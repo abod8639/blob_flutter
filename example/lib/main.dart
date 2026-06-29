@@ -33,8 +33,7 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage>
-    with SingleTickerProviderStateMixin {
+class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin {
   late ParticleBlobController _blobController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -85,13 +84,13 @@ class _DashboardPageState extends State<DashboardPage>
     _blobController.setAutoRotationSpeed(_autoRotationSpeed);
     _blobController.setNoiseFrequency(_noiseFrequency);
     _blobController.setViewDistance(_viewDistance);
-
+    
     // Setup pulse animation for "Audio" mode
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-
+    
     _pulseAnimation = Tween<double>(begin: 0.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
     )..addListener(() {
@@ -115,7 +114,7 @@ class _DashboardPageState extends State<DashboardPage>
         _isAudioPulseMode = false; // Disable pulse mode if listening
         _pulseController.stop();
         _blobController.setDispersion(0.0);
-
+        
         _blobController.setBlobiness(2.5);
         _blobController.setSpeed(3.0);
         _blobiness = 2.5;
@@ -161,7 +160,7 @@ class _DashboardPageState extends State<DashboardPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+    backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Background grid or texture could go here
@@ -174,39 +173,37 @@ class _DashboardPageState extends State<DashboardPage>
               ),
             ),
           ),
-
+          
           // Main blob
-          Positioned(
-            right: 0,
-            child: ParticleBlob(
-              tapScaleFactor: 2.1,
-              gradient: LinearGradient(
-                colors: [_color1, _color2],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+          Row(
+            children: [
+              ParticleBlob(
+                tapScaleFactor: 1.1,
+                  gradient: LinearGradient(
+                  colors: [_color1, _color2],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                particleCount: _particleCount,
+                radius: _baseRadius,
+                pointSize: _pointSize,
+                controller: _blobController,
               ),
-              particleCount: _particleCount,
-              radius: _baseRadius,
-              pointSize: _pointSize,
-              controller: _blobController,
-            ),
-          ),
-          Positioned(
-            left: 0,
-            child: ParticleBlob(
-              tapScaleFactor: 2.1,
-              gradient: LinearGradient(
-                colors: [_color1, _color2],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+              ParticleBlob(
+                tapScaleFactor: 1.1,
+                  gradient: LinearGradient(
+                  colors: [_color1, _color2],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                particleCount: _particleCount,
+                radius: _baseRadius,
+                pointSize: _pointSize,
+                controller: _blobController,
               ),
-              particleCount: _particleCount,
-              radius: _baseRadius,
-              pointSize: _pointSize,
-              controller: _blobController,
-            ),
+            ],
           ),
-
+          
           // UI Overlay
           SafeArea(
             child: Column(
@@ -254,11 +251,9 @@ class _DashboardPageState extends State<DashboardPage>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _isListening
-                  ? Colors.red.withValues(alpha: 0.2)
-                  : Colors.cyan.withValues(alpha: 0.2),
-              border: Border.all(
-                  color: _isListening ? Colors.redAccent : Colors.cyanAccent),
+              
+              color: _isListening ? Colors.red.withValues(alpha: 0.2) : Colors.cyan.withValues(alpha: 0.2),
+              border: Border.all(color: _isListening ? Colors.redAccent : Colors.cyanAccent),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -347,9 +342,7 @@ class _DashboardPageState extends State<DashboardPage>
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.cyanAccent.withValues(alpha: 0.1)
-              : Colors.transparent,
+          color: isSelected ? Colors.cyanAccent.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? Colors.cyanAccent : Colors.transparent,
@@ -535,23 +528,17 @@ class _DashboardPageState extends State<DashboardPage>
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'SCI-FI PRESET THEMES',
-                  style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   children: _themes.map((theme) {
-                    final bool isCurrent = !_isRainbowMode &&
-                        _color1 == theme.c1 &&
-                        _color2 == theme.c2;
+                    final bool isCurrent = !_isRainbowMode && _color1 == theme.c1 && _color2 == theme.c2;
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -563,16 +550,12 @@ class _DashboardPageState extends State<DashboardPage>
                       },
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 6),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: isCurrent
-                              ? Colors.cyanAccent.withValues(alpha: 0.15)
-                              : Colors.white.withValues(alpha: 0.05),
+                          color: isCurrent ? Colors.cyanAccent.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color:
-                                isCurrent ? Colors.cyanAccent : Colors.white12,
+                            color: isCurrent ? Colors.cyanAccent : Colors.white12,
                             width: 1,
                           ),
                         ),
@@ -583,16 +566,14 @@ class _DashboardPageState extends State<DashboardPage>
                               height: 12,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                    colors: [theme.c1, theme.c2]),
+                                gradient: LinearGradient(colors: [theme.c1, theme.c2]),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               theme.name,
                               style: TextStyle(
-                                color:
-                                    isCurrent ? Colors.white : Colors.white54,
+                                color: isCurrent ? Colors.white : Colors.white54,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -688,9 +669,7 @@ class _DashboardPageState extends State<DashboardPage>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isActive
-                  ? activeColor.withValues(alpha: 0.2)
-                  : Colors.white.withValues(alpha: 0.05),
+              color: isActive ? activeColor.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isActive ? activeColor : Colors.white12,
@@ -717,8 +696,7 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  Widget _buildColorSelector(
-      String label, Color selectedColor, ValueChanged<Color> onSelect) {
+  Widget _buildColorSelector(String label, Color selectedColor, ValueChanged<Color> onSelect) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -726,10 +704,7 @@ class _DashboardPageState extends State<DashboardPage>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Text(
             label,
-            style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 11,
-                fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
           ),
         ),
         SingleChildScrollView(
@@ -742,8 +717,7 @@ class _DashboardPageState extends State<DashboardPage>
                 return GestureDetector(
                   onTap: () => onSelect(color),
                   child: Container(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
@@ -753,15 +727,13 @@ class _DashboardPageState extends State<DashboardPage>
                         color: isSelected ? Colors.white : Colors.white24,
                         width: isSelected ? 2.0 : 1.0,
                       ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.5),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              )
-                            ]
-                          : null,
+                      boxShadow: isSelected ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        )
+                      ] : null,
                     ),
                   ),
                 );
@@ -794,10 +766,7 @@ class _DashboardPageState extends State<DashboardPage>
               ),
               Text(
                 value.toStringAsFixed(value % 1 == 0 ? 0 : 2),
-                style: const TextStyle(
-                    color: Colors.cyanAccent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.cyanAccent, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -823,11 +792,11 @@ class _GridPainter extends CustomPainter {
       ..strokeWidth = 1.0;
 
     const double step = 40.0;
-
+    
     for (double x = 0; x < size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-
+    
     for (double y = 0; y < size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
