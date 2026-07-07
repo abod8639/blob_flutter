@@ -243,6 +243,14 @@ class _ParticleBlobState extends State<ParticleBlob>
   // ── Particle Update ────────────────────────────────────────────────────────
 
   void _updateProjectedPoints() {
+    List<Offset> localTouches = _activeTouches;
+    if (_activeTouches.isNotEmpty) {
+      final RenderObject? renderObject = context.findRenderObject();
+      if (renderObject is RenderBox && renderObject.attached) {
+        localTouches = _activeTouches.map((pos) => renderObject.globalToLocal(pos)).toList();
+      }
+    }
+
     BlobMath.projectParticles(
       count: widget.particleCount,
       radius: widget.radius,
@@ -253,7 +261,7 @@ class _ParticleBlobState extends State<ParticleBlob>
       time: _time,
       viewportWidth: _cachedSize.width,
       viewportHeight: _cachedSize.height,
-      activeTouches: _activeTouches,
+      activeTouches: localTouches,
       baseSphere: _baseSphere,
       projectedPoints: _projectedPoints,
       autoRotationSpeed: _controller.autoRotationSpeed,
