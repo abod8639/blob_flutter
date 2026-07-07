@@ -28,7 +28,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
 
   void _updateTouchState(PointerEvent event, bool isDown) {
     if (isDown) {
-      _touchPoints[event.pointer] = event.localPosition;
+      _touchPoints[event.pointer] = event.position; // Store global position to handle moving blobs
     } else {
       _touchPoints.remove(event.pointer);
     }
