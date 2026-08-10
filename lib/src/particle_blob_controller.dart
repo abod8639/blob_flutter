@@ -29,6 +29,7 @@ class ParticleBlobController extends ChangeNotifier {
   bool _isColorAnimated = true;
   double _colorAnimationSpeed = 1.0;
   double _waveIntensity = 1.0;
+  bool _enableHover = false;
   Gradient? _gradient;
 
   /// Accumulated manual rotation from drag gestures.
@@ -43,12 +44,14 @@ class ParticleBlobController extends ChangeNotifier {
     bool isColorAnimated = true,
     double colorAnimationSpeed = 1.0,
     double waveIntensity = 1.0,
+    bool enableHover = false,
     Gradient? gradient,
   }) : _dampingFactor = dampingFactor,
        _tapScaleFactor = tapScaleFactor,
        _isColorAnimated = isColorAnimated,
        _colorAnimationSpeed = colorAnimationSpeed,
        _waveIntensity = waveIntensity,
+       _enableHover = enableHover,
        _gradient = gradient,
        assert(dampingFactor >= 0.0 && dampingFactor <= 1.0,
             'dampingFactor must be between 0.0 and 1.0'),
@@ -85,6 +88,9 @@ class ParticleBlobController extends ChangeNotifier {
   /// Wave distortion intensity applied to the color gradient.
   /// 0.0 = clean geometric gradient, 1.0 = liquid/organic wave shimmer.
   double get waveIntensity => _waveIntensity;
+
+  /// Whether particle dispersion and interaction triggers on mouse hover without clicking.
+  bool get enableHover => _enableHover;
 
   /// Optional runtime gradient override.
   Gradient? get gradient => _gradient;
@@ -221,6 +227,17 @@ class ParticleBlobController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Sets whether hover interaction is enabled on mouse movement without clicking.
+  void setEnableHover(bool value) {
+    if (_enableHover != value) {
+      _enableHover = value;
+      notifyListeners();
+    }
+  }
+
+  /// Alias for [setEnableHover].
+  void setIsHoverEnabled(bool value) => setEnableHover(value);
 
   /// Adds an angular velocity impulse from a drag gesture.
   /// Delta is in screen pixels — sensitivity is applied internally.
