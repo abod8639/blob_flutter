@@ -6,7 +6,6 @@ import 'package:blob_flutter/blob_flutter.dart';
 import 'package:blob_flutter/src/blob_input_listener.dart';
 import 'package:blob_flutter/src/blob_math.dart';
 import 'package:blob_flutter/src/blob_painter.dart';
-
 void main() {
   group('BlobMath Tests', () {
     test('generateFibonacciSphere generates unit sphere points and asserts invalid inputs', () {
