@@ -683,6 +683,53 @@ void main() {
       await gesture.removePointer();
     });
 
+    testWidgets('enableHover triggers particle interaction and dispersion without clicking', (tester) async {
+      final controller = ParticleBlobController(enableHover: true);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                enableHover: true,
+                onTouchesChanged: (t) {
+                  touches = t;
+                },
+                child: const SizedBox(width: 200, height: 200),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Create mouse hover
+      final gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(50, 50));
+      await tester.pump();
+
+      // Move mouse pointer over widget
+      await gesture.moveTo(const Offset(80, 80));
+      await tester.pump();
+
+      // Verify active touches and dispersion are populated without clicking
+      expect(touches.length, 1);
+      expect(touches.first, const Offset(80, 80));
+      expect(controller.dispersion, greaterThan(0.0));
+
+      // Move mouse outside widget
+      await gesture.moveTo(const Offset(300, 300));
+      await tester.pump();
+
+      expect(touches.isEmpty, true);
+      expect(controller.dispersion, 0.0);
+
+      await gesture.removePointer();
+    });
+
     testWidgets('pointer cancel removes touch points and resets dispersion', (tester) async {
       final controller = ParticleBlobController();
       List<Offset> touches = [];
