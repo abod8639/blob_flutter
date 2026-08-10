@@ -163,6 +163,84 @@ void main() {
         () => ParticleBlob(tapScaleFactor: -0.1),
         throwsAssertionError,
       );
+
+      // Verify assertions for invalid color parameters
+      expect(
+        () => ParticleBlob(colorAnimationSpeed: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => ParticleBlob(waveIntensity: -0.1),
+        throwsAssertionError,
+      );
+    });
+
+    testWidgets('renders successfully with static gradient and various gradient types', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleBlob(
+                isColorAnimated: false,
+                colorAnimationSpeed: 0.0,
+                waveIntensity: 0.0,
+                gradient: LinearGradient(
+                  colors: [Colors.red, Colors.yellow, Colors.blue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(CustomPaint), findsOneWidget);
+
+      // Test with RadialGradient
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleBlob(
+                gradient: RadialGradient(
+                  colors: [Colors.cyan, Colors.purple],
+                  center: Alignment.center,
+                  radius: 0.8,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(ParticleBlob), findsOneWidget);
+
+      // Test with SweepGradient
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleBlob(
+                gradient: SweepGradient(
+                  colors: [Colors.teal, Colors.amber],
+                  center: Alignment.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(ParticleBlob), findsOneWidget);
     });
 
     testWidgets('renders successfully with unbounded width constraints (e.g. inside Row)', (tester) async {
@@ -333,6 +411,10 @@ void main() {
       final controller = ParticleBlobController(
         dampingFactor: 0.9,
         tapScaleFactor: 2.0,
+        isColorAnimated: false,
+        colorAnimationSpeed: 2.5,
+        waveIntensity: 0.5,
+        gradient: const RadialGradient(colors: [Colors.red, Colors.blue]),
       );
       expect(controller.dampingFactor, 0.9);
       expect(controller.tapScaleFactor, 2.0);
@@ -342,16 +424,39 @@ void main() {
       expect(controller.autoRotationSpeed, 0.5);
       expect(controller.noiseFrequency, 1.0);
       expect(controller.viewDistance, 2.0);
+      expect(controller.isColorAnimated, false);
+      expect(controller.colorAnimationSpeed, 2.5);
+      expect(controller.waveIntensity, 0.5);
+      expect(controller.gradient, isA<RadialGradient>());
     });
 
     test('constructor asserts on invalid parameters', () {
       expect(() => ParticleBlobController(dampingFactor: -0.1), throwsAssertionError);
       expect(() => ParticleBlobController(dampingFactor: 1.1), throwsAssertionError);
       expect(() => ParticleBlobController(tapScaleFactor: -0.5), throwsAssertionError);
+      expect(() => ParticleBlobController(colorAnimationSpeed: -0.1), throwsAssertionError);
+      expect(() => ParticleBlobController(waveIntensity: -0.1), throwsAssertionError);
     });
 
     test('property setters clamp inputs correctly', () {
       final controller = ParticleBlobController();
+
+      controller.setColorAnimationSpeed(15.0); // clamped to 10.0
+      expect(controller.colorAnimationSpeed, 10.0);
+      controller.setColorAnimationSpeed(-2.0); // clamped to 0.0
+      expect(controller.colorAnimationSpeed, 0.0);
+
+      controller.setWaveIntensity(8.0); // clamped to 5.0
+      expect(controller.waveIntensity, 5.0);
+      controller.setWaveIntensity(-1.0); // clamped to 0.0
+      expect(controller.waveIntensity, 0.0);
+
+      controller.setIsColorAnimated(false);
+      expect(controller.isColorAnimated, false);
+
+      const grad = SweepGradient(colors: [Colors.green, Colors.yellow]);
+      controller.setGradient(grad);
+      expect(controller.gradient, grad);
 
       controller.setBlobiness(6.0); // clamped to 5.0
       expect(controller.blobiness, 5.0);
