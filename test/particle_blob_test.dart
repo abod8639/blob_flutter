@@ -2,10 +2,10 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particle_blob/blob_flutter.dart';
-import 'package:particle_blob/src/blob_input_listener.dart';
-import 'package:particle_blob/src/blob_math.dart';
-import 'package:particle_blob/src/blob_painter.dart';
+import 'package:blob_flutter/blob_flutter.dart';
+import 'package:blob_flutter/src/blob_input_listener.dart';
+import 'package:blob_flutter/src/blob_math.dart';
+import 'package:blob_flutter/src/blob_painter.dart';
 
 void main() {
   group('BlobMath Tests', () {
