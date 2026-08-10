@@ -5,16 +5,16 @@
 **High-performance, GPU-accelerated 3D particle blob visualization for Flutter.**
 
 <p align="center">
-  <a href="https://github.com/yourusername/particle_blob/actions"><img src="https://github.com/yourusername/particle_blob/actions/workflows/flutter-ci.yml/badge.svg" alt="CI Status"></a>
-  <a href="https://pub.dev/packages/particle_blob"><img src="https://img.shields.io/pub/v/particle_blob?color=blue&label=pub.dev&logo=dart" alt="Pub Version"></a>
-  <a href="https://codecov.io/gh/yourusername/particle_blob"><img src="https://codecov.io/gh/yourusername/particle_blob/branch/main/graph/badge.svg" alt="Code Coverage"></a>
+  <a href="https://github.com/yourusername/blob_flutter/actions"><img src="https://github.com/yourusername/blob_flutter/actions/workflows/flutter-ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://pub.dev/packages/blob_flutter"><img src="https://img.shields.io/pub/v/blob_flutter?color=blue&label=pub.dev&logo=dart" alt="Pub Version"></a>
+  <a href="https://codecov.io/gh/yourusername/blob_flutter"><img src="https://codecov.io/gh/yourusername/blob_flutter/branch/main/graph/badge.svg" alt="Code Coverage"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/yourusername/particle_blob/stargazers"><img src="https://img.shields.io/github/stars/yourusername/particle_blob?style=flat&logo=github&color=blue" alt="GitHub stars"></a>
-  <img src="https://img.shields.io/pub/likes/particle_blob?logo=flutter&color=gold" alt="Pub Likes">
-  <img src="https://img.shields.io/pub/points/particle_blob?logo=dart&color=blue" alt="Pub Points">
+  <a href="https://github.com/yourusername/blob_flutter/stargazers"><img src="https://img.shields.io/github/stars/yourusername/blob_flutter?style=flat&logo=github&color=blue" alt="GitHub stars"></a>
+  <img src="https://img.shields.io/pub/likes/blob_flutter?logo=flutter&color=gold" alt="Pub Likes">
+  <img src="https://img.shields.io/pub/points/blob_flutter?logo=dart&color=blue" alt="Pub Points">
   <a href="https://particle-blob-demo.web.app"><img src="https://img.shields.io/badge/Demo-Live_Preview-EA4335?logo=firebase" alt="Live Demo"></a>
 </p>
 
@@ -81,7 +81,7 @@ Perfect for creating stunning, high-end visual effects in:
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:particle_blob/particle_blob.dart';
+import 'package:blob_flutter/blob_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -122,7 +122,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  particle_blob: ^1.0.0
+  blob_flutter: ^1.0.0
 ```
 
 Then run:
