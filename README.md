@@ -69,7 +69,7 @@ Perfect for creating stunning, futuristic visual effects in:
 
 1. Import the package:
 ```dart
-import 'package:particle_blob/particle_blob.dart';
+import 'package:blob_flutter/blob_flutter.dart';
 ```
 
 2. Add it to your widget tree:
