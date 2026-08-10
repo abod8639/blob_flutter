@@ -69,6 +69,10 @@ class ParticleBlob extends StatefulWidget {
   /// `0.0` = clean geometric gradient, `1.0` = organic liquid shimmer. Default: `1.0`.
   final double waveIntensity;
 
+  /// Whether particle dispersion and interaction triggers on mouse hover without clicking.
+  /// Default: `false`.
+  final bool enableHover;
+
   const ParticleBlob({
     super.key,
     this.particleCount = 5000,
@@ -82,6 +86,7 @@ class ParticleBlob extends StatefulWidget {
     this.isColorAnimated = true,
     this.colorAnimationSpeed = 1.0,
     this.waveIntensity = 1.0,
+    this.enableHover = false,
   }) : assert(particleCount > 0, 'particleCount must be greater than 0'),
        assert(tapScaleFactor >= 0.0, 'tapScaleFactor must be greater than or equal to 0.0'),
        assert(colorAnimationSpeed >= 0.0, 'colorAnimationSpeed must be greater than or equal to 0.0'),
@@ -173,6 +178,7 @@ class _ParticleBlobState extends State<ParticleBlob>
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
+          enableHover: widget.enableHover,
           gradient: widget.gradient,
         );
 
@@ -201,6 +207,7 @@ class _ParticleBlobState extends State<ParticleBlob>
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
+            enableHover: widget.enableHover,
             gradient: widget.gradient,
           );
     } else if (_ownsController) {
@@ -215,6 +222,9 @@ class _ParticleBlobState extends State<ParticleBlob>
       }
       if (oldWidget.waveIntensity != widget.waveIntensity) {
         _controller.setWaveIntensity(widget.waveIntensity);
+      }
+      if (oldWidget.enableHover != widget.enableHover) {
+        _controller.setEnableHover(widget.enableHover);
       }
       if (oldWidget.gradient != widget.gradient) {
         _controller.setGradient(widget.gradient);
@@ -438,6 +448,7 @@ class _ParticleBlobState extends State<ParticleBlob>
           height: height,
           child: BlobInputListener(
             controller: _controller,
+            enableHover: widget.enableHover,
             onTouchesChanged: (touches) {
               _activeTouches = touches;
             },
