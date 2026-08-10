@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'particle_blob_controller.dart';
+import 'blob_noise_type.dart';
 import 'blob_math.dart';
 import 'blob_painter.dart';
 import 'blob_input_listener.dart';
@@ -73,6 +74,10 @@ class ParticleBlob extends StatefulWidget {
   /// Default: `false`.
   final bool enableHover;
 
+  /// The procedural 3D noise deformation algorithm used to shape the blob.
+  /// Default: [BlobNoiseType.harmonic].
+  final BlobNoiseType noiseType;
+
   const ParticleBlob({
     super.key,
     this.particleCount = 5000,
@@ -87,6 +92,7 @@ class ParticleBlob extends StatefulWidget {
     this.colorAnimationSpeed = 1.0,
     this.waveIntensity = 1.0,
     this.enableHover = false,
+    this.noiseType = BlobNoiseType.harmonic,
   }) : assert(particleCount > 0, 'particleCount must be greater than 0'),
        assert(tapScaleFactor >= 0.0, 'tapScaleFactor must be greater than or equal to 0.0'),
        assert(colorAnimationSpeed >= 0.0, 'colorAnimationSpeed must be greater than or equal to 0.0'),
@@ -179,6 +185,7 @@ class _ParticleBlobState extends State<ParticleBlob>
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
           enableHover: widget.enableHover,
+          noiseType: widget.noiseType,
           gradient: widget.gradient,
         );
 
@@ -208,6 +215,7 @@ class _ParticleBlobState extends State<ParticleBlob>
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
             enableHover: widget.enableHover,
+            noiseType: widget.noiseType,
             gradient: widget.gradient,
           );
     } else if (_ownsController) {
@@ -225,6 +233,9 @@ class _ParticleBlobState extends State<ParticleBlob>
       }
       if (oldWidget.enableHover != widget.enableHover) {
         _controller.setEnableHover(widget.enableHover);
+      }
+      if (oldWidget.noiseType != widget.noiseType) {
+        _controller.setNoiseType(widget.noiseType);
       }
       if (oldWidget.gradient != widget.gradient) {
         _controller.setGradient(widget.gradient);
@@ -325,6 +336,7 @@ class _ParticleBlobState extends State<ParticleBlob>
       autoRotationSpeed: _controller.autoRotationSpeed,
       noiseFrequency: _controller.noiseFrequency,
       viewDistance: _controller.viewDistance,
+      noiseType: _controller.noiseType,
     );
   }
 
