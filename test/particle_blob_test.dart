@@ -2,10 +2,10 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particle_blob/particle_blob.dart';
+import 'package:particle_blob/blob_flutter.dart';
+import 'package:particle_blob/src/blob_input_listener.dart';
 import 'package:particle_blob/src/blob_math.dart';
 import 'package:particle_blob/src/blob_painter.dart';
-import 'package:particle_blob/src/blob_input_listener.dart';
 
 void main() {
   group('BlobMath Tests', () {
@@ -132,7 +132,7 @@ void main() {
     });
   });
 
-  group('ParticleBlob Widget Tests', () {
+  group('BlobFlutter Widget Tests', () {
     testWidgets('renders CustomPaint with default settings and asserts on invalid parameters', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -140,7 +140,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(),
+              child: BlobFlutter(),
             ),
           ),
         ),
@@ -148,29 +148,29 @@ void main() {
 
       await tester.pump();
 
-      // Check if ParticleBlob widget is built
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      // Check if BlobFlutter widget is built
+      expect(find.byType(BlobFlutter), findsOneWidget);
       expect(find.byType(CustomPaint), findsOneWidget);
 
       // Verify assertion for invalid particleCount
       expect(
-        () => ParticleBlob(particleCount: 0),
+        () => BlobFlutter(particleCount: 0),
         throwsAssertionError,
       );
 
       // Verify assertion for invalid tapScaleFactor
       expect(
-        () => ParticleBlob(tapScaleFactor: -0.1),
+        () => BlobFlutter(tapScaleFactor: -0.1),
         throwsAssertionError,
       );
 
       // Verify assertions for invalid color parameters
       expect(
-        () => ParticleBlob(colorAnimationSpeed: -0.1),
+        () => BlobFlutter(colorAnimationSpeed: -0.1),
         throwsAssertionError,
       );
       expect(
-        () => ParticleBlob(waveIntensity: -0.1),
+        () => BlobFlutter(waveIntensity: -0.1),
         throwsAssertionError,
       );
     });
@@ -182,7 +182,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 isColorAnimated: false,
                 colorAnimationSpeed: 0.0,
                 waveIntensity: 0.0,
@@ -198,7 +198,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
       expect(find.byType(CustomPaint), findsOneWidget);
 
       // Test with RadialGradient
@@ -208,7 +208,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 gradient: RadialGradient(
                   colors: [Colors.cyan, Colors.purple],
                   center: Alignment.center,
@@ -220,7 +220,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
 
       // Test with SweepGradient
       await tester.pumpWidget(
@@ -229,7 +229,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 gradient: SweepGradient(
                   colors: [Colors.teal, Colors.amber],
                   center: Alignment.center,
@@ -240,7 +240,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
     testWidgets('renders successfully with unbounded width constraints (e.g. inside Row)', (tester) async {
@@ -249,7 +249,7 @@ void main() {
           home: Scaffold(
             body: Row(
               children: [
-                ParticleBlob(),
+                BlobFlutter(),
               ],
             ),
           ),
@@ -258,10 +258,10 @@ void main() {
 
       await tester.pump();
 
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
       expect(find.byType(CustomPaint), findsOneWidget);
 
-      final RenderBox renderBox = tester.renderObject(find.byType(ParticleBlob));
+      final RenderBox renderBox = tester.renderObject(find.byType(BlobFlutter));
       expect(renderBox.size.width, 300.0); // radius (150) * 2.0
       // Height should be the height of the Scaffold body in tests (typically 600.0)
       expect(renderBox.size.height, 600.0);
@@ -272,7 +272,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: UnconstrainedBox(
-              child: ParticleBlob(),
+              child: BlobFlutter(),
             ),
           ),
         ),
@@ -280,10 +280,10 @@ void main() {
 
       await tester.pump();
 
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
       expect(find.byType(CustomPaint), findsOneWidget);
 
-      final RenderBox renderBox = tester.renderObject(find.byType(ParticleBlob));
+      final RenderBox renderBox = tester.renderObject(find.byType(BlobFlutter));
       expect(renderBox.size.width, 300.0); // radius (150) * 2.0
       expect(renderBox.size.height, 300.0); // radius (150) * 2.0
     });
@@ -295,7 +295,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 tapScaleFactor: 1.0,
               ),
@@ -316,7 +316,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 tapScaleFactor: 2.0,
               ),
@@ -331,8 +331,8 @@ void main() {
     });
 
     testWidgets('handles dynamic controller swapping', (tester) async {
-      final controller1 = ParticleBlobController(tapScaleFactor: 1.5);
-      final controller2 = ParticleBlobController(tapScaleFactor: 3.0);
+      final controller1 = BlobController(tapScaleFactor: 1.5);
+      final controller2 = BlobController(tapScaleFactor: 3.0);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -340,7 +340,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 controller: controller1,
               ),
@@ -361,7 +361,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 controller: controller2,
               ),
@@ -383,7 +383,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
               ),
             ),
@@ -406,9 +406,9 @@ void main() {
     });
   });
 
-  group('ParticleBlobController Tests', () {
+  group('BlobController Tests', () {
     test('initial values and custom constructor parameters', () {
-      final controller = ParticleBlobController(
+      final controller = BlobController(
         dampingFactor: 0.9,
         tapScaleFactor: 2.0,
         isColorAnimated: false,
@@ -431,15 +431,15 @@ void main() {
     });
 
     test('constructor asserts on invalid parameters', () {
-      expect(() => ParticleBlobController(dampingFactor: -0.1), throwsAssertionError);
-      expect(() => ParticleBlobController(dampingFactor: 1.1), throwsAssertionError);
-      expect(() => ParticleBlobController(tapScaleFactor: -0.5), throwsAssertionError);
-      expect(() => ParticleBlobController(colorAnimationSpeed: -0.1), throwsAssertionError);
-      expect(() => ParticleBlobController(waveIntensity: -0.1), throwsAssertionError);
+      expect(() => BlobController(dampingFactor: -0.1), throwsAssertionError);
+      expect(() => BlobController(dampingFactor: 1.1), throwsAssertionError);
+      expect(() => BlobController(tapScaleFactor: -0.5), throwsAssertionError);
+      expect(() => BlobController(colorAnimationSpeed: -0.1), throwsAssertionError);
+      expect(() => BlobController(waveIntensity: -0.1), throwsAssertionError);
     });
 
     test('property setters clamp inputs correctly', () {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
 
       controller.setColorAnimationSpeed(15.0); // clamped to 10.0
       expect(controller.colorAnimationSpeed, 10.0);
@@ -500,7 +500,7 @@ void main() {
     });
 
     test('notifies listeners when properties are updated', () {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
       int notifyCount = 0;
       controller.addListener(() => notifyCount++);
 
@@ -540,7 +540,7 @@ void main() {
     });
 
     test('addRotationImpulse, applyDamping, and snapping rotation logic', () {
-      final controller = ParticleBlobController(dampingFactor: 0.9);
+      final controller = BlobController(dampingFactor: 0.9);
       expect(controller.rotationX, 0.0);
       expect(controller.rotationY, 0.0);
 
@@ -563,14 +563,14 @@ void main() {
       expect(controller.rotationY, 0.0);
 
       // Test no decay when dampingFactor is 1.0
-      final controllerNoDecay = ParticleBlobController(dampingFactor: 1.0);
+      final controllerNoDecay = BlobController(dampingFactor: 1.0);
       controllerNoDecay.addRotationImpulse(const Offset(10.0, 20.0));
       controllerNoDecay.applyDamping();
       expect(controllerNoDecay.rotationX, 20.0 * 0.005);
       expect(controllerNoDecay.rotationY, 10.0 * 0.005);
 
       // Test instant decay when dampingFactor is 0.0
-      final controllerInstantDecay = ParticleBlobController(dampingFactor: 0.0);
+      final controllerInstantDecay = BlobController(dampingFactor: 0.0);
       controllerInstantDecay.addRotationImpulse(const Offset(10.0, 20.0));
       controllerInstantDecay.applyDamping();
       expect(controllerInstantDecay.rotationX, 0.0);
@@ -580,7 +580,7 @@ void main() {
 
   group('BlobInputListener Widget Tests', () {
     testWidgets('detects pointer gestures and updates controller values', (tester) async {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
       List<Offset> touches = [];
 
       await tester.pumpWidget(
@@ -617,7 +617,7 @@ void main() {
     });
 
     testWidgets('applies tapScaleFactor to dispersion output', (tester) async {
-      final controller = ParticleBlobController(tapScaleFactor: 0.5);
+      final controller = BlobController(tapScaleFactor: 0.5);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -644,7 +644,7 @@ void main() {
     });
 
     testWidgets('mouse hover triggers subtle rotation impulse when no active touches', (tester) async {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -684,7 +684,7 @@ void main() {
     });
 
     testWidgets('enableHover triggers particle interaction and dispersion without clicking', (tester) async {
-      final controller = ParticleBlobController(enableHover: true);
+      final controller = BlobController(enableHover: true);
       List<Offset> touches = [];
 
       await tester.pumpWidget(
@@ -731,7 +731,7 @@ void main() {
     });
 
     testWidgets('pointer cancel removes touch points and resets dispersion', (tester) async {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
       List<Offset> touches = [];
 
       await tester.pumpWidget(
@@ -882,8 +882,8 @@ void main() {
       expect(val1 >= -2.0 && val1 <= 2.0, true);
     });
 
-    test('ParticleBlobController handles setNoiseType and notifies listeners', () {
-      final controller = ParticleBlobController(noiseType: BlobNoiseType.harmonic);
+    test('BlobController handles setNoiseType and notifies listeners', () {
+      final controller = BlobController(noiseType: BlobNoiseType.harmonic);
       expect(controller.noiseType, BlobNoiseType.harmonic);
 
       int notifyCount = 0;
@@ -902,14 +902,14 @@ void main() {
       expect(notifyCount, 2);
     });
 
-    testWidgets('ParticleBlob widget accepts noiseType and responds to changes', (tester) async {
+    testWidgets('BlobFlutter widget accepts noiseType and responds to changes', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 200,
                 noiseType: BlobNoiseType.fractal,
               ),
@@ -919,7 +919,7 @@ void main() {
       );
 
       await tester.pump(const Duration(milliseconds: 50));
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
 
       // Rebuild with different noiseType
       await tester.pumpWidget(
@@ -928,7 +928,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 200,
                 noiseType: BlobNoiseType.vortex,
               ),
@@ -938,7 +938,7 @@ void main() {
       );
 
       await tester.pump(const Duration(milliseconds: 50));
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      expect(find.byType(BlobFlutter), findsOneWidget);
     });
   });
 }
