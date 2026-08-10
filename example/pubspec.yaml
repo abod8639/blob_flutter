@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  particle_blob:
+  blob_flutter:
     path: ../
 
 dev_dependencies:
