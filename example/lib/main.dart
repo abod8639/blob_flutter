@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:particle_blob/blob_flutter.dart';
 
 void main() {
   runApp(const ParticleBlobExampleApp());
