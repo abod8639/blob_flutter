@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "stronger_muscles_dashboard",
+      "request": "launch",
+      "type": "dart",
+      "args": ["-d", "linux"],
+      "env": {
+        "__NV_PRIME_RENDER_OFFLOAD": "1",
+        "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
+        // "__VK_LAYER_NV_optimus": "NVIDIA_only"
+      }
+    },
+    {
+      "name": "stronger_muscles_dashboard (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": ["-d", "linux"],
+      "env": {
+        "__NV_PRIME_RENDER_OFFLOAD": "1",
+        "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
+        // "__VK_LAYER_NV_optimus": "NVIDIA_only"
+      }
+    },
+    {
+      "name": "stronger_muscles_dashboard (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": ["-d", "linux"],
+      "env": {
+        "__NV_PRIME_RENDER_OFFLOAD": "1",
+        "__GLX_VENDOR_LIBRARY_NAME": "nvidia"
+        // "__VK_LAYER_NV_optimus": "NVIDIA_only"
+      }
+    }
+  ]
+}

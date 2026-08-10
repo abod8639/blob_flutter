@@ -2,10 +2,10 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:particle_blob/particle_blob.dart';
-import 'package:particle_blob/src/blob_math.dart';
-import 'package:particle_blob/src/blob_painter.dart';
-import 'package:particle_blob/src/blob_input_listener.dart';
+import 'package:blob_flutter/blob_flutter.dart';
+import 'package:blob_flutter/src/blob_input_listener.dart';
+import 'package:blob_flutter/src/blob_math.dart';
+import 'package:blob_flutter/src/blob_painter.dart';
 
 void main() {
   group('BlobMath Tests', () {
@@ -132,7 +132,7 @@ void main() {
     });
   });
 
-  group('ParticleBlob Widget Tests', () {
+  group('BlobFlutter Widget Tests', () {
     testWidgets('renders CustomPaint with default settings and asserts on invalid parameters', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -140,7 +140,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(),
+              child: BlobFlutter(),
             ),
           ),
         ),
@@ -148,21 +148,144 @@ void main() {
 
       await tester.pump();
 
-      // Check if ParticleBlob widget is built
-      expect(find.byType(ParticleBlob), findsOneWidget);
+      // Check if BlobFlutter widget is built
+      expect(find.byType(BlobFlutter), findsOneWidget);
       expect(find.byType(CustomPaint), findsOneWidget);
 
       // Verify assertion for invalid particleCount
       expect(
-        () => ParticleBlob(particleCount: 0),
+        () => BlobFlutter(particleCount: 0),
         throwsAssertionError,
       );
 
       // Verify assertion for invalid tapScaleFactor
       expect(
-        () => ParticleBlob(tapScaleFactor: -0.1),
+        () => BlobFlutter(tapScaleFactor: -0.1),
         throwsAssertionError,
       );
+
+      // Verify assertions for invalid color parameters
+      expect(
+        () => BlobFlutter(colorAnimationSpeed: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => BlobFlutter(waveIntensity: -0.1),
+        throwsAssertionError,
+      );
+    });
+
+    testWidgets('renders successfully with static gradient and various gradient types', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                isColorAnimated: false,
+                colorAnimationSpeed: 0.0,
+                waveIntensity: 0.0,
+                gradient: LinearGradient(
+                  colors: [Colors.red, Colors.yellow, Colors.blue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+      expect(find.byType(CustomPaint), findsOneWidget);
+
+      // Test with RadialGradient
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                gradient: RadialGradient(
+                  colors: [Colors.cyan, Colors.purple],
+                  center: Alignment.center,
+                  radius: 0.8,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(BlobFlutter), findsOneWidget);
+
+      // Test with SweepGradient
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                gradient: SweepGradient(
+                  colors: [Colors.teal, Colors.amber],
+                  center: Alignment.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('renders successfully with unbounded width constraints (e.g. inside Row)', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                BlobFlutter(),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+      expect(find.byType(CustomPaint), findsOneWidget);
+
+      final RenderBox renderBox = tester.renderObject(find.byType(BlobFlutter));
+      expect(renderBox.size.width, 300.0); // radius (150) * 2.0
+      // Height should be the height of the Scaffold body in tests (typically 600.0)
+      expect(renderBox.size.height, 600.0);
+    });
+
+    testWidgets('renders successfully with completely unbounded constraints (inside UnconstrainedBox)', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: UnconstrainedBox(
+              child: BlobFlutter(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+      expect(find.byType(CustomPaint), findsOneWidget);
+
+      final RenderBox renderBox = tester.renderObject(find.byType(BlobFlutter));
+      expect(renderBox.size.width, 300.0); // radius (150) * 2.0
+      expect(renderBox.size.height, 300.0); // radius (150) * 2.0
     });
 
     testWidgets('handles dynamic tapScaleFactor updates', (tester) async {
@@ -172,7 +295,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 tapScaleFactor: 1.0,
               ),
@@ -193,7 +316,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 tapScaleFactor: 2.0,
               ),
@@ -208,8 +331,8 @@ void main() {
     });
 
     testWidgets('handles dynamic controller swapping', (tester) async {
-      final controller1 = ParticleBlobController(tapScaleFactor: 1.5);
-      final controller2 = ParticleBlobController(tapScaleFactor: 3.0);
+      final controller1 = BlobController(tapScaleFactor: 1.5);
+      final controller2 = BlobController(tapScaleFactor: 3.0);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -217,7 +340,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 controller: controller1,
               ),
@@ -238,7 +361,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
                 controller: controller2,
               ),
@@ -260,7 +383,7 @@ void main() {
             body: SizedBox(
               width: 300,
               height: 300,
-              child: ParticleBlob(
+              child: BlobFlutter(
                 particleCount: 500,
               ),
             ),
@@ -283,11 +406,15 @@ void main() {
     });
   });
 
-  group('ParticleBlobController Tests', () {
+  group('BlobController Tests', () {
     test('initial values and custom constructor parameters', () {
-      final controller = ParticleBlobController(
+      final controller = BlobController(
         dampingFactor: 0.9,
         tapScaleFactor: 2.0,
+        isColorAnimated: false,
+        colorAnimationSpeed: 2.5,
+        waveIntensity: 0.5,
+        gradient: const RadialGradient(colors: [Colors.red, Colors.blue]),
       );
       expect(controller.dampingFactor, 0.9);
       expect(controller.tapScaleFactor, 2.0);
@@ -297,16 +424,39 @@ void main() {
       expect(controller.autoRotationSpeed, 0.5);
       expect(controller.noiseFrequency, 1.0);
       expect(controller.viewDistance, 2.0);
+      expect(controller.isColorAnimated, false);
+      expect(controller.colorAnimationSpeed, 2.5);
+      expect(controller.waveIntensity, 0.5);
+      expect(controller.gradient, isA<RadialGradient>());
     });
 
     test('constructor asserts on invalid parameters', () {
-      expect(() => ParticleBlobController(dampingFactor: -0.1), throwsAssertionError);
-      expect(() => ParticleBlobController(dampingFactor: 1.1), throwsAssertionError);
-      expect(() => ParticleBlobController(tapScaleFactor: -0.5), throwsAssertionError);
+      expect(() => BlobController(dampingFactor: -0.1), throwsAssertionError);
+      expect(() => BlobController(dampingFactor: 1.1), throwsAssertionError);
+      expect(() => BlobController(tapScaleFactor: -0.5), throwsAssertionError);
+      expect(() => BlobController(colorAnimationSpeed: -0.1), throwsAssertionError);
+      expect(() => BlobController(waveIntensity: -0.1), throwsAssertionError);
     });
 
     test('property setters clamp inputs correctly', () {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
+
+      controller.setColorAnimationSpeed(15.0); // clamped to 10.0
+      expect(controller.colorAnimationSpeed, 10.0);
+      controller.setColorAnimationSpeed(-2.0); // clamped to 0.0
+      expect(controller.colorAnimationSpeed, 0.0);
+
+      controller.setWaveIntensity(8.0); // clamped to 5.0
+      expect(controller.waveIntensity, 5.0);
+      controller.setWaveIntensity(-1.0); // clamped to 0.0
+      expect(controller.waveIntensity, 0.0);
+
+      controller.setIsColorAnimated(false);
+      expect(controller.isColorAnimated, false);
+
+      const grad = SweepGradient(colors: [Colors.green, Colors.yellow]);
+      controller.setGradient(grad);
+      expect(controller.gradient, grad);
 
       controller.setBlobiness(6.0); // clamped to 5.0
       expect(controller.blobiness, 5.0);
@@ -350,7 +500,7 @@ void main() {
     });
 
     test('notifies listeners when properties are updated', () {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
       int notifyCount = 0;
       controller.addListener(() => notifyCount++);
 
@@ -390,7 +540,7 @@ void main() {
     });
 
     test('addRotationImpulse, applyDamping, and snapping rotation logic', () {
-      final controller = ParticleBlobController(dampingFactor: 0.9);
+      final controller = BlobController(dampingFactor: 0.9);
       expect(controller.rotationX, 0.0);
       expect(controller.rotationY, 0.0);
 
@@ -413,14 +563,14 @@ void main() {
       expect(controller.rotationY, 0.0);
 
       // Test no decay when dampingFactor is 1.0
-      final controllerNoDecay = ParticleBlobController(dampingFactor: 1.0);
+      final controllerNoDecay = BlobController(dampingFactor: 1.0);
       controllerNoDecay.addRotationImpulse(const Offset(10.0, 20.0));
       controllerNoDecay.applyDamping();
       expect(controllerNoDecay.rotationX, 20.0 * 0.005);
       expect(controllerNoDecay.rotationY, 10.0 * 0.005);
 
       // Test instant decay when dampingFactor is 0.0
-      final controllerInstantDecay = ParticleBlobController(dampingFactor: 0.0);
+      final controllerInstantDecay = BlobController(dampingFactor: 0.0);
       controllerInstantDecay.addRotationImpulse(const Offset(10.0, 20.0));
       controllerInstantDecay.applyDamping();
       expect(controllerInstantDecay.rotationX, 0.0);
@@ -430,7 +580,7 @@ void main() {
 
   group('BlobInputListener Widget Tests', () {
     testWidgets('detects pointer gestures and updates controller values', (tester) async {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
       List<Offset> touches = [];
 
       await tester.pumpWidget(
@@ -467,7 +617,7 @@ void main() {
     });
 
     testWidgets('applies tapScaleFactor to dispersion output', (tester) async {
-      final controller = ParticleBlobController(tapScaleFactor: 0.5);
+      final controller = BlobController(tapScaleFactor: 0.5);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -494,7 +644,7 @@ void main() {
     });
 
     testWidgets('mouse hover triggers subtle rotation impulse when no active touches', (tester) async {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -533,8 +683,55 @@ void main() {
       await gesture.removePointer();
     });
 
+    testWidgets('enableHover triggers particle interaction and dispersion without clicking', (tester) async {
+      final controller = BlobController(enableHover: true);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                enableHover: true,
+                onTouchesChanged: (t) {
+                  touches = t;
+                },
+                child: const SizedBox(width: 200, height: 200),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Create mouse hover
+      final gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(50, 50));
+      await tester.pump();
+
+      // Move mouse pointer over widget
+      await gesture.moveTo(const Offset(80, 80));
+      await tester.pump();
+
+      // Verify active touches and dispersion are populated without clicking
+      expect(touches.length, 1);
+      expect(touches.first, const Offset(80, 80));
+      expect(controller.dispersion, greaterThan(0.0));
+
+      // Move mouse outside widget
+      await gesture.moveTo(const Offset(300, 300));
+      await tester.pump();
+
+      expect(touches.isEmpty, true);
+      expect(controller.dispersion, 0.0);
+
+      await gesture.removePointer();
+    });
+
     testWidgets('pointer cancel removes touch points and resets dispersion', (tester) async {
-      final controller = ParticleBlobController();
+      final controller = BlobController();
       List<Offset> touches = [];
 
       await tester.pumpWidget(
@@ -644,7 +841,105 @@ void main() {
       expect(canvas.paint?.color, Colors.green);
       expect(canvas.paint?.shader, isNull);
     });
+  });
 
+  group('BlobNoiseType & Procedural Noise Algorithms Tests', () {
+    test('BlobMath projects particles correctly for all BlobNoiseType algorithms', () {
+      final sphere = BlobMath.generateFibonacciSphere(100);
+      final projected = Float32List(100 * 2);
+
+      for (final noiseType in BlobNoiseType.values) {
+        BlobMath.projectParticles(
+          count: 100,
+          radius: 100.0,
+          blobiness: 1.5,
+          dispersion: 0.2,
+          rotationX: 0.5,
+          rotationY: 0.5,
+          time: 2.5,
+          viewportWidth: 400.0,
+          viewportHeight: 400.0,
+          activeTouches: const [],
+          baseSphere: sphere,
+          projectedPoints: projected,
+          autoRotationSpeed: 0.5,
+          noiseFrequency: 1.2,
+          viewDistance: 2.0,
+          noiseType: noiseType,
+        );
+
+        for (int i = 0; i < projected.length; i++) {
+          expect(projected[i].isNaN, false, reason: 'NaN found in $noiseType at index $i');
+          expect(projected[i].isInfinite, false, reason: 'Infinity found in $noiseType at index $i');
+        }
+      }
+    });
+
+    test('BlobMath.fastSimplex3D returns deterministic bounded values', () {
+      final val1 = BlobMath.fastSimplex3D(0.5, 0.5, 0.5);
+      final val2 = BlobMath.fastSimplex3D(0.5, 0.5, 0.5);
+      expect(val1, val2); // Deterministic
+      expect(val1 >= -2.0 && val1 <= 2.0, true);
+    });
+
+    test('BlobController handles setNoiseType and notifies listeners', () {
+      final controller = BlobController(noiseType: BlobNoiseType.harmonic);
+      expect(controller.noiseType, BlobNoiseType.harmonic);
+
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.setNoiseType(BlobNoiseType.spiky);
+      expect(controller.noiseType, BlobNoiseType.spiky);
+      expect(notifyCount, 1);
+
+      // No-op does not notify
+      controller.setNoiseType(BlobNoiseType.spiky);
+      expect(notifyCount, 1);
+
+      controller.setNoiseType(BlobNoiseType.simplex);
+      expect(controller.noiseType, BlobNoiseType.simplex);
+      expect(notifyCount, 2);
+    });
+
+    testWidgets('BlobFlutter widget accepts noiseType and responds to changes', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                particleCount: 200,
+                noiseType: BlobNoiseType.fractal,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(BlobFlutter), findsOneWidget);
+
+      // Rebuild with different noiseType
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                particleCount: 200,
+                noiseType: BlobNoiseType.vortex,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
   });
 }
 
