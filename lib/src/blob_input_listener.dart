@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'particle_blob_controller.dart';
+import 'package:particle_blob/src/blob_controller.dart';
 
 /// A widget that handles all multi-touch inputs, panning/drag interactions,
 /// and mouse hover effects for the [ParticleBlob].
@@ -8,7 +8,7 @@ import 'particle_blob_controller.dart';
 /// particle rendering and lifecycle logic.
 class BlobInputListener extends StatefulWidget {
   final Widget child;
-  final ParticleBlobController controller;
+  final BlobController controller;
   final ValueChanged<List<Offset>> onTouchesChanged;
   final bool enableHover;
 
