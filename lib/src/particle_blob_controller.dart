@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'blob_noise_type.dart';
+
 /// A controller for the [ParticleBlob] widget that provides programmatic
 /// control over blob geometry, animation speed, particle physics, and color flows.
 ///
@@ -11,6 +13,7 @@ import 'package:flutter/material.dart';
 /// final controller = ParticleBlobController();
 /// // ...
 /// controller.setSpeed(2.0);
+/// controller.setNoiseType(BlobNoiseType.spiky);
 /// controller.setIsColorAnimated(false); // Static color mode
 /// controller.setGradient(LinearGradient(...));
 /// // ...
@@ -23,6 +26,7 @@ class ParticleBlobController extends ChangeNotifier {
   double _dampingFactor;
   double _autoRotationSpeed = 0.5;
   double _noiseFrequency = 1.0;
+  BlobNoiseType _noiseType = BlobNoiseType.harmonic;
   double _viewDistance = 2.0;
   double _tapScaleFactor = 1.0;
   bool _isRainbowMode = false;
@@ -45,6 +49,7 @@ class ParticleBlobController extends ChangeNotifier {
     double colorAnimationSpeed = 1.0,
     double waveIntensity = 1.0,
     bool enableHover = false,
+    BlobNoiseType noiseType = BlobNoiseType.harmonic,
     Gradient? gradient,
   }) : _dampingFactor = dampingFactor,
        _tapScaleFactor = tapScaleFactor,
@@ -52,6 +57,7 @@ class ParticleBlobController extends ChangeNotifier {
        _colorAnimationSpeed = colorAnimationSpeed,
        _waveIntensity = waveIntensity,
        _enableHover = enableHover,
+       _noiseType = noiseType,
        _gradient = gradient,
        assert(dampingFactor >= 0.0 && dampingFactor <= 1.0,
             'dampingFactor must be between 0.0 and 1.0'),
@@ -104,6 +110,9 @@ class ParticleBlobController extends ChangeNotifier {
 
   /// Noise frequency multiplier: controls how dense/spiky the waves are.
   double get noiseFrequency => _noiseFrequency;
+
+  /// The procedural noise deformation algorithm used to shape the blob.
+  BlobNoiseType get noiseType => _noiseType;
 
   /// Perspective/3D depth camera distance.
   double get viewDistance => _viewDistance;
@@ -173,6 +182,14 @@ class ParticleBlobController extends ChangeNotifier {
     final clamped = value.clamp(0.1, 5.0);
     if (_noiseFrequency != clamped) {
       _noiseFrequency = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the procedural noise deformation algorithm used to shape the blob.
+  void setNoiseType(BlobNoiseType value) {
+    if (_noiseType != value) {
+      _noiseType = value;
       notifyListeners();
     }
   }
