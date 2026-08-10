@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:blob_flutter/src/blob_controller.dart';
+
+import 'blob_controller.dart';
 
 /// A widget that handles all multi-touch inputs, panning/drag interactions,
 /// and mouse hover effects for the [ParticleBlob].
