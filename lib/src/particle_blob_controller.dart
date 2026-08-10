@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// A controller for the [ParticleBlob] widget that provides programmatic
-/// control over blob geometry, animation speed, and particle physics.
+/// control over blob geometry, animation speed, particle physics, and color flows.
 ///
 /// Follows the [ChangeNotifier] contract — call [dispose] when no longer needed
 /// if the controller is created externally.
@@ -11,7 +11,8 @@ import 'package:flutter/material.dart';
 /// final controller = ParticleBlobController();
 /// // ...
 /// controller.setSpeed(2.0);
-/// controller.setBlobiness(1.5);
+/// controller.setIsColorAnimated(false); // Static color mode
+/// controller.setGradient(LinearGradient(...));
 /// // ...
 /// controller.dispose();
 /// ```
@@ -25,6 +26,10 @@ class ParticleBlobController extends ChangeNotifier {
   double _viewDistance = 2.0;
   double _tapScaleFactor = 1.0;
   bool _isRainbowMode = false;
+  bool _isColorAnimated = true;
+  double _colorAnimationSpeed = 1.0;
+  double _waveIntensity = 1.0;
+  Gradient? _gradient;
 
   /// Accumulated manual rotation from drag gestures.
   /// LOGIC-02: Managed with damping — decays in the animation ticker rather
@@ -35,12 +40,24 @@ class ParticleBlobController extends ChangeNotifier {
   ParticleBlobController({
     double dampingFactor = 0.92,
     double tapScaleFactor = 1.0,
+    bool isColorAnimated = true,
+    double colorAnimationSpeed = 1.0,
+    double waveIntensity = 1.0,
+    Gradient? gradient,
   }) : _dampingFactor = dampingFactor,
        _tapScaleFactor = tapScaleFactor,
+       _isColorAnimated = isColorAnimated,
+       _colorAnimationSpeed = colorAnimationSpeed,
+       _waveIntensity = waveIntensity,
+       _gradient = gradient,
        assert(dampingFactor >= 0.0 && dampingFactor <= 1.0,
             'dampingFactor must be between 0.0 and 1.0'),
        assert(tapScaleFactor >= 0.0,
-            'tapScaleFactor must be greater than or equal to 0.0');
+            'tapScaleFactor must be greater than or equal to 0.0'),
+       assert(colorAnimationSpeed >= 0.0,
+            'colorAnimationSpeed must be greater than or equal to 0.0'),
+       assert(waveIntensity >= 0.0,
+            'waveIntensity must be greater than or equal to 0.0');
 
   /// Noise amplitude: how much the sphere surface is displaced.
   /// 0.0 = perfect sphere, higher = more distorted.
@@ -58,6 +75,19 @@ class ParticleBlobController extends ChangeNotifier {
 
   /// Whether the color gradient cycles through a rainbow sequence.
   bool get isRainbowMode => _isRainbowMode;
+
+  /// Whether the colors animate dynamically across the blob or stay static.
+  bool get isColorAnimated => _isColorAnimated;
+
+  /// Speed of color animation/wave motion. 0.0 = static/fixed colors.
+  double get colorAnimationSpeed => _colorAnimationSpeed;
+
+  /// Wave distortion intensity applied to the color gradient.
+  /// 0.0 = clean geometric gradient, 1.0 = liquid/organic wave shimmer.
+  double get waveIntensity => _waveIntensity;
+
+  /// Optional runtime gradient override.
+  Gradient? get gradient => _gradient;
 
   /// Damping factor applied each frame: 1.0 = no decay, 0.0 = instant stop.
   /// Range: [0.0, 1.0].
@@ -154,6 +184,40 @@ class ParticleBlobController extends ChangeNotifier {
   void setIsRainbowMode(bool value) {
     if (_isRainbowMode != value) {
       _isRainbowMode = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets whether the color gradient is animated or static.
+  void setIsColorAnimated(bool value) {
+    if (_isColorAnimated != value) {
+      _isColorAnimated = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the color animation speed. Clamped to [0.0, 10.0].
+  void setColorAnimationSpeed(double value) {
+    final clamped = value.clamp(0.0, 10.0);
+    if (_colorAnimationSpeed != clamped) {
+      _colorAnimationSpeed = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the wave distortion intensity. Clamped to [0.0, 5.0].
+  void setWaveIntensity(double value) {
+    final clamped = value.clamp(0.0, 5.0);
+    if (_waveIntensity != clamped) {
+      _waveIntensity = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically changes the gradient at runtime.
+  void setGradient(Gradient? value) {
+    if (_gradient != value) {
+      _gradient = value;
       notifyListeners();
     }
   }
