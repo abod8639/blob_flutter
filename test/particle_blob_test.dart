@@ -841,7 +841,105 @@ void main() {
       expect(canvas.paint?.color, Colors.green);
       expect(canvas.paint?.shader, isNull);
     });
+  });
 
+  group('BlobNoiseType & Procedural Noise Algorithms Tests', () {
+    test('BlobMath projects particles correctly for all BlobNoiseType algorithms', () {
+      final sphere = BlobMath.generateFibonacciSphere(100);
+      final projected = Float32List(100 * 2);
+
+      for (final noiseType in BlobNoiseType.values) {
+        BlobMath.projectParticles(
+          count: 100,
+          radius: 100.0,
+          blobiness: 1.5,
+          dispersion: 0.2,
+          rotationX: 0.5,
+          rotationY: 0.5,
+          time: 2.5,
+          viewportWidth: 400.0,
+          viewportHeight: 400.0,
+          activeTouches: const [],
+          baseSphere: sphere,
+          projectedPoints: projected,
+          autoRotationSpeed: 0.5,
+          noiseFrequency: 1.2,
+          viewDistance: 2.0,
+          noiseType: noiseType,
+        );
+
+        for (int i = 0; i < projected.length; i++) {
+          expect(projected[i].isNaN, false, reason: 'NaN found in $noiseType at index $i');
+          expect(projected[i].isInfinite, false, reason: 'Infinity found in $noiseType at index $i');
+        }
+      }
+    });
+
+    test('BlobMath.fastSimplex3D returns deterministic bounded values', () {
+      final val1 = BlobMath.fastSimplex3D(0.5, 0.5, 0.5);
+      final val2 = BlobMath.fastSimplex3D(0.5, 0.5, 0.5);
+      expect(val1, val2); // Deterministic
+      expect(val1 >= -2.0 && val1 <= 2.0, true);
+    });
+
+    test('ParticleBlobController handles setNoiseType and notifies listeners', () {
+      final controller = ParticleBlobController(noiseType: BlobNoiseType.harmonic);
+      expect(controller.noiseType, BlobNoiseType.harmonic);
+
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.setNoiseType(BlobNoiseType.spiky);
+      expect(controller.noiseType, BlobNoiseType.spiky);
+      expect(notifyCount, 1);
+
+      // No-op does not notify
+      controller.setNoiseType(BlobNoiseType.spiky);
+      expect(notifyCount, 1);
+
+      controller.setNoiseType(BlobNoiseType.simplex);
+      expect(controller.noiseType, BlobNoiseType.simplex);
+      expect(notifyCount, 2);
+    });
+
+    testWidgets('ParticleBlob widget accepts noiseType and responds to changes', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleBlob(
+                particleCount: 200,
+                noiseType: BlobNoiseType.fractal,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(ParticleBlob), findsOneWidget);
+
+      // Rebuild with different noiseType
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ParticleBlob(
+                particleCount: 200,
+                noiseType: BlobNoiseType.vortex,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(ParticleBlob), findsOneWidget);
+    });
   });
 }
 
