@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:blob_flutter/src/blob_controller.dart';
+import 'blob_controller.dart';
 
 import 'blob_noise_type.dart';
 import 'blob_math.dart';
