@@ -17,7 +17,7 @@ class BlobPainter extends CustomPainter {
   /// [shouldRepaint] comparison — we repaint only when the buffer changes,
   /// not on every parent rebuild (ARCH-05 fix).
   final int _generation;
-  // getter for generation to allow external access if needed
+
   int get generation => _generation;
 
   BlobPainter({
