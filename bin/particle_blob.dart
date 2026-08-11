@@ -1,5 +1,5 @@
-import 'package:particle_blob/particle_blob.dart' as particle_blob;
+import 'package:blob_flutter/blob_flutter.dart';
 
 void main(List<String> arguments) {
-  print('Hello world: ${particle_blob.ParticleBlob()}!');
+  print('Hello world: ${BlobFlutter()}!');
 }
