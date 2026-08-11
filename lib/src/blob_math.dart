@@ -265,6 +265,16 @@ class BlobMath {
           );
           displacement = 1.0 + noise * 0.35 * blobiness;
           break;
+
+        case BlobNoiseType.flame:
+          final double height = (py + 1.0) * 0.5;
+          final double dynamicY = py * 4.0 * f - time * 3.5;
+          final double flameWave1 = sin(px * 4.0 * f + time * 2.0) * cos(pz * 4.0 * f - time * 2.0);
+          final double flameWave2 = sin(dynamicY + px * 2.0) * cos(dynamicY * 0.7 - pz * 2.0);
+          final double noise = (flameWave1 + flameWave2) * 0.5;
+          final double flameTurbulence = noise * (0.1 + 0.5 * height * height);
+          displacement = 1.0 + flameTurbulence * blobiness;
+          break;
       }
 
       px *= displacement;
