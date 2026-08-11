@@ -9,14 +9,16 @@ import 'blob_controller.dart';
 /// particle rendering and lifecycle logic.
 class BlobInputListener extends StatefulWidget {
   final Widget child;
-  final ParticleBlobController controller;
+  final BlobController controller;
   final ValueChanged<List<Offset>> onTouchesChanged;
+  final bool enableHover;
 
   const BlobInputListener({
     super.key,
     required this.child,
     required this.controller,
     required this.onTouchesChanged,
+    this.enableHover = false,
   });
 
   @override
@@ -25,25 +27,46 @@ class BlobInputListener extends StatefulWidget {
 
 class _BlobInputListenerState extends State<BlobInputListener> {
   final Map<int, Offset> _touchPoints = {};
+  Offset? _hoverPosition;
+
+  bool get _isHoverEffective => widget.enableHover || widget.controller.enableHover;
 
   void _updateTouchState(PointerEvent event, bool isDown) {
     if (isDown) {
-      _touchPoints[event.pointer] = event.localPosition;
+      _touchPoints[event.pointer] = event.position; // Store global position to handle moving blobs
     } else {
       _touchPoints.remove(event.pointer);
     }
 
+    _notifyTouches();
+  }
+
+  void _notifyTouches() {
     if (_touchPoints.isNotEmpty) {
       // Scale dispersion based on the number of active fingers and the tap scale factor
       widget.controller.setDispersion(
         (0.4 + 0.2 * _touchPoints.length) * widget.controller.tapScaleFactor,
       );
+      widget.onTouchesChanged(_touchPoints.values.toList());
+    } else if (_isHoverEffective && _hoverPosition != null) {
+      // Hover interaction without clicking: disperse particles around hover cursor
+      widget.controller.setDispersion(
+        0.5 * widget.controller.tapScaleFactor,
+      );
+      widget.onTouchesChanged([_hoverPosition!]);
     } else {
       widget.controller.setDispersion(0.0);
+      widget.onTouchesChanged(const []);
     }
+  }
 
-    // Send a copy of active touch points back to the parent
-    widget.onTouchesChanged(_touchPoints.values.toList());
+  @override
+  void didUpdateWidget(BlobInputListener oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_isHoverEffective && _hoverPosition != null) {
+      _hoverPosition = null;
+      _notifyTouches();
+    }
   }
 
   @override
@@ -53,6 +76,17 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         if (_touchPoints.isEmpty) {
           // Subtle auto-nudge on hover (not full drag — just orientation hint)
           widget.controller.addRotationImpulse(event.localDelta * 0.3);
+
+          if (_isHoverEffective) {
+            _hoverPosition = event.position;
+            _notifyTouches();
+          }
+        }
+      },
+      onExit: (event) {
+        if (_hoverPosition != null) {
+          _hoverPosition = null;
+          _notifyTouches();
         }
       },
       child: Listener(
