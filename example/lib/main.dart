@@ -426,6 +426,7 @@ class _DashboardPageState extends State<DashboardPage>
                       _buildNoiseChip('Vortex', BlobNoiseType.vortex),
                       _buildNoiseChip('Cymatics', BlobNoiseType.sphericalHarmonics),
                       _buildNoiseChip('Simplex 3D', BlobNoiseType.simplex),
+                      _buildNoiseChip('Flame', BlobNoiseType.flame),
                     ],
                   ),
                 ],
