@@ -41,9 +41,9 @@ class _DashboardPageState extends State<DashboardPage>
   late Animation<double> _pulseAnimation;
 
   // Blob Geometry & Physics State
-  final int _particleCount = 8000;
-  final double _baseRadius = 150.0;
-  final double _pointSize = 2.0;
+  int _particleCount = 8000;
+  double _baseRadius = 150.0;
+  double _pointSize = 2.0;
   double _blobiness = 1.0;
   double _speed = 1.0;
   double _dampingFactor = 0.95;
@@ -805,6 +805,39 @@ class _DashboardPageState extends State<DashboardPage>
         return Column(
           children: [
             _buildSlider(
+              label: 'عدد الجسيمات (Particle Count)',
+              value: _particleCount.toDouble(),
+              min: 1000,
+              max: 20000,
+              onChanged: (val) {
+                setState(() {
+                  _particleCount = val.toInt();
+                });
+              },
+            ),
+            _buildSlider(
+              label: 'نصف القطر (Base Radius)',
+              value: _baseRadius,
+              min: 50.0,
+              max: 300.0,
+              onChanged: (val) {
+                setState(() {
+                  _baseRadius = val;
+                });
+              },
+            ),
+            _buildSlider(
+              label: 'حجم النقطة (Point Size)',
+              value: _pointSize,
+              min: 0.5,
+              max: 5.0,
+              onChanged: (val) {
+                setState(() {
+                  _pointSize = val;
+                });
+              },
+            ),
+            _buildSlider(
               label: 'سعة التشوه (Blobiness)',
               value: _blobiness,
               min: 0.0,
@@ -988,6 +1021,87 @@ class _DashboardPageState extends State<DashboardPage>
                   activeColor: Colors.amberAccent,
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                'تخصيص اللون الأساسي (Color 1):',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _colorPalette.map((color) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _color1 = color;
+                        _isRainbowMode = false;
+                        _blobController.setIsRainbowMode(false);
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _color1 == color ? Colors.white : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                'تخصيص اللون الثانوي (Color 2):',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _colorPalette.map((color) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _color2 = color;
+                        _isRainbowMode = false;
+                        _blobController.setIsRainbowMode(false);
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _color2 == color ? Colors.white : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ],
         );
