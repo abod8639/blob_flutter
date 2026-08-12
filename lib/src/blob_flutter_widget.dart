@@ -65,6 +65,10 @@ class BlobFlutter extends StatefulWidget {
   /// Range: [0.0, 5.0]. Default: 1.0.
   final double tapScaleFactor;
 
+  /// Multiplier applied to the touch interaction radius size.
+  /// Range: [0.1, 5.0]. Default: 1.0.
+  final double touchRadiusFactor;
+
   /// The gradient used to color the particles.
   /// Supports [LinearGradient], [RadialGradient], and [SweepGradient].
   final Gradient gradient;
@@ -95,6 +99,7 @@ class BlobFlutter extends StatefulWidget {
     this.radius = 150.0,
     this.pointSize = 2.0,
     this.tapScaleFactor = 1.0,
+    this.touchRadiusFactor = 1.0,
     this.controller,
     this.gradient = const LinearGradient(
       colors: [Colors.blueAccent, Colors.purpleAccent],
@@ -107,6 +112,8 @@ class BlobFlutter extends StatefulWidget {
   })  : assert(particleCount > 0, 'particleCount must be greater than 0'),
         assert(tapScaleFactor >= 0.0,
             'tapScaleFactor must be greater than or equal to 0.0'),
+        assert(touchRadiusFactor >= 0.0,
+            'touchRadiusFactor must be greater than or equal to 0.0'),
         assert(colorAnimationSpeed >= 0.0,
             'colorAnimationSpeed must be greater than or equal to 0.0'),
         assert(waveIntensity >= 0.0,

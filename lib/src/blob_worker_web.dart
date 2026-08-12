@@ -52,6 +52,7 @@ class BlobWorker {
       noiseFrequency:    p.noiseFrequency,
       viewDistance:      p.viewDistance,
       noiseType:         BlobNoiseType.values[p.noiseTypeIndex],
+      touchRadiusFactor: p.touchRadiusFactor,
     );
 
     // Return the pre-allocated buffer directly (no copy on Web).

@@ -137,6 +137,7 @@ class BlobWorker {
         noiseFrequency:    p.noiseFrequency,
         viewDistance:      p.viewDistance,
         noiseType:         BlobNoiseType.values[p.noiseTypeIndex],
+        touchRadiusFactor: p.touchRadiusFactor,
       );
 
       // Transfer ownership back to main isolate — zero-copy on native.
