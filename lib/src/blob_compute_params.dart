@@ -25,6 +25,7 @@ class ProjectParamsFlat {
   final double autoRotationSpeed;
   final double noiseFrequency;
   final double viewDistance;
+  final double touchRadiusFactor;
 
   /// [BlobNoiseType.index] — avoids sending a Dart enum across the boundary.
   final int noiseTypeIndex;
@@ -44,6 +45,7 @@ class ProjectParamsFlat {
     required this.noiseFrequency,
     required this.viewDistance,
     required this.noiseTypeIndex,
+    this.touchRadiusFactor = 1.0,
   });
 
   /// Packs all fields into a [List] that satisfies Dart's isolate message
@@ -55,6 +57,7 @@ class ProjectParamsFlat {
     time, viewportWidth, viewportHeight,
     autoRotationSpeed, noiseFrequency, viewDistance,
     noiseTypeIndex,
+    touchRadiusFactor,
     encodedTouches,
   ];
 
@@ -75,6 +78,7 @@ class ProjectParamsFlat {
         noiseFrequency:    m[10] as double,
         viewDistance:      m[11] as double,
         noiseTypeIndex:    m[12] as int,
-        encodedTouches:    m[13] as Float32List,
+        touchRadiusFactor: m[13] as double,
+        encodedTouches:    m[14] as Float32List,
       );
 }
