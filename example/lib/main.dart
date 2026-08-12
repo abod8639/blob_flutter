@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:blob_flutter/blob_flutter.dart';
 
@@ -12,10 +13,10 @@ class ParticleBlobExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sci-Fi AI Core',
+      title: 'Sci-Fi AI Core 3D',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0A0E17),
+        scaffoldBackgroundColor: const Color(0xFF070A12),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.cyanAccent,
           brightness: Brightness.dark,
@@ -39,7 +40,7 @@ class _DashboardPageState extends State<DashboardPage>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // State variables
+  // Blob Geometry & Physics State
   final int _particleCount = 8000;
   final double _baseRadius = 150.0;
   final double _pointSize = 2.0;
@@ -51,7 +52,13 @@ class _DashboardPageState extends State<DashboardPage>
   double _viewDistance = 2.0;
   BlobNoiseType _noiseType = BlobNoiseType.harmonic;
 
-  // Color & Gradient state
+  // Touch & Dispersion Physics State
+  double _dispersion = 0.0;
+  double _tapScaleFactor = 1.1;
+  double _touchRadiusFactor = 1.0;
+  bool _enableHover = true;
+
+  // Color & Gradient State
   Color _color1 = Colors.cyanAccent;
   Color _color2 = Colors.blueAccent;
   Color _color3 = Colors.purpleAccent;
@@ -60,15 +67,13 @@ class _DashboardPageState extends State<DashboardPage>
   double _colorAnimationSpeed = 1.0;
   double _waveIntensity = 1.0;
   int _alignmentIndex = 0; // 0: Top-Bottom, 1: Left-Right, 2: Diagonal, 3: Radial, 4: Sweep
+  bool _isRainbowMode = false;
 
-  // Physics / Interaction state
-  bool _enableHover = true;
-
-  // UI state
+  // UI Control Panel State
+  bool _isPanelExpanded = true;
+  int _selectedTab = 0;
   bool _isListening = false;
   bool _isAudioPulseMode = false;
-  bool _isRainbowMode = false;
-  int _selectedTab = 0;
 
   final List<Color> _colorPalette = [
     Colors.pinkAccent,
@@ -97,16 +102,19 @@ class _DashboardPageState extends State<DashboardPage>
     super.initState();
     _blobController = BlobController(
       dampingFactor: _dampingFactor,
+      tapScaleFactor: _tapScaleFactor,
+      touchRadiusFactor: _touchRadiusFactor,
       isColorAnimated: _isColorAnimated,
       colorAnimationSpeed: _colorAnimationSpeed,
       waveIntensity: _waveIntensity,
       enableHover: _enableHover,
+      noiseType: _noiseType,
     );
     _blobController.setAutoRotationSpeed(_autoRotationSpeed);
     _blobController.setNoiseFrequency(_noiseFrequency);
     _blobController.setViewDistance(_viewDistance);
 
-    // Setup pulse animation for "Audio" mode
+    // Pulse animation for Audio mode
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -132,31 +140,31 @@ class _DashboardPageState extends State<DashboardPage>
     final colors = _useThreeColors ? [_color1, _color2, _color3] : [_color1, _color2];
 
     switch (_alignmentIndex) {
-      case 0: // Top to Bottom
+      case 0:
         return LinearGradient(
           colors: colors,
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         );
-      case 1: // Left to Right
+      case 1:
         return LinearGradient(
           colors: colors,
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         );
-      case 2: // Diagonal
+      case 2:
         return LinearGradient(
           colors: colors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
-      case 3: // Radial
+      case 3:
         return RadialGradient(
           colors: colors,
           center: Alignment.center,
           radius: 0.85,
         );
-      case 4: // Sweep
+      case 4:
         return SweepGradient(
           colors: colors,
           center: Alignment.center,
@@ -220,98 +228,341 @@ class _DashboardPageState extends State<DashboardPage>
     });
   }
 
+  String _getNoiseName(BlobNoiseType type) {
+    switch (type) {
+      case BlobNoiseType.harmonic: return 'موجات توافقية (Harmonic)';
+      case BlobNoiseType.spiky: return 'أشواك وكريستال (Spiky)';
+      case BlobNoiseType.fractal: return 'تلاطم كسوري (Fractal)';
+      case BlobNoiseType.cellular: return 'حويصلات خلوية (Cellular)';
+      case BlobNoiseType.vortex: return 'دوامة مجرية (Vortex)';
+      case BlobNoiseType.sphericalHarmonics: return 'مدارات كروية (Cymatics)';
+      case BlobNoiseType.simplex: return 'تدفق سمبلكس (Simplex)';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: BlobFlutter(
-                  tapScaleFactor: 1.1,
-                  gradient: _buildCurrentGradient(),
-                  particleCount: _particleCount,
-                  radius: _baseRadius,
-                  pointSize: _pointSize,
-                  isColorAnimated: _isColorAnimated,
-                  colorAnimationSpeed: _colorAnimationSpeed,
-                  waveIntensity: _waveIntensity,
-                  enableHover: _enableHover,
-                  noiseType: _noiseType,
-                  controller: _blobController,
+      body: Stack(
+        children: [
+          // Background ambient light glow matching current primary color
+          Positioned.fill(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 500),
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 0.9,
+                  colors: [
+                    _color1.withValues(alpha: 0.12),
+                    const Color(0xFF070A12),
+                  ],
                 ),
               ),
             ),
-            _buildControlsPanel(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoiseChip(String label, BlobNoiseType type) {
-    final bool isSelected = _noiseType == type;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _noiseType = type;
-          _blobController.setNoiseType(type);
-        });
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.cyanAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.cyanAccent : Colors.white.withValues(alpha: 0.1),
-            width: isSelected ? 1.5 : 1.0,
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.cyanAccent : Colors.white70,
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildControlsPanel() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.8),
-        border: Border.all(color: Colors.white12),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.cyanAccent.withValues(alpha: 0.08),
-            blurRadius: 20,
-            spreadRadius: 2,
-          )
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildTabBar(),
-          const Divider(color: Colors.white12, height: 20),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 280),
+          // 3D Blob Canvas Area (Fills entire screen)
+          Positioned.fill(
+            child: BlobFlutter(
+              tapScaleFactor: _tapScaleFactor,
+              touchRadiusFactor: _touchRadiusFactor,
+              gradient: _buildCurrentGradient(),
+              particleCount: _particleCount,
+              radius: _baseRadius,
+              pointSize: _pointSize,
+              isColorAnimated: _isColorAnimated,
+              colorAnimationSpeed: _colorAnimationSpeed,
+              waveIntensity: _waveIntensity,
+              enableHover: _enableHover,
+              noiseType: _noiseType,
+              controller: _blobController,
+            ),
+          ),
+
+          // Top Header Bar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Title & Badge
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.cyanAccent.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.4)),
+                          ),
+                          child: const Icon(Icons.blur_on, color: Colors.cyanAccent, size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'SCI-FI AI CORE 3D',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            Text(
+                              '${_particleCount.toString()} الجسيمات • ${_getNoiseName(_noiseType)}',
+                              style: TextStyle(
+                                color: Colors.cyanAccent.withValues(alpha: 0.8),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    // Quick Toggle Action Buttons
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.restart_alt, color: Colors.white70),
+                          tooltip: 'إعادة ضبط الدوران',
+                          onPressed: () => _blobController.resetRotation(),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _isPanelExpanded ? Icons.visibility_off_outlined : Icons.tune_rounded,
+                            color: Colors.cyanAccent,
+                          ),
+                          tooltip: _isPanelExpanded ? 'إخفاء لوحة التحكم' : 'إظهار لوحة التحكم',
+                          onPressed: () {
+                            setState(() {
+                              _isPanelExpanded = !_isPanelExpanded;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Quick Noise Selection Bar (Floating Top Carousel)
+          Positioned(
+            top: 75,
+            left: 16,
+            right: 16,
             child: SingleChildScrollView(
-              child: _buildTabContent(),
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: BlobNoiseType.values.map((type) {
+                  final bool isSelected = _noiseType == type;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ActionChip(
+                      elevation: isSelected ? 4 : 0,
+                      backgroundColor: isSelected
+                          ? Colors.cyanAccent.withValues(alpha: 0.25)
+                          : Colors.black.withValues(alpha: 0.4),
+                      side: BorderSide(
+                        color: isSelected ? Colors.cyanAccent : Colors.white24,
+                        width: isSelected ? 1.5 : 0.8,
+                      ),
+                      label: Text(
+                        _getNoiseShortName(type),
+                        style: TextStyle(
+                          color: isSelected ? Colors.cyanAccent : Colors.white70,
+                          fontSize: 11,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _noiseType = type;
+                          _blobController.setNoiseType(type);
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
+          // Floating Collapsible Control Panel (Bottom)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 16,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, anim) => SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.5),
+                  end: Offset.zero,
+                ).animate(anim),
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: _isPanelExpanded
+                  ? _buildExpandedControlPanel()
+                  : _buildCollapsedPillButton(),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _getNoiseShortName(BlobNoiseType type) {
+    switch (type) {
+      case BlobNoiseType.harmonic: return 'موجات (Harmonic)';
+      case BlobNoiseType.spiky: return 'أشواك (Spiky)';
+      case BlobNoiseType.fractal: return 'كسوري (Fractal)';
+      case BlobNoiseType.cellular: return 'خلوي (Cellular)';
+      case BlobNoiseType.vortex: return 'دوامة (Vortex)';
+      case BlobNoiseType.sphericalHarmonics: return 'مدارات (Cymatics)';
+      case BlobNoiseType.simplex: return 'سمبلكس (Simplex)';
+    }
+  }
+
+  // Small floating pill button shown when control panel is collapsed
+  Widget _buildCollapsedPillButton() {
+    return Center(
+      key: const ValueKey('collapsed_pill'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Material(
+            color: Colors.black.withValues(alpha: 0.65),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+              side: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.4), width: 1.2),
+            ),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isPanelExpanded = true;
+                });
+              },
+              borderRadius: BorderRadius.circular(30),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.tune_rounded, color: Colors.cyanAccent, size: 18),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'لوحة التحكم ⚙️',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.cyanAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _getNoiseShortName(_noiseType),
+                        style: const TextStyle(
+                          color: Colors.cyanAccent,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Glassmorphic Collapsible Control Panel
+  Widget _buildExpandedControlPanel() {
+    return ClipRRect(
+      key: const ValueKey('expanded_panel'),
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.cyanAccent.withValues(alpha: 0.12),
+                blurRadius: 24,
+                spreadRadius: 2,
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header of panel with Title and Collapse Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.settings_suggest, color: Colors.cyanAccent, size: 18),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'إعدادات المحاكاة والتحكم',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.cyanAccent, size: 24),
+                    tooltip: 'طي لوحة التحكم',
+                    onPressed: () {
+                      setState(() {
+                        _isPanelExpanded = false;
+                      });
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 6),
+              _buildTabBar(),
+              const Divider(color: Colors.white12, height: 16),
+
+              // Tab Content Area
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 250),
+                child: SingleChildScrollView(
+                  child: _buildTabContent(),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -322,10 +573,10 @@ class _DashboardPageState extends State<DashboardPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildTabButton(0, 'GEOMETRY', Icons.filter_tilt_shift),
-          _buildTabButton(1, 'PHYSICS', Icons.bolt),
-          _buildTabButton(2, 'COLOR & GRADIENT', Icons.palette),
-          _buildTabButton(3, 'SYSTEM MODES', Icons.settings_input_component),
+          _buildTabButton(0, 'الخوارزميات', Icons.alt_route),
+          _buildTabButton(1, 'التفاعل واللمس', Icons.touch_app),
+          _buildTabButton(2, 'الفيزياء والأشكال', Icons.filter_tilt_shift),
+          _buildTabButton(3, 'الألوان والمؤثرات', Icons.palette),
         ],
       ),
     );
@@ -339,14 +590,15 @@ class _DashboardPageState extends State<DashboardPage>
           _selectedTab = index;
         });
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.cyanAccent.withValues(alpha: 0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+              ? Colors.cyanAccent.withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? Colors.cyanAccent : Colors.transparent,
             width: 1,
@@ -358,16 +610,15 @@ class _DashboardPageState extends State<DashboardPage>
             Icon(
               icon,
               color: isSelected ? Colors.cyanAccent : Colors.white54,
-              size: 16,
+              size: 15,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.cyanAccent : Colors.white54,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
+                color: isSelected ? Colors.cyanAccent : Colors.white70,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
@@ -379,90 +630,83 @@ class _DashboardPageState extends State<DashboardPage>
   Widget _buildTabContent() {
     switch (_selectedTab) {
       case 0:
+        // Tab 0: Algorithms
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Noise Algorithm Selector
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'NOISE ALGORITHM',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '3D Procedural Morph',
-                        style: TextStyle(
-                          color: Colors.cyanAccent,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildNoiseChip('Harmonic', BlobNoiseType.harmonic),
-                      _buildNoiseChip('Spiky', BlobNoiseType.spiky),
-                      _buildNoiseChip('Fractal (fBm)', BlobNoiseType.fractal),
-                      _buildNoiseChip('Cellular', BlobNoiseType.cellular),
-                      _buildNoiseChip('Vortex', BlobNoiseType.vortex),
-                      _buildNoiseChip('Cymatics', BlobNoiseType.sphericalHarmonics),
-                      _buildNoiseChip('Simplex 3D', BlobNoiseType.simplex),
-                    ],
-                  ),
-                ],
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                'اختر خوارزمية تشويه الجسيمات 3D:',
+                style: TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            _buildSlider(
-              label: 'Blobiness (Deform Amplitude)',
-              value: _blobiness,
-              min: 0.0,
-              max: 5.0,
-              onChanged: (val) {
-                setState(() {
-                  _blobiness = val;
-                  _blobController.setBlobiness(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Noise Density / Frequency',
-              value: _noiseFrequency,
-              min: 0.1,
-              max: 3.0,
-              onChanged: (val) {
-                setState(() {
-                  _noiseFrequency = val;
-                  _blobController.setNoiseFrequency(val);
-                });
-              },
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: BlobNoiseType.values.map((type) {
+                return _buildNoiseAlgorithmCard(type);
+              }).toList(),
             ),
           ],
         );
       case 1:
+        // Tab 1: Touch & Interaction Controls
         return Column(
           children: [
+            // Touch Radius Factor Slider
+            _buildSlider(
+              label: 'قطر التفاعل باللمس (Touch Radius Factor)',
+              value: _touchRadiusFactor,
+              min: 0.1,
+              max: 3.0,
+              displayUnit: 'x',
+              onChanged: (val) {
+                setState(() {
+                  _touchRadiusFactor = val;
+                  _blobController.setTouchRadiusFactor(val);
+                });
+              },
+            ),
+
+            // Tap Scale Factor
+            _buildSlider(
+              label: 'حساسية التشتت باللمس (Tap Scale Factor)',
+              value: _tapScaleFactor,
+              min: 0.0,
+              max: 3.0,
+              displayUnit: 'x',
+              onChanged: (val) {
+                setState(() {
+                  _tapScaleFactor = val;
+                  _blobController.setTapScaleFactor(val);
+                });
+              },
+            ),
+
+            // Radial Dispersion Slider
+            _buildSlider(
+              label: 'شدة التشتت الإشعاعي (Radial Dispersion)',
+              value: _dispersion,
+              min: 0.0,
+              max: 2.0,
+              onChanged: (val) {
+                setState(() {
+                  _dispersion = val;
+                  _blobController.setDispersion(val);
+                });
+              },
+            ),
+
+            // Mouse Hover Toggle
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              margin: const EdgeInsets.only(top: 4, bottom: 6),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(10),
@@ -474,7 +718,7 @@ class _DashboardPageState extends State<DashboardPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'MOUSE HOVER INTERACTION',
+                        'تفاعل تحويم الماوس (Mouse Hover)',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -482,9 +726,9 @@ class _DashboardPageState extends State<DashboardPage>
                         ),
                       ),
                       Text(
-                        'Interact on hover without clicking',
+                        'تفعيل التفاعل بمجرد مرّور المؤشر دون النقر',
                         style: TextStyle(
-                          color: Colors.cyanAccent,
+                          color: Colors.white54,
                           fontSize: 10,
                         ),
                       ),
@@ -504,8 +748,38 @@ class _DashboardPageState extends State<DashboardPage>
                 ],
               ),
             ),
+          ],
+        );
+      case 2:
+        // Tab 2: Physics & Geometry
+        return Column(
+          children: [
             _buildSlider(
-              label: 'Animation Speed',
+              label: 'سعة التشوه (Blobiness)',
+              value: _blobiness,
+              min: 0.0,
+              max: 4.0,
+              onChanged: (val) {
+                setState(() {
+                  _blobiness = val;
+                  _blobController.setBlobiness(val);
+                });
+              },
+            ),
+            _buildSlider(
+              label: 'تردد وكثافة التوجس (Noise Frequency)',
+              value: _noiseFrequency,
+              min: 0.1,
+              max: 3.0,
+              onChanged: (val) {
+                setState(() {
+                  _noiseFrequency = val;
+                  _blobController.setNoiseFrequency(val);
+                });
+              },
+            ),
+            _buildSlider(
+              label: 'سرعة الحركة (Animation Speed)',
               value: _speed,
               min: 0.0,
               max: 5.0,
@@ -517,7 +791,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'Background Auto-Rotation',
+              label: 'الدوران التلقائي (Auto Rotation)',
               value: _autoRotationSpeed,
               min: -3.0,
               max: 3.0,
@@ -529,7 +803,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'Inertia / Damping Factor',
+              label: 'معامل الخمود والتخميد (Damping)',
               value: _dampingFactor,
               min: 0.80,
               max: 1.00,
@@ -541,7 +815,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'Camera Perspective Distance',
+              label: 'مسافة الكاميرا (Camera View Distance)',
               value: _viewDistance,
               min: 0.8,
               max: 5.0,
@@ -554,92 +828,17 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           ],
         );
-      case 2:
+      case 3:
+      default:
+        // Tab 3: Colors & System Modes
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Static vs Moving Toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'COLOR MOTION',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        _isColorAnimated ? 'Moving Wave' : 'Static Fixed Position',
-                        style: TextStyle(
-                          color: _isColorAnimated ? Colors.cyanAccent : Colors.amberAccent,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: _isColorAnimated,
-                    activeThumbColor: Colors.cyanAccent,
-                    activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.3),
-                    inactiveThumbColor: Colors.amberAccent,
-                    onChanged: (val) {
-                      setState(() {
-                        _isColorAnimated = val;
-                        _blobController.setIsColorAnimated(val);
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Color Animation Speed & Wave Intensity (if animated)
-            if (_isColorAnimated) ...[
-              _buildSlider(
-                label: 'Color Flow Speed',
-                value: _colorAnimationSpeed,
-                min: 0.1,
-                max: 4.0,
-                onChanged: (val) {
-                  setState(() {
-                    _colorAnimationSpeed = val;
-                    _blobController.setColorAnimationSpeed(val);
-                  });
-                },
-              ),
-              _buildSlider(
-                label: 'Wave Shimmer Intensity',
-                value: _waveIntensity,
-                min: 0.0,
-                max: 2.0,
-                onChanged: (val) {
-                  setState(() {
-                    _waveIntensity = val;
-                    _blobController.setWaveIntensity(val);
-                  });
-                },
-              ),
-            ],
-
-            const Divider(color: Colors.white12, height: 16),
-
-            // Gradient Direction / Alignment Selector
+            // Presets
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
-                'GRADIENT POSITION / ALIGNMENT',
+                'السمات اللونية الجاهزة (Preset Themes):',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
@@ -649,207 +848,84 @@ class _DashboardPageState extends State<DashboardPage>
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Row(
-                  children: [
-                    _buildAlignmentChip(0, 'Top → Bottom'),
-                    _buildAlignmentChip(1, 'Left → Right'),
-                    _buildAlignmentChip(2, 'Diagonal'),
-                    _buildAlignmentChip(3, 'Radial (Center)'),
-                    _buildAlignmentChip(4, 'Sweep (360°)'),
-                  ],
-                ),
-              ),
-            ),
-
-            const Divider(color: Colors.white12, height: 16),
-
-            // Rainbow Toggle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'RAINBOW CYCLE EFFECT',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Switch(
-                    value: _isRainbowMode,
-                    activeThumbColor: Colors.cyanAccent,
-                    activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.3),
-                    onChanged: (val) {
+                children: _themes.map((theme) {
+                  final bool isCurrent = !_isRainbowMode &&
+                      _color1 == theme.c1 &&
+                      _color2 == theme.c2;
+                  return GestureDetector(
+                    onTap: () {
                       setState(() {
-                        _isRainbowMode = val;
-                        _blobController.setIsRainbowMode(val);
+                        _color1 = theme.c1;
+                        _color2 = theme.c2;
+                        _color3 = theme.c3;
+                        _isRainbowMode = false;
+                        _blobController.setIsRainbowMode(false);
                       });
                     },
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(color: Colors.white12, height: 16),
-
-            // Presets
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                'PRESET THEMES',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Row(
-                  children: _themes.map((theme) {
-                    final bool isCurrent = !_isRainbowMode &&
-                        _color1 == theme.c1 &&
-                        _color2 == theme.c2;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _color1 = theme.c1;
-                          _color2 = theme.c2;
-                          _color3 = theme.c3;
-                          _isRainbowMode = false;
-                          _blobController.setIsRainbowMode(false);
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isCurrent
-                              ? Colors.cyanAccent.withValues(alpha: 0.15)
-                              : Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isCurrent ? Colors.cyanAccent : Colors.white12,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [theme.c1, theme.c2, theme.c3],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              theme.name,
-                              style: TextStyle(
-                                color: isCurrent ? Colors.white : Colors.white54,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isCurrent
+                            ? Colors.cyanAccent.withValues(alpha: 0.15)
+                            : Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isCurrent ? Colors.cyanAccent : Colors.white12,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            const Divider(color: Colors.white12, height: 16),
-
-            // 3-Color Mode Switch
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'USE 3-COLOR GRADIENT',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [theme.c1, theme.c2, theme.c3],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            theme.name,
+                            style: TextStyle(
+                              color: isCurrent ? Colors.white : Colors.white60,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Switch(
-                    value: _useThreeColors,
-                    activeThumbColor: Colors.cyanAccent,
-                    activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.3),
-                    onChanged: (val) {
-                      setState(() {
-                        _useThreeColors = val;
-                      });
-                    },
-                  ),
-                ],
+                  );
+                }).toList(),
               ),
             ),
+            const SizedBox(height: 10),
 
-            _buildColorSelector('PRIMARY COLOR', _color1, (color) {
-              setState(() {
-                _color1 = color;
-                _isRainbowMode = false;
-                _blobController.setIsRainbowMode(false);
-              });
-            }),
-            const SizedBox(height: 8),
-            _buildColorSelector('SECONDARY COLOR', _color2, (color) {
-              setState(() {
-                _color2 = color;
-                _isRainbowMode = false;
-                _blobController.setIsRainbowMode(false);
-              });
-            }),
-            if (_useThreeColors) ...[
-              const SizedBox(height: 8),
-              _buildColorSelector('TERTIARY COLOR', _color3, (color) {
-                setState(() {
-                  _color3 = color;
-                  _isRainbowMode = false;
-                  _blobController.setIsRainbowMode(false);
-                });
-              }),
-            ],
-          ],
-        );
-      case 3:
-      default:
-        return Column(
-          children: [
+            // Special System Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildActionButton(
                   icon: Icons.mic,
-                  label: 'Voice Command',
+                  label: 'الأمر الصوتي',
                   isActive: _isListening,
                   onTap: _toggleListening,
                   activeColor: Colors.redAccent,
                 ),
                 _buildActionButton(
                   icon: Icons.graphic_eq,
-                  label: 'Audio Pulse',
+                  label: 'النبض الصوتي',
                   isActive: _isAudioPulseMode,
                   onTap: _togglePulseMode,
                   activeColor: Colors.purpleAccent,
                 ),
                 _buildActionButton(
-                  icon: Icons.refresh,
-                  label: 'Random Impulse',
+                  icon: Icons.flash_on,
+                  label: 'دفعة عشوائية',
                   isActive: false,
                   onTap: () {
                     _blobController.addRotationImpulse(
@@ -859,16 +935,7 @@ class _DashboardPageState extends State<DashboardPage>
                       ),
                     );
                   },
-                  activeColor: Colors.white,
-                ),
-                _buildActionButton(
-                  icon: Icons.restart_alt,
-                  label: 'Reset Rotation',
-                  isActive: false,
-                  onTap: () {
-                    _blobController.resetRotation();
-                  },
-                  activeColor: Colors.cyanAccent,
+                  activeColor: Colors.amberAccent,
                 ),
               ],
             ),
@@ -877,33 +944,46 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
-  Widget _buildAlignmentChip(int index, String label) {
-    final bool isSelected = _alignmentIndex == index;
+  Widget _buildNoiseAlgorithmCard(BlobNoiseType type) {
+    final bool isSelected = _noiseType == type;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _alignmentIndex = index;
+          _noiseType = type;
+          _blobController.setNoiseType(type);
         });
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? Colors.cyanAccent.withValues(alpha: 0.2)
               : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? Colors.cyanAccent : Colors.white12,
+            color: isSelected ? Colors.cyanAccent : Colors.white.withValues(alpha: 0.1),
+            width: isSelected ? 1.5 : 1.0,
           ),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.cyanAccent : Colors.white60,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? Icons.check_circle : Icons.blur_on,
+              color: isSelected ? Colors.cyanAccent : Colors.white38,
+              size: 16,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _getNoiseName(type),
+              style: TextStyle(
+                color: isSelected ? Colors.cyanAccent : Colors.white54,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -921,7 +1001,7 @@ class _DashboardPageState extends State<DashboardPage>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isActive
                   ? activeColor.withValues(alpha: 0.2)
@@ -929,16 +1009,16 @@ class _DashboardPageState extends State<DashboardPage>
               shape: BoxShape.circle,
               border: Border.all(
                 color: isActive ? activeColor : Colors.white12,
-                width: 2,
+                width: 1.5,
               ),
             ),
             child: Icon(
               icon,
               color: isActive ? activeColor : Colors.white54,
-              size: 28,
+              size: 22,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
@@ -952,98 +1032,52 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  Widget _buildColorSelector(
-      String label, Color selectedColor, ValueChanged<Color> onSelect) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Text(
-            label,
-            style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 11,
-                fontWeight: FontWeight.bold),
-          ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: _colorPalette.map((color) {
-                final bool isSelected = selectedColor == color;
-                return GestureDetector(
-                  onTap: () => onSelect(color),
-                  child: Container(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? Colors.white : Colors.white24,
-                        width: isSelected ? 2.0 : 1.0,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.5),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              )
-                            ]
-                          : null,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSlider({
     required String label,
     required double value,
     required double min,
     required double max,
     required ValueChanged<double> onChanged,
+    String displayUnit = '',
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 label,
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
               Text(
-                value.toStringAsFixed(value % 1 == 0 ? 0 : 2),
+                '${value.toStringAsFixed(value % 1 == 0 ? 0 : 2)}$displayUnit',
                 style: const TextStyle(
-                    color: Colors.cyanAccent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.cyanAccent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
         ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          onChanged: onChanged,
-          activeColor: Colors.cyanAccent,
-          inactiveColor: Colors.white12,
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 3,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            activeTrackColor: Colors.cyanAccent,
+            inactiveTrackColor: Colors.white12,
+            thumbColor: Colors.cyanAccent,
+          ),
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            onChanged: onChanged,
+          ),
         ),
       ],
     );
