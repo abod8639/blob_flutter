@@ -3,12 +3,15 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+
 import 'blob_controller.dart';
 
 import 'blob_noise_type.dart';
 import 'blob_math.dart';
 import 'blob_painter.dart';
 import 'blob_input_listener.dart';
+import 'blob_compute_params.dart';
+import 'blob_worker.dart';
 
 /// A high-performance Flutter widget that renders an animated 3D particle blob.
 ///
@@ -37,6 +40,14 @@ import 'blob_input_listener.dart';
 /// - Uses [ValueNotifier] + [ValueListenableBuilder] so only [CustomPaint]
 ///   rebuilds per frame, not the entire widget subtree. (BUG-05 fix)
 /// - Uses actual ticker delta time for device-rate-independent animation. (ARCH-02 fix)
+/// - On native platforms, particle math is offloaded to a persistent background
+///   [Isolate] so the UI thread stays free. On Flutter Web the same computation
+///   runs synchronously (Web has no Isolate.spawn support).
+/// - Shader uniforms are split into "static" (pushed only on change) and
+///   "dynamic" (only uTime pushed every frame) to minimise Dart→GPU round-trips.
+/// - Rainbow-mode colour list is pre-allocated; no heap allocation per frame.
+/// - [RenderBox.globalToLocal] results are cached and recomputed only when touch
+///   positions actually change.
 class BlobFlutter extends StatefulWidget {
   /// Total number of particles. Default: 5000.
   final int particleCount;
@@ -104,6 +115,7 @@ class BlobFlutter extends StatefulWidget {
 
 class _ParticleBlobState extends State<BlobFlutter>
     with SingleTickerProviderStateMixin {
+
   // ── Animation ──────────────────────────────────────────────────────────────
 
   late Ticker _ticker;
@@ -128,13 +140,32 @@ class _ParticleBlobState extends State<BlobFlutter>
   /// BUG-07 fix: Float32List instead of `List<List<double>>`.
   Float32List _baseSphere = Float32List(0);
 
-  /// Output buffer: [x0,y0, x1,y1, ...] in screen pixels. Mutated every frame.
+  /// Output buffer: [x0,y0, x1,y1, ...] in screen pixels. Replaced each frame
+  /// with the worker's result on native, mutated in-place on Web.
   Float32List _projectedPoints = Float32List(0);
 
   // ── Shader ─────────────────────────────────────────────────────────────────
 
   ui.FragmentProgram? _program; // ARCH-03 fix: stored to prevent premature GC
-  ui.FragmentShader? _shader;
+  ui.FragmentShader?  _shader;
+
+  // ── Shader Dirty Tracking ──────────────────────────────────────────────────
+  //
+  // Shader uniforms are split into two groups:
+  //   "static"  — resolution, gradient type/position, animation speed, wave
+  //               intensity.  These change rarely (layout change, controller
+  //               update) and are re-pushed only when [_shaderStaticDirty] is
+  //               set.
+  //   "dynamic" — uTime pushed every frame; gradient colours when isRainbow.
+  //
+  // This eliminates up to 25 redundant setFloat() calls per frame.
+
+  bool _shaderStaticDirty = true;
+  bool _shaderColorsDirty = true;
+
+  /// Tracks the last gradient seen by the shader so external controller
+  /// changes (controller.setGradient) are detected automatically.
+  Gradient? _lastPushedGradient;
 
   // ── Layout ─────────────────────────────────────────────────────────────────
 
@@ -145,20 +176,40 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   List<Offset> _activeTouches = const [];
 
+  /// Cached result of [RenderBox.globalToLocal].  Recomputed only when
+  /// [_activeTouches] positions actually change.
+  List<Offset> _localTouches      = const [];
+  List<Offset> _lastGlobalTouches = const [];
+
+  /// Encoded touches for the worker message: [x0,y0, x1,y1, …].
+  Float32List _encodedTouches = Float32List(0);
+
+  // ── Worker ─────────────────────────────────────────────────────────────────
+
+  BlobWorker? _worker;
+  bool _workerReady = false;
+  bool _workerBusy  = false;
+
+  // ── Rainbow Color Cache ─────────────────────────────────────────────────────
+
+  /// Pre-allocated list reused every frame in rainbow mode.
+  /// Eliminates one [List] allocation + 4 [Color] allocations per frame.
+  final List<Color> _rainbowColors = List<Color>.filled(
+    4, const Color(0xFFFFFFFF),
+  );
+
+  // ── Effective Colour Helpers ───────────────────────────────────────────────
+
   Gradient get _effectiveGradient => _controller.gradient ?? widget.gradient;
 
   List<Color> get _effectiveColors {
     if (_controller.isRainbowMode) {
-      final double h1 = (_time * 40.0) % 360.0;
-      final double h2 = (_time * 40.0 + 60.0) % 360.0;
-      final double h3 = (_time * 40.0 + 120.0) % 360.0;
-      final double h4 = (_time * 40.0 + 180.0) % 360.0;
-      return [
-        HSVColor.fromAHSV(1.0, h1, 0.85, 1.0).toColor(),
-        HSVColor.fromAHSV(1.0, h2, 0.85, 1.0).toColor(),
-        HSVColor.fromAHSV(1.0, h3, 0.85, 1.0).toColor(),
-        HSVColor.fromAHSV(1.0, h4, 0.85, 1.0).toColor(),
-      ];
+      final double h = (_time * 40.0) % 360.0;
+      _rainbowColors[0] = HSVColor.fromAHSV(1.0, h,              0.85, 1.0).toColor();
+      _rainbowColors[1] = HSVColor.fromAHSV(1.0, (h + 60)  % 360, 0.85, 1.0).toColor();
+      _rainbowColors[2] = HSVColor.fromAHSV(1.0, (h + 120) % 360, 0.85, 1.0).toColor();
+      _rainbowColors[3] = HSVColor.fromAHSV(1.0, (h + 180) % 360, 0.85, 1.0).toColor();
+      return _rainbowColors;
     }
     final g = _effectiveGradient;
     return g.colors.isNotEmpty
@@ -180,17 +231,18 @@ class _ParticleBlobState extends State<BlobFlutter>
     _ownsController = widget.controller == null;
     _controller = widget.controller ??
         BlobController(
-          tapScaleFactor: widget.tapScaleFactor,
-          isColorAnimated: widget.isColorAnimated,
+          tapScaleFactor:      widget.tapScaleFactor,
+          isColorAnimated:     widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
-          waveIntensity: widget.waveIntensity,
-          enableHover: widget.enableHover,
-          noiseType: widget.noiseType,
-          gradient: widget.gradient,
+          waveIntensity:       widget.waveIntensity,
+          enableHover:         widget.enableHover,
+          noiseType:           widget.noiseType,
+          gradient:            widget.gradient,
         );
 
     _generateBuffers(widget.particleCount);
     _loadShader();
+    _startWorker();
 
     _ticker = createTicker(_onTick)..start();
   }
@@ -199,37 +251,44 @@ class _ParticleBlobState extends State<BlobFlutter>
   void didUpdateWidget(BlobFlutter oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Regenerate particle buffers if count changed
+    // Regenerate particle buffers and restart worker if count changed.
     if (oldWidget.particleCount != widget.particleCount) {
       _generateBuffers(widget.particleCount);
+      _restartWorker();
     }
 
-    // Swap controller ownership cleanly
+    // Swap controller ownership cleanly.
     if (oldWidget.controller != widget.controller) {
       if (_ownsController) _controller.dispose();
       _ownsController = widget.controller == null;
       _controller = widget.controller ??
           BlobController(
-            tapScaleFactor: widget.tapScaleFactor,
-            isColorAnimated: widget.isColorAnimated,
+            tapScaleFactor:      widget.tapScaleFactor,
+            isColorAnimated:     widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
-            waveIntensity: widget.waveIntensity,
-            enableHover: widget.enableHover,
-            noiseType: widget.noiseType,
-            gradient: widget.gradient,
+            waveIntensity:       widget.waveIntensity,
+            enableHover:         widget.enableHover,
+            noiseType:           widget.noiseType,
+            gradient:            widget.gradient,
           );
+      _shaderStaticDirty = true;
+      _shaderColorsDirty = true;
     } else if (_ownsController) {
+      bool staticChanged = false;
       if (oldWidget.tapScaleFactor != widget.tapScaleFactor) {
         _controller.setTapScaleFactor(widget.tapScaleFactor);
       }
       if (oldWidget.isColorAnimated != widget.isColorAnimated) {
         _controller.setIsColorAnimated(widget.isColorAnimated);
+        staticChanged = true;
       }
       if (oldWidget.colorAnimationSpeed != widget.colorAnimationSpeed) {
         _controller.setColorAnimationSpeed(widget.colorAnimationSpeed);
+        staticChanged = true;
       }
       if (oldWidget.waveIntensity != widget.waveIntensity) {
         _controller.setWaveIntensity(widget.waveIntensity);
+        staticChanged = true;
       }
       if (oldWidget.enableHover != widget.enableHover) {
         _controller.setEnableHover(widget.enableHover);
@@ -239,7 +298,10 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.gradient != widget.gradient) {
         _controller.setGradient(widget.gradient);
+        staticChanged = true;
+        _shaderColorsDirty = true;
       }
+      if (staticChanged) _shaderStaticDirty = true;
     }
   }
 
@@ -248,6 +310,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     _ticker.dispose();
     _frameNotifier.dispose();
     _shader?.dispose();
+    _worker?.dispose();
     if (_ownsController) _controller.dispose();
     super.dispose();
   }
@@ -255,7 +318,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   // ── Initialization ─────────────────────────────────────────────────────────
 
   void _generateBuffers(int count) {
-    _baseSphere = BlobMath.generateFibonacciSphere(count); // BUG-01 guarded
+    _baseSphere      = BlobMath.generateFibonacciSphere(count); // BUG-01 guarded
     _projectedPoints = Float32List(count * 2);
   }
 
@@ -271,12 +334,31 @@ class _ParticleBlobState extends State<BlobFlutter>
       if (mounted) {
         setState(() {
           _shader = _program!.fragmentShader();
+          _shaderStaticDirty = true;
+          _shaderColorsDirty = true;
         });
       }
     } catch (e) {
-      debugPrint('[ParticleBlob] Shader load failed: $e');
-      // Falls back to solid fallbackColor in BlobPainter
+      debugPrint('[BlobFlutter] Shader load failed: $e');
+      // Falls back to solid fallbackColor in BlobPainter.
     }
+  }
+
+  void _startWorker() {
+    final w = BlobWorker();
+    _worker = w;
+    w.init(_baseSphere, widget.particleCount).then((_) {
+      if (mounted && _worker == w) {
+        _workerReady = true;
+      }
+    });
+  }
+
+  void _restartWorker() {
+    _worker?.dispose();
+    _workerReady = false;
+    _workerBusy  = false;
+    _startWorker();
   }
 
   // ── Ticker Callback ────────────────────────────────────────────────────────
@@ -284,159 +366,253 @@ class _ParticleBlobState extends State<BlobFlutter>
   void _onTick(Duration elapsed) {
     if (!mounted || _cachedSize == Size.zero) return;
 
-    // ARCH-02 fix: use actual frame delta, clamped to prevent spiral of death
-    // (e.g., after app backgrounding, elapsed jumps massively)
+    // ARCH-02 fix: use actual frame delta, clamped to prevent spiral of death.
     final double dt =
         ((elapsed - _lastElapsed).inMicroseconds / 1e6).clamp(0.0, 0.05);
     _lastElapsed = elapsed;
 
-    // Advance time with speed multiplier; wrap to prevent float precision loss
-    // LOGIC-01 fix
+    // Advance time and apply rotation damping.
     _time = BlobMath.wrapTime(_time + dt * _controller.speed);
+    _controller.applyDamping(); // LOGIC-02 fix
 
-    // LOGIC-02 fix: apply rotation damping every frame
-    _controller.applyDamping();
+    // Always push the time uniform so colour animation remains smooth even
+    // when particle positions are being computed in the background worker.
+    _updateDynamicUniforms();
 
-    _updateProjectedPoints();
+    if (_workerReady && !_workerBusy) {
+      // ── Async path (native) / microtask path (Web) ─────────────────────────
+      _workerBusy = true;
+      _worker!.compute(_buildWorkerParams()).then(_onParticlesReady);
+    } else if (!_workerReady) {
+      // ── Sync fallback: worker still initialising (first few frames only) ───
+      _updateLocalTouches();
+      BlobMath.projectParticles(
+        count:             widget.particleCount,
+        radius:            widget.radius,
+        blobiness:         _controller.blobiness,
+        dispersion:        _controller.dispersion,
+        rotationX:         _controller.rotationX,
+        rotationY:         _controller.rotationY,
+        time:              _time,
+        viewportWidth:     _cachedSize.width,
+        viewportHeight:    _cachedSize.height,
+        activeTouches:     _localTouches,
+        baseSphere:        _baseSphere,
+        projectedPoints:   _projectedPoints,
+        autoRotationSpeed: _controller.autoRotationSpeed,
+        noiseFrequency:    _controller.noiseFrequency,
+        viewDistance:      _controller.viewDistance,
+        noiseType:         _controller.noiseType,
+      );
+      _frameCount++;
+      _frameNotifier.value = _frameCount;
+    } else {
+      // ── Worker busy: still repaint so colour animation stays smooth ─────────
+      _frameCount++;
+      _frameNotifier.value = _frameCount;
+    }
+  }
 
-    // Update shader uniforms (only when shader is loaded)
-    _updateShaderUniforms();
+  void _onParticlesReady(Float32List? result) {
+    _workerBusy = false;
+    if (!mounted || result == null) return;
 
-    // BUG-05 fix: increment counter to notify only the ValueListenableBuilder
+    // Replace the projected-points buffer with the worker's result.
+    // On native, this is the zero-copy materialised TransferableTypedData.
+    // On Web, this is the same pre-allocated buffer written in-place.
+    _projectedPoints = result;
+
     _frameCount++;
     _frameNotifier.value = _frameCount;
   }
 
-  // ── Particle Update ────────────────────────────────────────────────────────
+  // ── Touch Cache ────────────────────────────────────────────────────────────
 
-  void _updateProjectedPoints() {
-    List<Offset> localTouches = _activeTouches;
-    if (_activeTouches.isNotEmpty) {
-      final RenderObject? renderObject = context.findRenderObject();
-      if (renderObject is RenderBox && renderObject.attached) {
-        localTouches = _activeTouches
-            .map((pos) => renderObject.globalToLocal(pos))
-            .toList();
+  /// Recomputes [_localTouches] and [_encodedTouches] only when the global
+  /// touch positions have changed since the last call.
+  void _updateLocalTouches() {
+    if (_activeTouches.isEmpty) {
+      if (_localTouches.isNotEmpty) {
+        _localTouches      = const [];
+        _lastGlobalTouches = const [];
+        _encodedTouches    = Float32List(0);
       }
+      return;
     }
 
-    BlobMath.projectParticles(
-      count: widget.particleCount,
-      radius: widget.radius,
-      blobiness: _controller.blobiness,
-      dispersion: _controller.dispersion,
-      rotationX: _controller.rotationX,
-      rotationY: _controller.rotationY,
-      time: _time,
-      viewportWidth: _cachedSize.width,
-      viewportHeight: _cachedSize.height,
-      activeTouches: localTouches,
-      baseSphere: _baseSphere,
-      projectedPoints: _projectedPoints,
+    // Skip recalculation when positions haven't changed.
+    if (_offsetListEquals(_activeTouches, _lastGlobalTouches)) return;
+    _lastGlobalTouches = List<Offset>.of(_activeTouches);
+
+    final ro = context.findRenderObject();
+    if (ro is RenderBox && ro.attached) {
+      _localTouches = _activeTouches
+          .map((p) => ro.globalToLocal(p))
+          .toList(growable: false);
+    } else {
+      _localTouches = List<Offset>.of(_activeTouches);
+    }
+
+    // Encode for the worker message.
+    final buf = Float32List(_localTouches.length * 2);
+    for (int i = 0; i < _localTouches.length; i++) {
+      buf[i * 2]     = _localTouches[i].dx;
+      buf[i * 2 + 1] = _localTouches[i].dy;
+    }
+    _encodedTouches = buf;
+  }
+
+  static bool _offsetListEquals(List<Offset> a, List<Offset> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  // ── Worker Param Builder ───────────────────────────────────────────────────
+
+  ProjectParamsFlat _buildWorkerParams() {
+    _updateLocalTouches();
+    return ProjectParamsFlat(
+      count:             widget.particleCount,
+      radius:            widget.radius,
+      blobiness:         _controller.blobiness,
+      dispersion:        _controller.dispersion,
+      rotationX:         _controller.rotationX,
+      rotationY:         _controller.rotationY,
+      time:              _time,
+      viewportWidth:     _cachedSize.width,
+      viewportHeight:    _cachedSize.height,
+      encodedTouches:    _encodedTouches,
       autoRotationSpeed: _controller.autoRotationSpeed,
-      noiseFrequency: _controller.noiseFrequency,
-      viewDistance: _controller.viewDistance,
-      noiseType: _controller.noiseType,
+      noiseFrequency:    _controller.noiseFrequency,
+      viewDistance:      _controller.viewDistance,
+      noiseTypeIndex:    _controller.noiseType.index,
     );
   }
 
   // ── Shader Uniforms ────────────────────────────────────────────────────────
 
-  void _updateShaderUniforms() {
+  /// Updates the fragment shader every frame.
+  ///
+  /// Only [uTime] (index 2) is pushed unconditionally.  Static uniforms
+  /// (resolution, gradient geometry, animation speed, wave intensity) are
+  /// re-pushed only when [_shaderStaticDirty] is set.  Colour uniforms are
+  /// re-pushed only in rainbow mode (every frame) or when [_shaderColorsDirty]
+  /// is set (gradient changed).
+  void _updateDynamicUniforms() {
     final s = _shader;
     if (s == null) return;
 
+    // Detect external gradient changes (e.g., controller.setGradient()).
+    final currentGradient = _effectiveGradient;
+    if (currentGradient != _lastPushedGradient) {
+      _lastPushedGradient = currentGradient;
+      _shaderStaticDirty = true;
+      _shaderColorsDirty = true;
+    }
+
+    // Push static uniforms only when dirty.
+    if (_shaderStaticDirty) {
+      _pushStaticUniforms(s);
+      _shaderStaticDirty = false;
+    }
+
+    // 2: uTime — always changes.
+    s.setFloat(2, _time);
+
+    // Colours — every frame in rainbow mode, otherwise only when dirty.
+    if (_controller.isRainbowMode) {
+      _pushColors(s, _effectiveColors);
+    } else if (_shaderColorsDirty) {
+      _pushColors(s, _effectiveColors);
+      _shaderColorsDirty = false;
+    }
+  }
+
+  /// Pushes resolution, gradient geometry, animation speed, and wave intensity.
+  /// Called once after the shader loads and whenever any of these change.
+  void _pushStaticUniforms(ui.FragmentShader s) {
     // 0-1: uResolution
     s.setFloat(0, _cachedSize.width);
     s.setFloat(1, _cachedSize.height);
 
-    // 2: uTime
-    s.setFloat(2, _time);
+    // Gradient geometry (19-24)
+    _pushGradientParams(s);
 
-    // 3-18: uColor1, uColor2, uColor3, uColor4 (vec4 each)
-    final colors = _effectiveColors;
+    // 23: uColorAnimationSpeed
+    final bool isAnim = _controller.isColorAnimated;
+    s.setFloat(23, isAnim ? _controller.colorAnimationSpeed : 0.0);
+
+    // 25: uWaveIntensity
+    s.setFloat(25, _controller.waveIntensity);
+  }
+
+  /// Pushes uColor1-4 and uColorCount (indices 3-18, 26).
+  void _pushColors(ui.FragmentShader s, List<Color> colors) {
     final int count = colors.length.clamp(1, 4);
-
     final c1 = colors[0];
     final c2 = count > 1 ? colors[1] : c1;
     final c3 = count > 2 ? colors[2] : c2;
     final c4 = count > 3 ? colors[3] : c3;
 
-    // uColor1 (3..6)
-    s.setFloat(3, c1.r);
-    s.setFloat(4, c1.g);
-    s.setFloat(5, c1.b);
-    s.setFloat(6, c1.a);
+    // uColor1 (3-6)
+    s.setFloat(3,  c1.r); s.setFloat(4,  c1.g);
+    s.setFloat(5,  c1.b); s.setFloat(6,  c1.a);
+    // uColor2 (7-10)
+    s.setFloat(7,  c2.r); s.setFloat(8,  c2.g);
+    s.setFloat(9,  c2.b); s.setFloat(10, c2.a);
+    // uColor3 (11-14)
+    s.setFloat(11, c3.r); s.setFloat(12, c3.g);
+    s.setFloat(13, c3.b); s.setFloat(14, c3.a);
+    // uColor4 (15-18)
+    s.setFloat(15, c4.r); s.setFloat(16, c4.g);
+    s.setFloat(17, c4.b); s.setFloat(18, c4.a);
 
-    // uColor2 (7..10)
-    s.setFloat(7, c2.r);
-    s.setFloat(8, c2.g);
-    s.setFloat(9, c2.b);
-    s.setFloat(10, c2.a);
+    // 26: uColorCount
+    s.setFloat(26, _controller.isRainbowMode ? 4.0 : count.toDouble());
+  }
 
-    // uColor3 (11..14)
-    s.setFloat(11, c3.r);
-    s.setFloat(12, c3.g);
-    s.setFloat(13, c3.b);
-    s.setFloat(14, c3.a);
-
-    // uColor4 (15..18)
-    s.setFloat(15, c4.r);
-    s.setFloat(16, c4.g);
-    s.setFloat(17, c4.b);
-    s.setFloat(18, c4.a);
-
-    // Parse gradient parameters:
+  /// Parses [_effectiveGradient] and pushes gradient geometry + type uniforms.
+  void _pushGradientParams(ui.FragmentShader s) {
     final g = _effectiveGradient;
     double startX = 0.5, startY = 0.0;
-    double endX = 0.5, endY = 1.0;
-    double gradType = 0.0; // 0=Linear, 1=Radial, 2=Sweep
+    double endX   = 0.5, endY   = 1.0;
+    double gradType = 0.0; // 0 = Linear, 1 = Radial, 2 = Sweep
 
     if (g is LinearGradient) {
       gradType = 0.0;
       final begin = g.begin.resolve(TextDirection.ltr);
-      final end = g.end.resolve(TextDirection.ltr);
+      final end   = g.end.resolve(TextDirection.ltr);
       startX = (begin.x + 1.0) / 2.0;
       startY = (begin.y + 1.0) / 2.0;
-      endX = (end.x + 1.0) / 2.0;
-      endY = (end.y + 1.0) / 2.0;
+      endX   = (end.x   + 1.0) / 2.0;
+      endY   = (end.y   + 1.0) / 2.0;
     } else if (g is RadialGradient) {
       gradType = 1.0;
       final center = g.center.resolve(TextDirection.ltr);
       startX = (center.x + 1.0) / 2.0;
       startY = (center.y + 1.0) / 2.0;
-      endX = g.radius; // radius in UV space
-      endY = 0.0;
+      endX   = g.radius;
+      endY   = 0.0;
     } else if (g is SweepGradient) {
       gradType = 2.0;
       final center = g.center.resolve(TextDirection.ltr);
       startX = (center.x + 1.0) / 2.0;
       startY = (center.y + 1.0) / 2.0;
-      endX = 0.0;
-      endY = 0.0;
+      endX   = 0.0;
+      endY   = 0.0;
     }
 
     // 19-20: uGradientStart
     s.setFloat(19, startX);
     s.setFloat(20, startY);
-
     // 21-22: uGradientEnd
     s.setFloat(21, endX);
     s.setFloat(22, endY);
-
-    // 23: uColorAnimationSpeed (0.0 if not animated or controller/widget is static)
-    final bool isAnim = _controller.isColorAnimated;
-    final double animSpeed = isAnim ? _controller.colorAnimationSpeed : 0.0;
-    s.setFloat(23, animSpeed);
-
     // 24: uGradientType
     s.setFloat(24, gradType);
-
-    // 25: uWaveIntensity
-    s.setFloat(25, _controller.waveIntensity);
-
-    // 26: uColorCount
-    s.setFloat(26, _controller.isRainbowMode ? 4.0 : count.toDouble());
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -447,38 +623,43 @@ class _ParticleBlobState extends State<BlobFlutter>
     // caches it for use in the ticker, avoiding MediaQuery inside the ticker.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double width = constraints.hasBoundedWidth
+        final double width  = constraints.hasBoundedWidth
             ? constraints.maxWidth
-            : (widget.radius * 2.0);
+            : widget.radius * 2.0;
         final double height = constraints.hasBoundedHeight
             ? constraints.maxHeight
-            : (widget.radius * 2.0);
-        _cachedSize = Size(width, height);
+            : widget.radius * 2.0;
+
+        final newSize = Size(width, height);
+        if (newSize != _cachedSize) {
+          _cachedSize = newSize;
+          _shaderStaticDirty = true; // resolution changed → repush
+        }
 
         return SizedBox(
-          width: width,
+          width:  width,
           height: height,
           child: BlobInputListener(
-            controller: _controller,
-            enableHover: widget.enableHover,
+            controller:       _controller,
+            enableHover:      widget.enableHover,
             onTouchesChanged: (touches) {
               _activeTouches = touches;
             },
             child: ValueListenableBuilder<int>(
               valueListenable: _frameNotifier,
               builder: (_, frame, __) {
-                // RepaintBoundary isolates the blob from the rest of the tree
+                // RepaintBoundary isolates the blob from the rest of the tree.
                 return RepaintBoundary(
                   child: CustomPaint(
                     painter: BlobPainter(
-                      positions: _projectedPoints,
-                      generation: frame,
-                      shader: _shader,
-                      pointSize: widget.pointSize,
+                      positions:     _projectedPoints,
+                      generation:    frame,
+                      shader:        _shader,
+                      pointSize:     widget.pointSize,
                       fallbackColor: _color1,
                     ),
-                    size: Size.infinite,
-                    isComplex: true,
+                    size:       Size.infinite,
+                    isComplex:  true,
                     willChange: true,
                   ),
                 );
