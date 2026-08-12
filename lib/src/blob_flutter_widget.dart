@@ -212,6 +212,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     _controller = widget.controller ??
         BlobController(
           tapScaleFactor: widget.tapScaleFactor,
+          touchRadiusFactor: widget.touchRadiusFactor,
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
@@ -242,6 +243,7 @@ class _ParticleBlobState extends State<BlobFlutter>
       _controller = widget.controller ??
           BlobController(
             tapScaleFactor: widget.tapScaleFactor,
+            touchRadiusFactor: widget.touchRadiusFactor,
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
@@ -255,6 +257,9 @@ class _ParticleBlobState extends State<BlobFlutter>
       bool staticChanged = false;
       if (oldWidget.tapScaleFactor != widget.tapScaleFactor) {
         _controller.setTapScaleFactor(widget.tapScaleFactor);
+      }
+      if (oldWidget.touchRadiusFactor != widget.touchRadiusFactor) {
+        _controller.setTouchRadiusFactor(widget.touchRadiusFactor);
       }
       if (oldWidget.isColorAnimated != widget.isColorAnimated) {
         _controller.setIsColorAnimated(widget.isColorAnimated);
@@ -365,6 +370,7 @@ class _ParticleBlobState extends State<BlobFlutter>
         noiseFrequency: _controller.noiseFrequency,
         viewDistance: _controller.viewDistance,
         noiseType: _controller.noiseType,
+        touchRadiusFactor: _controller.touchRadiusFactor,
       );
       _frameCount++;
       _frameNotifier.value = _frameCount;
@@ -402,6 +408,7 @@ class _ParticleBlobState extends State<BlobFlutter>
       noiseFrequency: _controller.noiseFrequency,
       viewDistance: _controller.viewDistance,
       noiseTypeIndex: _controller.noiseType.index,
+      touchRadiusFactor: _controller.touchRadiusFactor,
     );
   }
 
