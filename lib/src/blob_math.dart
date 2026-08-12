@@ -4,6 +4,21 @@ import 'dart:ui';
 
 import 'blob_noise_type.dart';
 
+/// Function signature for a single-particle noise displacement function.
+///
+/// Selected once per frame via [BlobMath._selectNoise], then called for every
+/// particle.  This moves the [BlobNoiseType] switch from O(particleCount) to
+/// O(1) per frame.
+typedef _NoiseFunc = double Function(
+  double px,
+  double py,
+  double pz,
+  double f,
+  double time,
+  double time15,
+  double blobiness,
+);
+
 /// Utility class for all 3D particle mathematics.
 ///
 /// Uses a flat [Float32List] for the base sphere (BUG-07 fix):
@@ -122,6 +137,94 @@ class BlobMath {
     return 32.0 * (n0 + n1 + n2 + n3);
   }
 
+  // ── Per-particle noise functions ────────────────────────────────────────────
+  //
+  // Each static method corresponds to one [BlobNoiseType] variant and is
+  // selected once per frame by [_selectNoise], eliminating the O(particleCount)
+  // switch that previously ran inside the particle loop.
+
+  static double _harmonicNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    final double n = sin(px * 3.0 * f + time) *
+                     cos(py * 2.0 * f - time) *
+                     sin(pz * 4.0 * f + time15);
+    return 1.0 + n * 0.3 * blobiness;
+  }
+
+  static double _spikyNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    final double raw = (sin(px * 4.0 * f + time) +
+                        cos(py * 4.0 * f - time) +
+                        sin(pz * 4.0 * f + time15)) / 3.0;
+    final double spike = 1.0 - raw.abs();
+    final double n = spike * spike * spike;
+    return 1.0 + (n * 0.6 - 0.1) * blobiness;
+  }
+
+  static double _fractalNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    double n = sin(px * 2.0 * f + time) *
+               cos(py * 2.0 * f - time) *
+               sin(pz * 2.0 * f + time);
+    n += 0.5  * (sin(px * 4.0 * f - time15) * cos(py * 4.0 * f + time15));
+    n += 0.25 * (sin(px * 8.0 * f + time * 2.0) * sin(pz * 8.0 * f - time * 2.0));
+    return 1.0 + n * 0.22 * blobiness;
+  }
+
+  static double _cellularNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    final double c1 = cos(px * 3.0 * f + time);
+    final double c2 = cos(py * 3.0 * f - time);
+    final double c3 = cos(pz * 3.0 * f + time15);
+    final double cell = sqrt((c1 * c1 + c2 * c2 + c3 * c3) / 3.0);
+    return 1.0 + (cell - 0.58) * 0.5 * blobiness;
+  }
+
+  static double _vortexNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    final double angle = py * 3.0 + time;
+    final double cosA  = cos(angle);
+    final double sinA  = sin(angle);
+    final double tx = px * cosA - pz * sinA;
+    final double tz = px * sinA + pz * cosA;
+    final double n = sin(tx * 3.0 * f) * cos(tz * 3.0 * f + time) * cos(py * 2.0 * f);
+    return 1.0 + n * 0.35 * blobiness;
+  }
+
+  static double _sphericalHarmonicsNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    final double phi   = atan2(pz, px);
+    final double theta = asin(py.clamp(-1.0, 1.0));
+    final double n = sin(4.0 * phi * f + time) * cos(3.0 * theta * f + time15);
+    return 1.0 + n * 0.35 * blobiness;
+  }
+
+  static double _simplexNoise(double px, double py, double pz,
+      double f, double time, double time15, double blobiness) {
+    final double n = fastSimplex3D(
+      px * f * 1.5 + sin(time * 0.5) * 0.2,
+      py * f * 1.5 + cos(time * 0.5) * 0.2,
+      pz * f * 1.5 + time * 0.3,
+    );
+    return 1.0 + n * 0.35 * blobiness;
+  }
+
+  /// Returns the noise function matching [type].
+  ///
+  /// Called **once per frame**, before the particle loop, so that the inner
+  /// loop body contains only a direct function call with no branching.
+  static _NoiseFunc _selectNoise(BlobNoiseType type) {
+    switch (type) {
+      case BlobNoiseType.harmonic:           return _harmonicNoise;
+      case BlobNoiseType.spiky:              return _spikyNoise;
+      case BlobNoiseType.fractal:            return _fractalNoise;
+      case BlobNoiseType.cellular:           return _cellularNoise;
+      case BlobNoiseType.vortex:             return _vortexNoise;
+      case BlobNoiseType.sphericalHarmonics: return _sphericalHarmonicsNoise;
+      case BlobNoiseType.simplex:            return _simplexNoise;
+    }
+  }
+
   /// Generates points evenly distributed on a unit sphere using the Fibonacci
   /// lattice algorithm, stored in a flat [Float32List] of length [samples * 3].
   ///
@@ -140,8 +243,8 @@ class BlobMath {
       final double radiusAtY = sqrt((1.0 - y * y).clamp(0.0, 1.0));
       final double theta = _goldenAngle * i;
 
-      buffer[i * 3] = cos(theta) * radiusAtY; // x
-      buffer[i * 3 + 1] = y; // y
+      buffer[i * 3]     = cos(theta) * radiusAtY; // x
+      buffer[i * 3 + 1] = y;                       // y
       buffer[i * 3 + 2] = sin(theta) * radiusAtY; // z
     }
     return buffer;
@@ -154,8 +257,11 @@ class BlobMath {
     return time % limit;
   }
 
-  /// Projects 3D sphere particles onto a 2D viewport with organic noise displacement,
-  /// multi-touch dispersion, and perspective rotation.
+  /// Projects 3D sphere particles onto a 2D viewport with organic noise
+  /// displacement, multi-touch dispersion, and perspective rotation.
+  ///
+  /// The noise algorithm is selected **once** via [_selectNoise] before the
+  /// particle loop, avoiding O(count) branch evaluations per frame.
   static void projectParticles({
     required int count,
     required double radius,
@@ -174,107 +280,45 @@ class BlobMath {
     required double viewDistance,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
   }) {
-    final double centerX = viewportWidth / 2.0;
+    final double centerX = viewportWidth  / 2.0;
     final double centerY = viewportHeight / 2.0;
 
     // Auto-rotation angle derived from time and autoRotationSpeed
-    final double autoRotY = time * autoRotationSpeed;
-
-    // Precalculate trigonometric functions for the frame
+    final double autoRotY  = time * autoRotationSpeed;
     final double totalRotY = autoRotY + rotationY;
-    final double cosRotY = cos(totalRotY);
-    final double sinRotY = sin(totalRotY);
+    final double cosRotY   = cos(totalRotY);
+    final double sinRotY   = sin(totalRotY);
+    final double cosRotX   = cos(rotationX);
+    final double sinRotX   = sin(rotationX);
 
-    final double cosRotX = cos(rotationX);
-    final double sinRotX = sin(rotationX);
-
-    // Precalculate time constant for noise function
-    final double time1_5 = time * 1.5;
+    // Precalculate time constant for noise functions
+    final double time15 = time * 1.5;
     final double f = noiseFrequency;
 
     // Cache variables for touch interaction
-    final bool hasPointers = activeTouches.isNotEmpty;
-    final int touchCount = activeTouches.length;
+    final bool   hasPointers = activeTouches.isNotEmpty;
+    final int    touchCount  = activeTouches.length;
     final double doubleRadius = radius * 2.0;
+
+    // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
+    final _NoiseFunc noise = _selectNoise(noiseType);
 
     for (int i = 0; i < count; i++) {
       final int base = i * 3;
 
-      // Extract coordinates to local variables
       double px = baseSphere[base];
       double py = baseSphere[base + 1];
       double pz = baseSphere[base + 2];
 
-      // Apply procedural noise displacement based on selected algorithm
-      double displacement = 1.0;
-
-      switch (noiseType) {
-        case BlobNoiseType.harmonic:
-          final double noise = sin(px * 3.0 * f + time) *
-                               cos(py * 2.0 * f - time) *
-                               sin(pz * 4.0 * f + time1_5);
-          displacement = 1.0 + noise * 0.3 * blobiness;
-          break;
-
-        case BlobNoiseType.spiky:
-          final double raw = (sin(px * 4.0 * f + time) +
-                              cos(py * 4.0 * f - time) +
-                              sin(pz * 4.0 * f + time1_5)) / 3.0;
-          final double spike = 1.0 - raw.abs();
-          final double noise = spike * spike * spike;
-          displacement = 1.0 + (noise * 0.6 - 0.1) * blobiness;
-          break;
-
-        case BlobNoiseType.fractal:
-          double n = sin(px * 2.0 * f + time) * cos(py * 2.0 * f - time) * sin(pz * 2.0 * f + time);
-          n += 0.5 * (sin(px * 4.0 * f - time1_5) * cos(py * 4.0 * f + time1_5));
-          n += 0.25 * (sin(px * 8.0 * f + time * 2.0) * sin(pz * 8.0 * f - time * 2.0));
-          displacement = 1.0 + n * 0.22 * blobiness;
-          break;
-
-        case BlobNoiseType.cellular:
-          final double c1 = cos(px * 3.0 * f + time);
-          final double c2 = cos(py * 3.0 * f - time);
-          final double c3 = cos(pz * 3.0 * f + time1_5);
-          final double cellNoise = sqrt((c1 * c1 + c2 * c2 + c3 * c3) / 3.0);
-          displacement = 1.0 + (cellNoise - 0.58) * 0.5 * blobiness;
-          break;
-
-        case BlobNoiseType.vortex:
-          final double angle = py * 3.0 + time;
-          final double cosA = cos(angle);
-          final double sinA = sin(angle);
-          final double tx = px * cosA - pz * sinA;
-          final double tz = px * sinA + pz * cosA;
-          final double noise = sin(tx * 3.0 * f) * cos(tz * 3.0 * f + time) * cos(py * 2.0 * f);
-          displacement = 1.0 + noise * 0.35 * blobiness;
-          break;
-
-        case BlobNoiseType.sphericalHarmonics:
-          final double phi = atan2(pz, px);
-          final double theta = asin(py.clamp(-1.0, 1.0));
-          final double noise = sin(4.0 * phi * f + time) * cos(3.0 * theta * f + time1_5);
-          displacement = 1.0 + noise * 0.35 * blobiness;
-          break;
-
-        case BlobNoiseType.simplex:
-          final double noise = fastSimplex3D(
-            px * f * 1.5 + sin(time * 0.5) * 0.2,
-            py * f * 1.5 + cos(time * 0.5) * 0.2,
-            pz * f * 1.5 + time * 0.3,
-          );
-          displacement = 1.0 + noise * 0.35 * blobiness;
-          break;
-      }
-
+      // Apply procedural noise displacement via the pre-selected function
+      final double displacement = noise(px, py, pz, f, time, time15, blobiness);
       px *= displacement;
       py *= displacement;
       pz *= displacement;
 
-      // Apply rotations (Y-axis first, then X-axis) to get fully rotated 3D coordinates
+      // Apply rotations (Y-axis first, then X-axis)
       final double xAfterY = px * cosRotY + pz * sinRotY;
       final double zAfterY = -px * sinRotY + pz * cosRotY;
-
       final double yAfterX = py * cosRotX - zAfterY * sinRotX;
       final double zAfterX = py * sinRotX + zAfterY * cosRotX;
 
@@ -282,11 +326,11 @@ class BlobMath {
       double ry = yAfterX;
       final double rz = zAfterX;
 
-      // Perspective projection with clamped Z denominator (using viewDistance)
-      final double safeZ = (viewDistance + rz).clamp(0.1, 10.0);
+      // Perspective projection with clamped Z denominator
+      final double safeZ     = (viewDistance + rz).clamp(0.1, 10.0);
       final double baseScale = radius / safeZ;
 
-      // Actual projected screen coordinates of the particle (before dispersion)
+      // Projected screen coordinates before dispersion
       final double screenX = centerX + rx * baseScale * 2.0;
       final double screenY = centerY + ry * baseScale * 2.0;
 
@@ -294,11 +338,12 @@ class BlobMath {
       double extraPush = 0.0;
       if (hasPointers) {
         for (int t = 0; t < touchCount; t++) {
-          final Offset touch = activeTouches[t];
-          final double dx = screenX - touch.dx;
-          final double dy = screenY - touch.dy;
-          final double dist = sqrt(dx * dx + dy * dy);
-          final double influence = (1.0 - (dist / doubleRadius).clamp(0.0, 1.0));
+          final Offset touch    = activeTouches[t];
+          final double dx       = screenX - touch.dx;
+          final double dy       = screenY - touch.dy;
+          final double dist     = sqrt(dx * dx + dy * dy);
+          final double influence =
+              (1.0 - (dist / doubleRadius).clamp(0.0, 1.0));
           extraPush += dispersion * influence * 2.0;
         }
       } else if (dispersion > 0.0) {
@@ -306,13 +351,13 @@ class BlobMath {
         extraPush = dispersion;
       }
 
-      // Apply dispersion push only to X and Y screen displacements (prevents Z-depth explosion)
+      // Apply dispersion push only to X and Y screen displacements
       final double pushScale = 1.0 + extraPush;
       rx *= pushScale;
       ry *= pushScale;
 
       final int outIndex = i * 2;
-      projectedPoints[outIndex] = centerX + rx * baseScale * 2.0;
+      projectedPoints[outIndex]     = centerX + rx * baseScale * 2.0;
       projectedPoints[outIndex + 1] = centerY + ry * baseScale * 2.0;
     }
   }
