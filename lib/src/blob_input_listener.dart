@@ -74,8 +74,11 @@ class _BlobInputListenerState extends State<BlobInputListener> {
     return MouseRegion(
       onHover: (event) {
         if (_touchPoints.isEmpty) {
-          // Subtle auto-nudge on hover (not full drag — just orientation hint)
-          widget.controller.addRotationImpulse(event.localDelta * 0.3);
+          // Phase-3 throttle: suppress notifyListeners for micro-movements
+          // (< 1.5 logical pixels) that would not produce visible rotation change.
+          if (event.localDelta.distanceSquared >= 2.25) {
+            widget.controller.addRotationImpulse(event.localDelta * 0.3);
+          }
 
           if (_isHoverEffective) {
             _hoverPosition = event.position;
