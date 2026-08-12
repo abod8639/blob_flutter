@@ -279,6 +279,7 @@ class BlobMath {
     required double noiseFrequency,
     required double viewDistance,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
+    double touchRadiusFactor = 1.0,
   }) {
     final double centerX = viewportWidth  / 2.0;
     final double centerY = viewportHeight / 2.0;
@@ -298,7 +299,7 @@ class BlobMath {
     // Cache variables for touch interaction
     final bool   hasPointers = activeTouches.isNotEmpty;
     final int    touchCount  = activeTouches.length;
-    final double doubleRadius = radius * 2.0;
+    final double effectiveTouchRadius = radius * 2.0 * touchRadiusFactor;
 
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
     final _NoiseFunc noise = _selectNoise(noiseType);
@@ -343,7 +344,7 @@ class BlobMath {
           final double dy       = screenY - touch.dy;
           final double dist     = sqrt(dx * dx + dy * dy);
           final double influence =
-              (1.0 - (dist / doubleRadius).clamp(0.0, 1.0));
+              (1.0 - (dist / effectiveTouchRadius).clamp(0.0, 1.0));
           extraPush += dispersion * influence * 2.0;
         }
       } else if (dispersion > 0.0) {
