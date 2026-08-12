@@ -29,6 +29,7 @@ class BlobController extends ChangeNotifier {
   BlobNoiseType _noiseType = BlobNoiseType.harmonic;
   double _viewDistance = 2.0;
   double _tapScaleFactor = 1.0;
+  double _touchRadiusFactor = 1.0;
   bool _isRainbowMode = false;
   bool _isColorAnimated = true;
   double _colorAnimationSpeed = 1.0;
@@ -45,6 +46,7 @@ class BlobController extends ChangeNotifier {
   BlobController({
     double dampingFactor = 0.92,
     double tapScaleFactor = 1.0,
+    double touchRadiusFactor = 1.0,
     bool isColorAnimated = true,
     double colorAnimationSpeed = 1.0,
     double waveIntensity = 1.0,
@@ -53,6 +55,7 @@ class BlobController extends ChangeNotifier {
     Gradient? gradient,
   }) : _dampingFactor = dampingFactor,
        _tapScaleFactor = tapScaleFactor,
+       _touchRadiusFactor = touchRadiusFactor,
        _isColorAnimated = isColorAnimated,
        _colorAnimationSpeed = colorAnimationSpeed,
        _waveIntensity = waveIntensity,
@@ -63,6 +66,8 @@ class BlobController extends ChangeNotifier {
             'dampingFactor must be between 0.0 and 1.0'),
        assert(tapScaleFactor >= 0.0,
             'tapScaleFactor must be greater than or equal to 0.0'),
+       assert(touchRadiusFactor >= 0.0,
+            'touchRadiusFactor must be greater than or equal to 0.0'),
        assert(colorAnimationSpeed >= 0.0,
             'colorAnimationSpeed must be greater than or equal to 0.0'),
        assert(waveIntensity >= 0.0,
@@ -81,6 +86,10 @@ class BlobController extends ChangeNotifier {
   /// Scale multiplier applied to particle dispersion on touch/tap.
   /// Range: [0.0, 5.0]. Default: 1.0.
   double get tapScaleFactor => _tapScaleFactor;
+
+  /// Multiplier for the touch interaction radius.
+  /// Range: [0.1, 5.0]. Default: 1.0.
+  double get touchRadiusFactor => _touchRadiusFactor;
 
   /// Whether the color gradient cycles through a rainbow sequence.
   bool get isRainbowMode => _isRainbowMode;
@@ -155,6 +164,15 @@ class BlobController extends ChangeNotifier {
     final clamped = value.clamp(0.0, double.infinity);
     if (_tapScaleFactor != clamped) {
       _tapScaleFactor = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the touch interaction radius multiplier. Clamped to [0.1, 10.0].
+  void setTouchRadiusFactor(double value) {
+    final clamped = value.clamp(0.1, 10.0);
+    if (_touchRadiusFactor != clamped) {
+      _touchRadiusFactor = clamped;
       notifyListeners();
     }
   }
