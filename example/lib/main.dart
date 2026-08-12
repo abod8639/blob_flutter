@@ -398,23 +398,31 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           ),
 
-          // Floating Collapsible Control Panel (Bottom)
+          // Floating Collapsible Control Panel (Bottom/Side)
           Positioned(
-            left: 12,
-            right: 12,
+            left: 16,
+            right: 16,
             bottom: 16,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, anim) => SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.5),
-                  end: Offset.zero,
-                ).animate(anim),
-                child: FadeTransition(opacity: anim, child: child),
+            child: SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 450),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, anim) => SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.2),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: _isPanelExpanded
+                        ? _buildExpandedControlPanel()
+                        : _buildCollapsedPillButton(),
+                  ),
+                ),
               ),
-              child: _isPanelExpanded
-                  ? _buildExpandedControlPanel()
-                  : _buildCollapsedPillButton(),
             ),
           ),
         ],
@@ -443,10 +451,10 @@ class _DashboardPageState extends State<DashboardPage>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Material(
-            color: Colors.black.withValues(alpha: 0.65),
+            color: const Color(0xFF070A12).withValues(alpha: 0.75),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
-              side: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.4), width: 1.2),
+              side: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.6), width: 1.5),
             ),
             child: InkWell(
               onTap: () {
@@ -456,32 +464,35 @@ class _DashboardPageState extends State<DashboardPage>
               },
               borderRadius: BorderRadius.circular(30),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.tune_rounded, color: Colors.cyanAccent, size: 18),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.memory, color: Colors.cyanAccent, size: 20),
+                    const SizedBox(width: 10),
                     const Text(
-                      'لوحة التحكم ⚙️',
+                      'HUD TERMINAL',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.cyanAccent,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.cyanAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         _getNoiseShortName(_noiseType),
                         style: const TextStyle(
                           color: Colors.cyanAccent,
                           fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -495,68 +506,107 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  // Glassmorphic Collapsible Control Panel
+  // Glassmorphic Collapsible Control Panel with Sci-Fi HUD style
   Widget _buildExpandedControlPanel() {
     return ClipRRect(
       key: const ValueKey('expanded_panel'),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(24),
+        bottomLeft: Radius.circular(12),
+        bottomRight: Radius.circular(12),
+      ),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(0),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+            color: const Color(0xFF070A12).withValues(alpha: 0.65),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+              bottomLeft: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+            border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.cyanAccent.withValues(alpha: 0.12),
-                blurRadius: 24,
-                spreadRadius: 2,
-              )
+                color: Colors.cyanAccent.withValues(alpha: 0.15),
+                blurRadius: 30,
+                spreadRadius: -5,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header of panel with Title and Collapse Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.settings_suggest, color: Colors.cyanAccent, size: 18),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'إعدادات المحاكاة والتحكم',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.cyanAccent.withValues(alpha: 0.2),
+                      Colors.transparent,
                     ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.cyanAccent, size: 24),
-                    tooltip: 'طي لوحة التحكم',
-                    onPressed: () {
-                      setState(() {
-                        _isPanelExpanded = false;
-                      });
-                    },
+                  border: Border(
+                    bottom: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.2), width: 1),
                   ),
-                ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.memory, color: Colors.cyanAccent, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'HUD CONTROL TERMINAL',
+                          style: TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.cyanAccent, size: 24),
+                      tooltip: 'طي لوحة التحكم',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        setState(() {
+                          _isPanelExpanded = false;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 6),
-              _buildTabBar(),
-              const Divider(color: Colors.white12, height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: _buildTabBar(),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Divider(color: Colors.white12, height: 16),
+              ),
 
               // Tab Content Area
               ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 250),
+                constraints: const BoxConstraints(maxHeight: 220),
                 child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: _buildTabContent(),
                 ),
               ),
@@ -574,9 +624,9 @@ class _DashboardPageState extends State<DashboardPage>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildTabButton(0, 'الخوارزميات', Icons.alt_route),
-          _buildTabButton(1, 'التفاعل واللمس', Icons.touch_app),
-          _buildTabButton(2, 'الفيزياء والأشكال', Icons.filter_tilt_shift),
-          _buildTabButton(3, 'الألوان والمؤثرات', Icons.palette),
+          _buildTabButton(1, 'اللمس', Icons.touch_app),
+          _buildTabButton(2, 'الفيزياء', Icons.filter_tilt_shift),
+          _buildTabButton(3, 'الألوان', Icons.palette),
         ],
       ),
     );
@@ -592,15 +642,15 @@ class _DashboardPageState extends State<DashboardPage>
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.cyanAccent.withValues(alpha: 0.18)
-              : Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(10),
+              ? Colors.cyanAccent.withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? Colors.cyanAccent : Colors.transparent,
+            color: isSelected ? Colors.cyanAccent : Colors.white12,
             width: 1,
           ),
         ),
@@ -610,9 +660,9 @@ class _DashboardPageState extends State<DashboardPage>
             Icon(
               icon,
               color: isSelected ? Colors.cyanAccent : Colors.white54,
-              size: 15,
+              size: 16,
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
