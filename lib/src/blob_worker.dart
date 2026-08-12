@@ -15,5 +15,6 @@
 ///   shader dirty-tracking, etc.).
 ///
 /// Consumers import only this file; the platform split is transparent.
+library;
 export 'blob_worker_native.dart'
     if (dart.library.js_interop) 'blob_worker_web.dart';

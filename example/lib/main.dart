@@ -62,11 +62,11 @@ class _DashboardPageState extends State<DashboardPage>
   Color _color1 = Colors.cyanAccent;
   Color _color2 = Colors.blueAccent;
   Color _color3 = Colors.purpleAccent;
-  bool _useThreeColors = false;
-  bool _isColorAnimated = true;
-  double _colorAnimationSpeed = 1.0;
-  double _waveIntensity = 1.0;
-  int _alignmentIndex = 0; // 0: Top-Bottom, 1: Left-Right, 2: Diagonal, 3: Radial, 4: Sweep
+  final bool _useThreeColors = false;
+  final bool _isColorAnimated = true;
+  final double _colorAnimationSpeed = 1.0;
+  final double _waveIntensity = 1.0;
+  final int _alignmentIndex = 0; // 0: Top-Bottom, 1: Left-Right, 2: Diagonal, 3: Radial, 4: Sweep
   bool _isRainbowMode = false;
 
   // UI Control Panel State
@@ -246,21 +246,21 @@ class _DashboardPageState extends State<DashboardPage>
       body: Stack(
         children: [
           // Background ambient light glow matching current primary color
-          Positioned.fill(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.9,
-                  colors: [
-                    _color1.withValues(alpha: 0.12),
-                    const Color(0xFF070A12),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Positioned.fill(
+          //   child: AnimatedContainer(
+          //     duration: const Duration(milliseconds: 500),
+          //     decoration: BoxDecoration(
+          //       gradient: RadialGradient(
+          //         center: Alignment.center,
+          //         radius: 0.9,
+          //         colors: [
+          //           _color1.withValues(alpha: 0.12),
+          //           const Color(0xFF070A12),
+          //         ],
+          //       ),
+          //     ),
+          //   ),
+          // ),
 
           // 3D Blob Canvas Area (Fills entire screen)
           Positioned.fill(
@@ -564,11 +564,11 @@ class _DashboardPageState extends State<DashboardPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    const Row(
                       children: [
-                        const Icon(Icons.memory, color: Colors.cyanAccent, size: 20),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Icon(Icons.memory, color: Colors.cyanAccent, size: 20),
+                        SizedBox(width: 8),
+                        Text(
                           'HUD CONTROL TERMINAL',
                           style: TextStyle(
                             color: Colors.cyanAccent,
@@ -1114,10 +1114,10 @@ class _DashboardPageState extends State<DashboardPage>
           ),
         ),
         SliderTheme(
-          data: SliderThemeData(
+          data: const SliderThemeData(
             trackHeight: 3,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: RoundSliderOverlayShape(overlayRadius: 12),
             activeTrackColor: Colors.cyanAccent,
             inactiveTrackColor: Colors.white12,
             thumbColor: Colors.cyanAccent,
