@@ -144,7 +144,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   // ── Shader & Dirty Tracking ────────────────────────────────────────────────
 
-  ui.FragmentProgram? _program;
+  // ui.FragmentProgram? _program;
   ui.FragmentShader? _shader;
 
   bool _shaderStaticDirty = true;
@@ -297,7 +297,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     final program = await BlobShaderHelper.loadProgram();
     if (program != null && mounted) {
       setState(() {
-        _program = program;
+        // _program = program;
         _shader = program.fragmentShader();
         _shaderStaticDirty = true;
         _shaderColorsDirty = true;
