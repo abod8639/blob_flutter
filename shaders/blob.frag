@@ -26,6 +26,10 @@ precision highp float;
 
 #include <flutter/runtime_effect.glsl>
 
+// ── Mathematical Constants ────────────────────────────────────────────────────
+const float PI     = 3.14159265358979;
+const float TWO_PI = 6.28318530717958;
+
 // ── Uniforms ─────────────────────────────────────────────────────────────────
 uniform vec2  uResolution;
 uniform float uTime;
@@ -42,17 +46,20 @@ uniform float uColorCount;
 
 out vec4 fragColor;
 
+// ── Colour Evaluation ─────────────────────────────────────────────────────────
+//
+// uColorCount is a uniform — identical for every fragment in the draw call, so
+// these branches are "uniform branches" with negligible GPU overhead (no warp
+// divergence).  The compiler typically flattens them into conditional moves.
 vec4 evaluateColor(float t) {
     if (uColorCount <= 1.5) {
         return uColor1;
     } else if (uColorCount <= 2.5) {
         return mix(uColor1, uColor2, t);
     } else if (uColorCount <= 3.5) {
-        if (t <= 0.5) {
-            return mix(uColor1, uColor2, t * 2.0);
-        } else {
-            return mix(uColor2, uColor3, (t - 0.5) * 2.0);
-        }
+        return t <= 0.5
+            ? mix(uColor1, uColor2, t * 2.0)
+            : mix(uColor2, uColor3, (t - 0.5) * 2.0);
     } else {
         if (t <= 0.333333) {
             return mix(uColor1, uColor2, t * 3.0);
@@ -64,6 +71,7 @@ vec4 evaluateColor(float t) {
     }
 }
 
+// ── Main ──────────────────────────────────────────────────────────────────────
 void main() {
     // Normalize fragment coordinate to [0.0, 1.0] UV space
     vec2 uv = FlutterFragCoord().xy / uResolution;
@@ -72,34 +80,34 @@ void main() {
 
     if (uGradientType < 0.5) {
         // Linear gradient from uGradientStart to uGradientEnd
-        vec2 dir = uGradientEnd - uGradientStart;
+        vec2  dir   = uGradientEnd - uGradientStart;
         float lenSq = dot(dir, dir);
-        if (lenSq > 0.00001) {
-            t = dot(uv - uGradientStart, dir) / lenSq;
-        } else {
-            t = uv.y;
-        }
+        t = lenSq > 0.00001
+            ? dot(uv - uGradientStart, dir) / lenSq
+            : uv.y;
+
     } else if (uGradientType < 1.5) {
-        // Radial gradient from uGradientStart with radius uGradientEnd.x
+        // Radial gradient centred on uGradientStart, radius = uGradientEnd.x
         float r = max(uGradientEnd.x, 0.001);
         t = length(uv - uGradientStart) / r;
+
     } else {
         // Sweep / Angular gradient around uGradientStart
-        vec2 sweepDir = uv - uGradientStart;
-        float angle = atan(sweepDir.y, sweepDir.x); // [-PI, PI]
-        t = (angle + 3.141592653589793) / (2.0 * 3.141592653589793);
+        vec2  dir   = uv - uGradientStart;
+        float angle = atan(dir.y, dir.x);          // [-PI, PI]
+        t = (angle + PI) / TWO_PI;
     }
 
-    // Apply animated wave/shimmer distortion if animated and wave intensity > 0
+    // Wave shimmer — only computed when animation is active.
+    // Both conditions are uniforms (same value for every fragment), so the
+    // branch causes zero GPU warp divergence.
     if (uColorAnimationSpeed > 0.0 && uWaveIntensity > 0.0) {
-        float animTime = uTime * uColorAnimationSpeed;
-        float wave1 = sin(uv.x * 3.14159265 + animTime * 0.5) * 0.25;
-        float wave2 = cos(uv.y * 3.14159265 - animTime * 0.3) * 0.15;
-        float shimmer = sin((uv.x + uv.y) * 6.2831853 + animTime * 1.2) * 0.05;
+        float anim    = uTime * uColorAnimationSpeed;
+        float wave1   = sin(uv.x * PI     + anim * 0.5) * 0.25;
+        float wave2   = cos(uv.y * PI     - anim * 0.3) * 0.15;
+        float shimmer = sin((uv.x + uv.y) * TWO_PI + anim * 1.2) * 0.05;
         t += (wave1 + wave2 + shimmer) * uWaveIntensity;
     }
 
-    t = clamp(t, 0.0, 1.0);
-
-    fragColor = evaluateColor(t);
+    fragColor = evaluateColor(clamp(t, 0.0, 1.0));
 }
