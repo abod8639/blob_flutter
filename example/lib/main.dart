@@ -54,8 +54,8 @@ class _DashboardPageState extends State<DashboardPage>
 
   // Touch & Dispersion Physics State
   double _dispersion = 0.0;
-  double _tapScaleFactor = 1.1;
-  double _touchRadiusFactor = 1.0;
+  double _tapScaleFactor = 0.30;
+  double _touchRadiusFactor = 0.35;
   bool _enableHover = true;
 
   // Color & Gradient State
