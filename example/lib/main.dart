@@ -239,19 +239,19 @@ class _DashboardPageState extends State<DashboardPage>
   String _getNoiseName(BlobNoiseType type) {
     switch (type) {
       case BlobNoiseType.harmonic:
-        return 'موجات توافقية (Harmonic)';
+        return 'Harmonic';
       case BlobNoiseType.spiky:
-        return 'أشواك وكريستال (Spiky)';
+        return 'Spiky';
       case BlobNoiseType.fractal:
-        return 'تلاطم كسوري (Fractal)';
+        return 'Fractal';
       case BlobNoiseType.cellular:
-        return 'حويصلات خلوية (Cellular)';
+        return 'Cellular';
       case BlobNoiseType.vortex:
-        return 'دوامة مجرية (Vortex)';
+        return 'Vortex';
       case BlobNoiseType.sphericalHarmonics:
-        return 'مدارات كروية (Cymatics)';
+        return 'Cymatics';
       case BlobNoiseType.simplex:
-        return 'تدفق سمبلكس (Simplex)';
+        return 'Simplex';
     }
   }
 
@@ -336,7 +336,7 @@ class _DashboardPageState extends State<DashboardPage>
                               ),
                             ),
                             Text(
-                              '${_particleCount.toString()} الجسيمات • ${_getNoiseName(_noiseType)}',
+                              '${_particleCount.toString()} particles • ${_getNoiseName(_noiseType)}',
                               style: TextStyle(
                                 color: Colors.cyanAccent.withValues(alpha: 0.8),
                                 fontSize: 10,
@@ -454,19 +454,19 @@ class _DashboardPageState extends State<DashboardPage>
   String _getNoiseShortName(BlobNoiseType type) {
     switch (type) {
       case BlobNoiseType.harmonic:
-        return 'موجات (Harmonic)';
+        return 'Harmonic';
       case BlobNoiseType.spiky:
-        return 'أشواك (Spiky)';
+        return 'Spiky';
       case BlobNoiseType.fractal:
-        return 'كسوري (Fractal)';
+        return 'Fractal';
       case BlobNoiseType.cellular:
-        return 'خلوي (Cellular)';
+        return 'Cellular';
       case BlobNoiseType.vortex:
-        return 'دوامة (Vortex)';
+        return 'Vortex';
       case BlobNoiseType.sphericalHarmonics:
-        return 'مدارات (Cymatics)';
+        return 'Cymatics';
       case BlobNoiseType.simplex:
-        return 'سمبلكس (Simplex)';
+        return 'Simplex';
     }
   }
 
@@ -501,8 +501,8 @@ class _DashboardPageState extends State<DashboardPage>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.memory,
-                          color: Colors.cyanAccent, size: 20),
+                      // const Icon(Icons.memory,
+                      //     color: Colors.cyanAccent, size: 20),
                       const SizedBox(width: 10),
                       const Text(
                         'HUD TERMINAL',
@@ -624,7 +624,7 @@ class _DashboardPageState extends State<DashboardPage>
                         IconButton(
                           icon: const Icon(Icons.keyboard_arrow_down,
                               color: Colors.cyanAccent, size: 24),
-                          tooltip: 'طي لوحة التحكم',
+                          tooltip: 'Control Panel',
                           visualDensity: VisualDensity.compact,
                           onPressed: () {
                             setState(() {
