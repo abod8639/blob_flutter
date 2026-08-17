@@ -2,24 +2,41 @@ import 'package:flutter/material.dart';
 
 import 'blob_noise_type.dart';
 
-/// A controller for the [ParticleBlob] widget that provides programmatic
-/// control over blob geometry, animation speed, particle physics, and color flows.
+/// A controller for the [BlobFlutter] widget that provides programmatic
+/// control over blob geometry (radius, pointSize, particleCount, scale, offset),
+/// animation speed, particle physics, pinch-to-scale, and color flows.
 ///
 /// Follows the [ChangeNotifier] contract — call [dispose] when no longer needed
 /// if the controller is created externally.
 ///
 /// Example:
 /// ```dart
-/// final controller = ParticleBlobController();
+/// final controller = BlobController(
+///   radius: 180.0,
+///   pointSize: 2.5,
+///   particleCount: 6000,
+/// );
 /// // ...
-/// controller.setSpeed(2.0);
+/// controller.setRadius(200.0);
+/// controller.setPointSize(3.0);
+/// controller.setScale(1.5);
+/// controller.setCenterOffset(const Offset(20, -10));
 /// controller.setNoiseType(BlobNoiseType.spiky);
-/// controller.setIsColorAnimated(false); // Static color mode
-/// controller.setGradient(LinearGradient(...));
 /// // ...
 /// controller.dispose();
 /// ```
 class BlobController extends ChangeNotifier {
+  // ── Geometry & Topology ───────────────────────────────────────────────────
+  double _radius;
+  double _pointSize;
+  int _particleCount;
+  double _scale = 1.0;
+  double _minScale = 0.1;
+  double _maxScale = 10.0;
+  Offset _centerOffset = Offset.zero;
+  Alignment _alignment = Alignment.center;
+
+  // ── Dynamics & Noise ──────────────────────────────────────────────────────
   double _blobiness = 1.0;
   double _speed = 1.0;
   double _dispersion = 0.0;
@@ -28,22 +45,33 @@ class BlobController extends ChangeNotifier {
   double _noiseFrequency = 1.0;
   BlobNoiseType _noiseType = BlobNoiseType.harmonic;
   double _viewDistance = 2.0;
+
+  // ── Touch & Interaction ───────────────────────────────────────────────────
   double _tapScaleFactor = 1.0;
   double _touchRadiusFactor = 1.0;
+  bool _enableHover = false;
+  bool _enablePinchToScale = true;
+
+  // ── Color & Shaders ───────────────────────────────────────────────────────
   bool _isRainbowMode = false;
   bool _isColorAnimated = true;
   double _colorAnimationSpeed = 1.0;
   double _waveIntensity = 1.0;
-  bool _enableHover = false;
   Gradient? _gradient;
 
-  /// Accumulated manual rotation from drag gestures.
-  /// LOGIC-02: Managed with damping — decays in the animation ticker rather
-  /// than growing infinitely.
+  // ── Accumulated Drag Rotation ─────────────────────────────────────────────
   double _rotationX = 0.0;
   double _rotationY = 0.0;
 
   BlobController({
+    double radius = 150.0,
+    double pointSize = 2.0,
+    int particleCount = 5000,
+    double scale = 1.0,
+    double minScale = 0.1,
+    double maxScale = 10.0,
+    Offset centerOffset = Offset.zero,
+    Alignment alignment = Alignment.center,
     double dampingFactor = 0.92,
     double tapScaleFactor = 1.0,
     double touchRadiusFactor = 1.0,
@@ -51,27 +79,74 @@ class BlobController extends ChangeNotifier {
     double colorAnimationSpeed = 1.0,
     double waveIntensity = 1.0,
     bool enableHover = false,
+    bool enablePinchToScale = true,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
     Gradient? gradient,
-  }) : _dampingFactor = dampingFactor,
-       _tapScaleFactor = tapScaleFactor,
-       _touchRadiusFactor = touchRadiusFactor,
-       _isColorAnimated = isColorAnimated,
-       _colorAnimationSpeed = colorAnimationSpeed,
-       _waveIntensity = waveIntensity,
-       _enableHover = enableHover,
-       _noiseType = noiseType,
-       _gradient = gradient,
-       assert(dampingFactor >= 0.0 && dampingFactor <= 1.0,
+  })  : _radius = radius,
+        _pointSize = pointSize,
+        _particleCount = particleCount,
+        _scale = scale,
+        _minScale = minScale,
+        _maxScale = maxScale,
+        _centerOffset = centerOffset,
+        _alignment = alignment,
+        _dampingFactor = dampingFactor,
+        _tapScaleFactor = tapScaleFactor,
+        _touchRadiusFactor = touchRadiusFactor,
+        _isColorAnimated = isColorAnimated,
+        _colorAnimationSpeed = colorAnimationSpeed,
+        _waveIntensity = waveIntensity,
+        _enableHover = enableHover,
+        _enablePinchToScale = enablePinchToScale,
+        _noiseType = noiseType,
+        _gradient = gradient,
+        assert(radius > 0.0, 'radius must be greater than 0.0'),
+        assert(pointSize > 0.0, 'pointSize must be greater than 0.0'),
+        assert(particleCount > 0, 'particleCount must be greater than 0'),
+        assert(scale > 0.0, 'scale must be greater than 0.0'),
+        assert(minScale > 0.0 && minScale <= maxScale,
+            'minScale must be > 0.0 and <= maxScale'),
+        assert(dampingFactor >= 0.0 && dampingFactor <= 1.0,
             'dampingFactor must be between 0.0 and 1.0'),
-       assert(tapScaleFactor >= 0.0,
+        assert(tapScaleFactor >= 0.0,
             'tapScaleFactor must be greater than or equal to 0.0'),
-       assert(touchRadiusFactor >= 0.0,
+        assert(touchRadiusFactor >= 0.0,
             'touchRadiusFactor must be greater than or equal to 0.0'),
-       assert(colorAnimationSpeed >= 0.0,
+        assert(colorAnimationSpeed >= 0.0,
             'colorAnimationSpeed must be greater than or equal to 0.0'),
-       assert(waveIntensity >= 0.0,
+        assert(waveIntensity >= 0.0,
             'waveIntensity must be greater than or equal to 0.0');
+
+  // ── Geometry Getters ──────────────────────────────────────────────────────
+
+  /// Base sphere radius in logical pixels.
+  double get radius => _radius;
+
+  /// Rendered size of each particle point in logical pixels.
+  double get pointSize => _pointSize;
+
+  /// Total number of 3D particles distributed on the sphere.
+  int get particleCount => _particleCount;
+
+  /// Current zoom/scale multiplier applied to the blob radius. Default: 1.0.
+  double get scale => _scale;
+
+  /// Minimum allowable scale limit for pinch gestures and setters.
+  double get minScale => _minScale;
+
+  /// Maximum allowable scale limit for pinch gestures and setters.
+  double get maxScale => _maxScale;
+
+  /// Pixel offset translation applied to the center of the blob projection.
+  Offset get centerOffset => _centerOffset;
+
+  /// Alignment of the blob within its parent viewport box.
+  Alignment get alignment => _alignment;
+
+  /// Effective radius after scale factor is applied (`radius * scale`).
+  double get effectiveRadius => _radius * _scale;
+
+  // ── Dynamics & Physics Getters ────────────────────────────────────────────
 
   /// Noise amplitude: how much the sphere surface is displaced.
   /// 0.0 = perfect sphere, higher = more distorted.
@@ -91,25 +166,6 @@ class BlobController extends ChangeNotifier {
   /// Range: [0.1, 5.0]. Default: 1.0.
   double get touchRadiusFactor => _touchRadiusFactor;
 
-  /// Whether the color gradient cycles through a rainbow sequence.
-  bool get isRainbowMode => _isRainbowMode;
-
-  /// Whether the colors animate dynamically across the blob or stay static.
-  bool get isColorAnimated => _isColorAnimated;
-
-  /// Speed of color animation/wave motion. 0.0 = static/fixed colors.
-  double get colorAnimationSpeed => _colorAnimationSpeed;
-
-  /// Wave distortion intensity applied to the color gradient.
-  /// 0.0 = clean geometric gradient, 1.0 = liquid/organic wave shimmer.
-  double get waveIntensity => _waveIntensity;
-
-  /// Whether particle dispersion and interaction triggers on mouse hover without clicking.
-  bool get enableHover => _enableHover;
-
-  /// Optional runtime gradient override.
-  Gradient? get gradient => _gradient;
-
   /// Damping factor applied each frame: 1.0 = no decay, 0.0 = instant stop.
   /// Range: [0.0, 1.0].
   double get dampingFactor => _dampingFactor;
@@ -126,11 +182,129 @@ class BlobController extends ChangeNotifier {
   /// Perspective/3D depth camera distance.
   double get viewDistance => _viewDistance;
 
+  /// Whether hover interaction is enabled on mouse movement without clicking.
+  bool get enableHover => _enableHover;
+
+  /// Whether pinch-to-scale two-finger zoom interaction is enabled.
+  bool get enablePinchToScale => _enablePinchToScale;
+
+  // ── Color & Shader Getters ────────────────────────────────────────────────
+
+  /// Whether the color gradient cycles through a rainbow sequence.
+  bool get isRainbowMode => _isRainbowMode;
+
+  /// Whether the colors animate dynamically across the blob or stay static.
+  bool get isColorAnimated => _isColorAnimated;
+
+  /// Speed of color animation/wave motion. 0.0 = static/fixed colors.
+  double get colorAnimationSpeed => _colorAnimationSpeed;
+
+  /// Wave distortion intensity applied to the color gradient.
+  /// 0.0 = clean geometric gradient, 1.0 = liquid/organic wave shimmer.
+  double get waveIntensity => _waveIntensity;
+
+  /// Optional runtime gradient override.
+  Gradient? get gradient => _gradient;
+
   /// Current accumulated X-axis rotation (from drag, with damping applied).
   double get rotationX => _rotationX;
 
   /// Current accumulated Y-axis rotation (from drag, with damping applied).
   double get rotationY => _rotationY;
+
+  // ── Geometry Setters ──────────────────────────────────────────────────────
+
+  /// Dynamically sets the sphere radius. Clamped to [1.0, 5000.0].
+  void setRadius(double value) {
+    final clamped = value.clamp(1.0, 5000.0);
+    if (_radius != clamped) {
+      _radius = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically sets the point size of rendered particles. Clamped to [0.1, 100.0].
+  void setPointSize(double value) {
+    final clamped = value.clamp(0.1, 100.0);
+    if (_pointSize != clamped) {
+      _pointSize = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically sets the particle count. Clamped to [10, 100000].
+  /// This will trigger buffer reallocation and worker restart in the widget.
+  void setParticleCount(int value) {
+    final clamped = value.clamp(10, 100000);
+    if (_particleCount != clamped) {
+      _particleCount = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically sets the scale multiplier. Clamped within `[minScale, maxScale]`.
+  void setScale(double value) {
+    final clamped = value.clamp(_minScale, _maxScale);
+    if (_scale != clamped) {
+      _scale = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Configures the minimum and maximum allowable scale limits.
+  void setScaleLimits({double? minScale, double? maxScale}) {
+    bool changed = false;
+    if (minScale != null && minScale > 0.0 && minScale != _minScale) {
+      _minScale = minScale;
+      changed = true;
+    }
+    if (maxScale != null && maxScale >= _minScale && maxScale != _maxScale) {
+      _maxScale = maxScale;
+      changed = true;
+    }
+    if (changed) {
+      _scale = _scale.clamp(_minScale, _maxScale);
+      notifyListeners();
+    }
+  }
+
+  /// Applies a relative scale factor multiplier (useful for pinch gestures).
+  void applyScaleFactor(double factor) {
+    if (factor <= 0.0) return;
+    setScale(_scale * factor);
+  }
+
+  /// Zooms in by the given step amount (default +0.1).
+  void zoomIn([double step = 0.1]) => setScale(_scale + step);
+
+  /// Zooms out by the given step amount (default -0.1).
+  void zoomOut([double step = 0.1]) => setScale(_scale - step);
+
+  /// Dynamically sets the center pixel offset translation.
+  void setCenterOffset(Offset value) {
+    if (_centerOffset != value) {
+      _centerOffset = value;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically sets the viewport alignment.
+  void setAlignment(Alignment value) {
+    if (_alignment != value) {
+      _alignment = value;
+      notifyListeners();
+    }
+  }
+
+  /// Enables or disables pinch-to-scale gesture handling.
+  void setEnablePinchToScale(bool value) {
+    if (_enablePinchToScale != value) {
+      _enablePinchToScale = value;
+      notifyListeners();
+    }
+  }
+
+  // ── Dynamics & Physics Setters ────────────────────────────────────────────
 
   /// Sets the noise amplitude. Clamped to [0.0, 5.0].
   void setBlobiness(double value) {
@@ -274,6 +448,8 @@ class BlobController extends ChangeNotifier {
   /// Alias for [setEnableHover].
   void setIsHoverEnabled(bool value) => setEnableHover(value);
 
+  // ── Drag Rotation & Damping ───────────────────────────────────────────────
+
   /// Adds an angular velocity impulse from a drag gesture.
   /// Delta is in screen pixels — sensitivity is applied internally.
   void addRotationImpulse(Offset delta) {
@@ -296,6 +472,8 @@ class BlobController extends ChangeNotifier {
     return _rotationX != 0.0 || _rotationY != 0.0;
   }
 
+  // ── Resets ────────────────────────────────────────────────────────────────
+
   /// Resets accumulated rotation to zero immediately.
   void resetRotation() {
     if (_rotationX != 0.0 || _rotationY != 0.0) {
@@ -303,5 +481,53 @@ class BlobController extends ChangeNotifier {
       _rotationY = 0.0;
       notifyListeners();
     }
+  }
+
+  /// Resets scale factor back to 1.0.
+  void resetScale() => setScale(1.0);
+
+  /// Resets center offset translation back to [Offset.zero].
+  void resetCenterOffset() => setCenterOffset(Offset.zero);
+
+  /// Resets scale, center offset, and rotation.
+  void resetGeometry() {
+    bool changed = false;
+    if (_scale != 1.0) {
+      _scale = 1.0;
+      changed = true;
+    }
+    if (_centerOffset != Offset.zero) {
+      _centerOffset = Offset.zero;
+      changed = true;
+    }
+    if (_rotationX != 0.0 || _rotationY != 0.0) {
+      _rotationX = 0.0;
+      _rotationY = 0.0;
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
+  /// Resets all transform properties (rotation, scale, centerOffset, dispersion).
+  void resetAll() {
+    bool changed = false;
+    if (_scale != 1.0) {
+      _scale = 1.0;
+      changed = true;
+    }
+    if (_centerOffset != Offset.zero) {
+      _centerOffset = Offset.zero;
+      changed = true;
+    }
+    if (_rotationX != 0.0 || _rotationY != 0.0) {
+      _rotationX = 0.0;
+      _rotationY = 0.0;
+      changed = true;
+    }
+    if (_dispersion != 0.0) {
+      _dispersion = 0.0;
+      changed = true;
+    }
+    if (changed) notifyListeners();
   }
 }
