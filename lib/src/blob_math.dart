@@ -265,6 +265,9 @@ class BlobMath {
   static void projectParticles({
     required int count,
     required double radius,
+    double scale = 1.0,
+    double centerOffsetX = 0.0,
+    double centerOffsetY = 0.0,
     required double blobiness,
     required double dispersion,
     required double rotationX,
@@ -281,25 +284,27 @@ class BlobMath {
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
     double touchRadiusFactor = 1.0,
   }) {
-    final double centerX = viewportWidth  / 2.0;
-    final double centerY = viewportHeight / 2.0;
+    final double centerX = (viewportWidth / 2.0) + centerOffsetX;
+    final double centerY = (viewportHeight / 2.0) + centerOffsetY;
+    final double effectiveRadius = radius * scale;
 
     // Auto-rotation angle derived from time and autoRotationSpeed
-    final double autoRotY  = time * autoRotationSpeed;
+    final double autoRotY = time * autoRotationSpeed;
     final double totalRotY = autoRotY + rotationY;
-    final double cosRotY   = cos(totalRotY);
-    final double sinRotY   = sin(totalRotY);
-    final double cosRotX   = cos(rotationX);
-    final double sinRotX   = sin(rotationX);
+    final double cosRotY = cos(totalRotY);
+    final double sinRotY = sin(totalRotY);
+    final double cosRotX = cos(rotationX);
+    final double sinRotX = sin(rotationX);
 
     // Precalculate time constant for noise functions
     final double time15 = time * 1.5;
     final double f = noiseFrequency;
 
     // Cache variables for touch interaction
-    final bool   hasPointers = activeTouches.isNotEmpty;
-    final int    touchCount  = activeTouches.length;
-    final double effectiveTouchRadius = radius * 2.0 * touchRadiusFactor;
+    final bool hasPointers = activeTouches.isNotEmpty;
+    final int touchCount = activeTouches.length;
+    final double effectiveTouchRadius =
+        effectiveRadius * 2.0 * touchRadiusFactor;
 
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
     final _NoiseFunc noise = _selectNoise(noiseType);
@@ -312,7 +317,8 @@ class BlobMath {
       double pz = baseSphere[base + 2];
 
       // Apply procedural noise displacement via the pre-selected function
-      final double displacement = noise(px, py, pz, f, time, time15, blobiness);
+      final double displacement =
+          noise(px, py, pz, f, time, time15, blobiness);
       px *= displacement;
       py *= displacement;
       pz *= displacement;
@@ -328,8 +334,8 @@ class BlobMath {
       final double rz = zAfterX;
 
       // Perspective projection with clamped Z denominator
-      final double safeZ     = (viewDistance + rz).clamp(0.1, 10.0);
-      final double baseScale = radius / safeZ;
+      final double safeZ = (viewDistance + rz).clamp(0.1, 10.0);
+      final double baseScale = effectiveRadius / safeZ;
 
       // Projected screen coordinates before dispersion
       final double screenX = centerX + rx * baseScale * 2.0;
@@ -339,10 +345,10 @@ class BlobMath {
       double extraPush = 0.0;
       if (hasPointers) {
         for (int t = 0; t < touchCount; t++) {
-          final Offset touch    = activeTouches[t];
-          final double dx       = screenX - touch.dx;
-          final double dy       = screenY - touch.dy;
-          final double dist     = sqrt(dx * dx + dy * dy);
+          final Offset touch = activeTouches[t];
+          final double dx = screenX - touch.dx;
+          final double dy = screenY - touch.dy;
+          final double dist = sqrt(dx * dx + dy * dy);
           final double influence =
               (1.0 - (dist / effectiveTouchRadius).clamp(0.0, 1.0));
           extraPush += dispersion * influence * 2.0;
@@ -358,7 +364,7 @@ class BlobMath {
       ry *= pushScale;
 
       final int outIndex = i * 2;
-      projectedPoints[outIndex]     = centerX + rx * baseScale * 2.0;
+      projectedPoints[outIndex] = centerX + rx * baseScale * 2.0;
       projectedPoints[outIndex + 1] = centerY + ry * baseScale * 2.0;
     }
   }
