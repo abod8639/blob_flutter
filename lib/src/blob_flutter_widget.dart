@@ -17,7 +17,7 @@ import 'blob_worker.dart';
 /// A high-performance Flutter widget that renders an animated 3D particle blob.
 ///
 /// Particles are distributed uniformly on a 3D sphere via the Fibonacci lattice
-/// algorithm and deformed over time using fast sine-wave noise. The result is
+/// algorithm and deformed over time using procedural noise algorithms. The result is
 /// projected to 2D via perspective division and rendered in a single GPU draw
 /// call using [Canvas.drawRawPoints].
 ///
@@ -25,29 +25,17 @@ import 'blob_worker.dart';
 /// Garbage Collection pressure. A [ui.FragmentShader] handles per-pixel
 /// coloring on the GPU.
 ///
-/// ## Interaction
-/// - **Drag**: Rotates the blob. Rotation decays naturally with inertia.
+/// ## Interaction & Physics
+/// - **Drag**: Rotates the blob with realistic inertial damping.
+/// - **Pinch-to-Scale**: Multi-touch zoom in/out (configurable via [BlobController.enablePinchToScale]).
 /// - **Tap & Hold**: Disperses the particles radially outward.
-/// - **Mouse Hover** (desktop/web): Applies a subtle rotation following the cursor.
+/// - **Mouse Hover** (desktop/web): Tracks cursor and applies subtle rotation/dispersion.
 ///
-/// ## Color & Gradient Control
-/// Supports [LinearGradient], [RadialGradient], and [SweepGradient] with:
-/// - Exact coordinate/alignment positioning ([LinearGradient.begin], [LinearGradient.end], etc.)
-/// - Up to 4 distinct color stops
-/// - Static mode ([isColorAnimated] = `false` or [colorAnimationSpeed] = `0.0`) for fixed color positions
-/// - Dynamic mode with customizable [colorAnimationSpeed] and [waveIntensity]
-///
-/// ## Performance Notes
-/// - Uses [ValueNotifier] + [ValueListenableBuilder] so only [CustomPaint]
-///   rebuilds per frame, not the entire widget subtree. (BUG-05 fix)
-/// - Uses actual ticker delta time for device-rate-independent animation. (ARCH-02 fix)
-/// - On native platforms, particle math is offloaded to a persistent background
-///   [Isolate] so the UI thread stays free. On Flutter Web the same computation
-///   runs synchronously (Web has no Isolate.spawn support).
-/// - Shader uniforms are split into "static" (pushed only on change) and
-///   "dynamic" (only uTime pushed every frame) to minimise Dart→GPU round-trips.
-/// - Rainbow-mode colour list is pre-allocated; no heap allocation per frame.
-/// - Touch transformation results are cached and recomputed only when positions change.
+/// ## Full Runtime Control via [BlobController]
+/// All geometric properties ([radius], [pointSize], [particleCount], [scale], [centerOffset], [alignment]),
+/// physics ([speed], [blobiness], [dispersion], [dampingFactor]), noise modes ([noiseType]),
+/// and shaders ([gradient], [isRainbowMode]) can be controlled dynamically at runtime
+/// without rebuilding the widget tree.
 class BlobFlutter extends StatefulWidget {
   /// Total number of particles. Default: 5000.
   final int particleCount;
@@ -110,6 +98,8 @@ class BlobFlutter extends StatefulWidget {
     this.enableHover = false,
     this.noiseType = BlobNoiseType.harmonic,
   })  : assert(particleCount > 0, 'particleCount must be greater than 0'),
+        assert(radius > 0.0, 'radius must be greater than 0.0'),
+        assert(pointSize > 0.0, 'pointSize must be greater than 0.0'),
         assert(tapScaleFactor >= 0.0,
             'tapScaleFactor must be greater than or equal to 0.0'),
         assert(touchRadiusFactor >= 0.0,
@@ -141,6 +131,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   late BlobController _controller;
   bool _ownsController = false;
+  int _lastParticleCount = 5000;
 
   // ── Particle Data & Touch Manager ──────────────────────────────────────────
 
@@ -151,7 +142,6 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   // ── Shader & Dirty Tracking ────────────────────────────────────────────────
 
-  // ui.FragmentProgram? _program;
   ui.FragmentShader? _shader;
 
   bool _shaderStaticDirty = true;
@@ -211,6 +201,9 @@ class _ParticleBlobState extends State<BlobFlutter>
     _ownsController = widget.controller == null;
     _controller = widget.controller ??
         BlobController(
+          radius: widget.radius,
+          pointSize: widget.pointSize,
+          particleCount: widget.particleCount,
           tapScaleFactor: widget.tapScaleFactor,
           touchRadiusFactor: widget.touchRadiusFactor,
           isColorAnimated: widget.isColorAnimated,
@@ -221,27 +214,41 @@ class _ParticleBlobState extends State<BlobFlutter>
           gradient: widget.gradient,
         );
 
-    _generateBuffers(widget.particleCount);
+    _lastParticleCount = _controller.particleCount;
+    _controller.addListener(_onControllerChanged);
+
+    _generateBuffers(_lastParticleCount);
     _loadShader();
     _startWorker();
 
     _ticker = createTicker(_onTick)..start();
   }
 
+  void _onControllerChanged() {
+    if (_controller.particleCount != _lastParticleCount) {
+      _lastParticleCount = _controller.particleCount;
+      _generateBuffers(_lastParticleCount);
+      _restartWorker();
+    }
+  }
+
   @override
   void didUpdateWidget(BlobFlutter oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.particleCount != widget.particleCount) {
-      _generateBuffers(widget.particleCount);
-      _restartWorker();
+    if (oldWidget.particleCount != widget.particleCount && _ownsController) {
+      _controller.setParticleCount(widget.particleCount);
     }
 
     if (oldWidget.controller != widget.controller) {
+      _controller.removeListener(_onControllerChanged);
       if (_ownsController) _controller.dispose();
       _ownsController = widget.controller == null;
       _controller = widget.controller ??
           BlobController(
+            radius: widget.radius,
+            pointSize: widget.pointSize,
+            particleCount: widget.particleCount,
             tapScaleFactor: widget.tapScaleFactor,
             touchRadiusFactor: widget.touchRadiusFactor,
             isColorAnimated: widget.isColorAnimated,
@@ -251,10 +258,20 @@ class _ParticleBlobState extends State<BlobFlutter>
             noiseType: widget.noiseType,
             gradient: widget.gradient,
           );
+      _lastParticleCount = _controller.particleCount;
+      _controller.addListener(_onControllerChanged);
+      _generateBuffers(_lastParticleCount);
+      _restartWorker();
       _shaderStaticDirty = true;
       _shaderColorsDirty = true;
     } else if (_ownsController) {
       bool staticChanged = false;
+      if (oldWidget.radius != widget.radius) {
+        _controller.setRadius(widget.radius);
+      }
+      if (oldWidget.pointSize != widget.pointSize) {
+        _controller.setPointSize(widget.pointSize);
+      }
       if (oldWidget.tapScaleFactor != widget.tapScaleFactor) {
         _controller.setTapScaleFactor(widget.tapScaleFactor);
       }
@@ -290,6 +307,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerChanged);
     _ticker.dispose();
     _frameNotifier.dispose();
     _shader?.dispose();
@@ -309,7 +327,6 @@ class _ParticleBlobState extends State<BlobFlutter>
     final program = await BlobShaderHelper.loadProgram();
     if (program != null && mounted) {
       setState(() {
-        // _program = program;
         _shader = program.fragmentShader();
         _shaderStaticDirty = true;
         _shaderColorsDirty = true;
@@ -320,7 +337,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   void _startWorker() {
     final w = BlobWorker();
     _worker = w;
-    w.init(_baseSphere, widget.particleCount).then((_) {
+    w.init(_baseSphere, _controller.particleCount).then((_) {
       if (mounted && _worker == w) {
         _workerReady = true;
       }
@@ -353,9 +370,17 @@ class _ParticleBlobState extends State<BlobFlutter>
       _worker!.compute(_buildWorkerParams()).then(_onParticlesReady);
     } else if (!_workerReady) {
       _touchManager.updateLocalTouches(context);
+      final double alignOffsetX =
+          _controller.alignment.x * (_cachedSize.width / 2.0);
+      final double alignOffsetY =
+          _controller.alignment.y * (_cachedSize.height / 2.0);
+
       BlobMath.projectParticles(
-        count: widget.particleCount,
-        radius: widget.radius,
+        count: _controller.particleCount,
+        radius: _controller.radius,
+        scale: _controller.scale,
+        centerOffsetX: _controller.centerOffset.dx + alignOffsetX,
+        centerOffsetY: _controller.centerOffset.dy + alignOffsetY,
         blobiness: _controller.blobiness,
         dispersion: _controller.dispersion,
         rotationX: _controller.rotationX,
@@ -393,9 +418,17 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   ProjectParamsFlat _buildWorkerParams() {
     _touchManager.updateLocalTouches(context);
+    final double alignOffsetX =
+        _controller.alignment.x * (_cachedSize.width / 2.0);
+    final double alignOffsetY =
+        _controller.alignment.y * (_cachedSize.height / 2.0);
+
     return ProjectParamsFlat(
-      count: widget.particleCount,
-      radius: widget.radius,
+      count: _controller.particleCount,
+      radius: _controller.radius,
+      scale: _controller.scale,
+      centerOffsetX: _controller.centerOffset.dx + alignOffsetX,
+      centerOffsetY: _controller.centerOffset.dy + alignOffsetY,
       blobiness: _controller.blobiness,
       dispersion: _controller.dispersion,
       rotationX: _controller.rotationX,
@@ -464,10 +497,10 @@ class _ParticleBlobState extends State<BlobFlutter>
       builder: (context, constraints) {
         final double width = constraints.hasBoundedWidth
             ? constraints.maxWidth
-            : widget.radius * 2.0;
+            : _controller.radius * 2.0;
         final double height = constraints.hasBoundedHeight
             ? constraints.maxHeight
-            : widget.radius * 2.0;
+            : _controller.radius * 2.0;
 
         final newSize = Size(width, height);
         if (newSize != _cachedSize) {
@@ -493,7 +526,7 @@ class _ParticleBlobState extends State<BlobFlutter>
                       positions: _projectedPoints,
                       generation: frame,
                       shader: _shader,
-                      pointSize: widget.pointSize,
+                      pointSize: _controller.pointSize,
                       fallbackColor: _color1,
                     ),
                     size: Size.infinite,
