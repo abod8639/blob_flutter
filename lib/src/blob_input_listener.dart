@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'blob_controller.dart';
 
 /// A widget that handles all multi-touch inputs, panning/drag interactions,
-/// and mouse hover effects for the [ParticleBlob].
+/// pinch-to-scale zooming, and mouse hover effects for [BlobFlutter].
 ///
 /// It isolates gesture tracking and pointer state management from the main
 /// particle rendering and lifecycle logic.
@@ -28,12 +28,14 @@ class BlobInputListener extends StatefulWidget {
 class _BlobInputListenerState extends State<BlobInputListener> {
   final Map<int, Offset> _touchPoints = {};
   Offset? _hoverPosition;
+  double _baseScale = 1.0;
 
-  bool get _isHoverEffective => widget.enableHover || widget.controller.enableHover;
+  bool get _isHoverEffective =>
+      widget.enableHover || widget.controller.enableHover;
 
   void _updateTouchState(PointerEvent event, bool isDown) {
     if (isDown) {
-      _touchPoints[event.pointer] = event.position; // Store global position to handle moving blobs
+      _touchPoints[event.pointer] = event.position;
     } else {
       _touchPoints.remove(event.pointer);
     }
@@ -72,6 +74,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
+      opaque: true,
       onHover: (event) {
         if (_touchPoints.isEmpty) {
           // Phase-3 throttle: suppress notifyListeners for micro-movements
@@ -93,14 +96,25 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         }
       },
       child: Listener(
+        behavior: HitTestBehavior.opaque,
         onPointerDown: (event) => _updateTouchState(event, true),
         onPointerMove: (event) => _updateTouchState(event, true),
         onPointerUp: (event) => _updateTouchState(event, false),
         onPointerCancel: (event) => _updateTouchState(event, false),
         child: GestureDetector(
-          onPanUpdate: (details) {
-            // Drag: rotation impulse with inertia
-            widget.controller.addRotationImpulse(details.delta);
+          behavior: HitTestBehavior.opaque,
+          onScaleStart: (details) {
+            _baseScale = widget.controller.scale;
+          },
+          onScaleUpdate: (details) {
+            if (details.pointerCount > 1 &&
+                widget.controller.enablePinchToScale &&
+                details.scale != 1.0) {
+              widget.controller.setScale(_baseScale * details.scale);
+            } else {
+              // Drag / pan rotation impulse
+              widget.controller.addRotationImpulse(details.focalPointDelta);
+            }
           },
           child: widget.child,
         ),
