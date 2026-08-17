@@ -811,7 +811,7 @@ class _DashboardPageState extends State<DashboardPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'تفاعل تحويم الماوس (Mouse Hover)',
+                        'Mouse Hover Interaction',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -819,7 +819,7 @@ class _DashboardPageState extends State<DashboardPage>
                         ),
                       ),
                       Text(
-                        'تفعيل التفاعل بمجرد مرّور المؤشر دون النقر',
+                        'Enable interaction just by passing the cursor without clicking',
                         style: TextStyle(
                           color: Colors.white54,
                           fontSize: 10,
