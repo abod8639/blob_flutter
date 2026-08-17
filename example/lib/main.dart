@@ -66,7 +66,8 @@ class _DashboardPageState extends State<DashboardPage>
   final bool _isColorAnimated = true;
   final double _colorAnimationSpeed = 1.0;
   final double _waveIntensity = 1.0;
-  final int _alignmentIndex = 0; // 0: Top-Bottom, 1: Left-Right, 2: Diagonal, 3: Radial, 4: Sweep
+  final int _alignmentIndex =
+      0; // 0: Top-Bottom, 1: Left-Right, 2: Diagonal, 3: Radial, 4: Sweep
   bool _isRainbowMode = false;
 
   // UI Control Panel State
@@ -89,12 +90,18 @@ class _DashboardPageState extends State<DashboardPage>
   ];
 
   final List<_ThemePreset> _themes = [
-    const _ThemePreset('CYBERPUNK', Colors.blueAccent, Colors.purpleAccent, Colors.pinkAccent),
-    const _ThemePreset('NEON MATRIX', Colors.greenAccent, Colors.teal, Colors.cyanAccent),
-    const _ThemePreset('SOLAR FLARE', Colors.orangeAccent, Colors.redAccent, Colors.amberAccent),
-    const _ThemePreset('DEEP SPACE', Colors.cyanAccent, Colors.indigoAccent, Colors.blueAccent),
-    const _ThemePreset('PLASMA CORE', Colors.purpleAccent, Colors.pinkAccent, Colors.deepOrangeAccent),
-    const _ThemePreset('AURORA', Colors.tealAccent, Colors.indigoAccent, Colors.purpleAccent),
+    const _ThemePreset(
+        'CYBERPUNK', Colors.blueAccent, Colors.purpleAccent, Colors.pinkAccent),
+    const _ThemePreset(
+        'NEON MATRIX', Colors.greenAccent, Colors.teal, Colors.cyanAccent),
+    const _ThemePreset('SOLAR FLARE', Colors.orangeAccent, Colors.redAccent,
+        Colors.amberAccent),
+    const _ThemePreset('DEEP SPACE', Colors.cyanAccent, Colors.indigoAccent,
+        Colors.blueAccent),
+    const _ThemePreset('PLASMA CORE', Colors.purpleAccent, Colors.pinkAccent,
+        Colors.deepOrangeAccent),
+    const _ThemePreset(
+        'AURORA', Colors.tealAccent, Colors.indigoAccent, Colors.purpleAccent),
   ];
 
   @override
@@ -137,7 +144,8 @@ class _DashboardPageState extends State<DashboardPage>
   }
 
   Gradient _buildCurrentGradient() {
-    final colors = _useThreeColors ? [_color1, _color2, _color3] : [_color1, _color2];
+    final colors =
+        _useThreeColors ? [_color1, _color2, _color3] : [_color1, _color2];
 
     switch (_alignmentIndex) {
       case 0:
@@ -230,13 +238,20 @@ class _DashboardPageState extends State<DashboardPage>
 
   String _getNoiseName(BlobNoiseType type) {
     switch (type) {
-      case BlobNoiseType.harmonic: return 'موجات توافقية (Harmonic)';
-      case BlobNoiseType.spiky: return 'أشواك وكريستال (Spiky)';
-      case BlobNoiseType.fractal: return 'تلاطم كسوري (Fractal)';
-      case BlobNoiseType.cellular: return 'حويصلات خلوية (Cellular)';
-      case BlobNoiseType.vortex: return 'دوامة مجرية (Vortex)';
-      case BlobNoiseType.sphericalHarmonics: return 'مدارات كروية (Cymatics)';
-      case BlobNoiseType.simplex: return 'تدفق سمبلكس (Simplex)';
+      case BlobNoiseType.harmonic:
+        return 'موجات توافقية (Harmonic)';
+      case BlobNoiseType.spiky:
+        return 'أشواك وكريستال (Spiky)';
+      case BlobNoiseType.fractal:
+        return 'تلاطم كسوري (Fractal)';
+      case BlobNoiseType.cellular:
+        return 'حويصلات خلوية (Cellular)';
+      case BlobNoiseType.vortex:
+        return 'دوامة مجرية (Vortex)';
+      case BlobNoiseType.sphericalHarmonics:
+        return 'مدارات كروية (Cymatics)';
+      case BlobNoiseType.simplex:
+        return 'تدفق سمبلكس (Simplex)';
     }
   }
 
@@ -287,7 +302,8 @@ class _DashboardPageState extends State<DashboardPage>
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -299,9 +315,12 @@ class _DashboardPageState extends State<DashboardPage>
                           decoration: BoxDecoration(
                             color: Colors.cyanAccent.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.4)),
+                            border: Border.all(
+                                color:
+                                    Colors.cyanAccent.withValues(alpha: 0.4)),
                           ),
-                          child: const Icon(Icons.blur_on, color: Colors.cyanAccent, size: 20),
+                          child: const Icon(Icons.blur_on,
+                              color: Colors.cyanAccent, size: 20),
                         ),
                         const SizedBox(width: 10),
                         Column(
@@ -332,16 +351,21 @@ class _DashboardPageState extends State<DashboardPage>
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.restart_alt, color: Colors.white70),
+                          icon: const Icon(Icons.restart_alt,
+                              color: Colors.white70),
                           tooltip: 'إعادة ضبط الدوران',
                           onPressed: () => _blobController.resetRotation(),
                         ),
                         IconButton(
                           icon: Icon(
-                            _isPanelExpanded ? Icons.visibility_off_outlined : Icons.tune_rounded,
+                            _isPanelExpanded
+                                ? Icons.visibility_off_outlined
+                                : Icons.tune_rounded,
                             color: Colors.cyanAccent,
                           ),
-                          tooltip: _isPanelExpanded ? 'إخفاء لوحة التحكم' : 'إظهار لوحة التحكم',
+                          tooltip: _isPanelExpanded
+                              ? 'إخفاء لوحة التحكم'
+                              : 'إظهار لوحة التحكم',
                           onPressed: () {
                             setState(() {
                               _isPanelExpanded = !_isPanelExpanded;
@@ -380,9 +404,11 @@ class _DashboardPageState extends State<DashboardPage>
                       label: Text(
                         _getNoiseShortName(type),
                         style: TextStyle(
-                          color: isSelected ? Colors.cyanAccent : Colors.white70,
+                          color:
+                              isSelected ? Colors.cyanAccent : Colors.white70,
                           fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                       onPressed: () {
@@ -398,30 +424,25 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           ),
 
-          // Floating Collapsible Control Panel (Bottom/Side)
+          // Floating Collapsible Control Panel (Bottom)
           Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: SafeArea(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 450),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, anim) => SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.2),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: FadeTransition(opacity: anim, child: child),
-                    ),
-                    child: _isPanelExpanded
-                        ? _buildExpandedControlPanel()
-                        : _buildCollapsedPillButton(),
-                  ),
+              bottom: true,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, anim) => SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.2),
+                    end: Offset.zero,
+                  ).animate(anim),
+                  child: FadeTransition(opacity: anim, child: child),
                 ),
+                child: _isPanelExpanded
+                    ? _buildExpandedControlPanel()
+                    : _buildCollapsedPillButton(),
               ),
             ),
           ),
@@ -432,71 +453,87 @@ class _DashboardPageState extends State<DashboardPage>
 
   String _getNoiseShortName(BlobNoiseType type) {
     switch (type) {
-      case BlobNoiseType.harmonic: return 'موجات (Harmonic)';
-      case BlobNoiseType.spiky: return 'أشواك (Spiky)';
-      case BlobNoiseType.fractal: return 'كسوري (Fractal)';
-      case BlobNoiseType.cellular: return 'خلوي (Cellular)';
-      case BlobNoiseType.vortex: return 'دوامة (Vortex)';
-      case BlobNoiseType.sphericalHarmonics: return 'مدارات (Cymatics)';
-      case BlobNoiseType.simplex: return 'سمبلكس (Simplex)';
+      case BlobNoiseType.harmonic:
+        return 'موجات (Harmonic)';
+      case BlobNoiseType.spiky:
+        return 'أشواك (Spiky)';
+      case BlobNoiseType.fractal:
+        return 'كسوري (Fractal)';
+      case BlobNoiseType.cellular:
+        return 'خلوي (Cellular)';
+      case BlobNoiseType.vortex:
+        return 'دوامة (Vortex)';
+      case BlobNoiseType.sphericalHarmonics:
+        return 'مدارات (Cymatics)';
+      case BlobNoiseType.simplex:
+        return 'سمبلكس (Simplex)';
     }
   }
 
   // Small floating pill button shown when control panel is collapsed
   Widget _buildCollapsedPillButton() {
-    return Center(
-      key: const ValueKey('collapsed_pill'),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Material(
-            color: const Color(0xFF070A12).withValues(alpha: 0.75),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-              side: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.6), width: 1.5),
-            ),
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _isPanelExpanded = true;
-                });
-              },
-              borderRadius: BorderRadius.circular(30),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.memory, color: Colors.cyanAccent, size: 20),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'HUD TERMINAL',
-                      style: TextStyle(
-                        color: Colors.cyanAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.cyanAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        _getNoiseShortName(_noiseType),
-                        style: const TextStyle(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Center(
+        key: const ValueKey('collapsed_pill'),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Material(
+              color: const Color(0xFF070A12).withValues(alpha: 0.75),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: BorderSide(
+                    color: Colors.cyanAccent.withValues(alpha: 0.6),
+                    width: 1.5),
+              ),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _isPanelExpanded = true;
+                  });
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.memory,
+                          color: Colors.cyanAccent, size: 20),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'HUD TERMINAL',
+                        style: TextStyle(
                           color: Colors.cyanAccent,
-                          fontSize: 10,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.cyanAccent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          _getNoiseShortName(_noiseType),
+                          style: const TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -508,113 +545,119 @@ class _DashboardPageState extends State<DashboardPage>
 
   // Glassmorphic Collapsible Control Panel with Sci-Fi HUD style
   Widget _buildExpandedControlPanel() {
-    return ClipRRect(
-      key: const ValueKey('expanded_panel'),
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(24),
-        topRight: Radius.circular(24),
-        bottomLeft: Radius.circular(12),
-        bottomRight: Radius.circular(12),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(0),
-          decoration: BoxDecoration(
-            color: const Color(0xFF070A12).withValues(alpha: 0.65),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-              bottomLeft: Radius.circular(12),
-              bottomRight: Radius.circular(12),
-            ),
-            border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.cyanAccent.withValues(alpha: 0.15),
-                blurRadius: 30,
-                spreadRadius: -5,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
+    return SizedBox(
+        width: double.infinity,
+        child: ClipRRect(
+          key: const ValueKey('expanded_panel'),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header of panel with Title and Collapse Button
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.cyanAccent.withValues(alpha: 0.2),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  border: Border(
-                    bottom: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.2), width: 1),
-                  ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(0),
+              decoration: BoxDecoration(
+                color: const Color(0xFF070A12).withValues(alpha: 0.65),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
+                border: Border.all(
+                    color: Colors.cyanAccent.withValues(alpha: 0.3),
+                    width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.cyanAccent.withValues(alpha: 0.15),
+                    blurRadius: 30,
+                    spreadRadius: -5,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header of panel with Title and Collapse Button
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.cyanAccent.withValues(alpha: 0.2),
+                          Colors.transparent,
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                            color: Colors.cyanAccent.withValues(alpha: 0.2),
+                            width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.memory, color: Colors.cyanAccent, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'HUD CONTROL TERMINAL',
-                          style: TextStyle(
-                            color: Colors.cyanAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
+                        const Row(
+                          children: [
+                            Icon(Icons.memory,
+                                color: Colors.cyanAccent, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'HUD CONTROL TERMINAL',
+                              style: TextStyle(
+                                color: Colors.cyanAccent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              color: Colors.cyanAccent, size: 24),
+                          tooltip: 'طي لوحة التحكم',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            setState(() {
+                              _isPanelExpanded = false;
+                            });
+                          },
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.cyanAccent, size: 24),
-                      tooltip: 'طي لوحة التحكم',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        setState(() {
-                          _isPanelExpanded = false;
-                        });
-                      },
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                    child: _buildTabBar(),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Divider(color: Colors.white12, height: 16),
+                  ),
+
+                  // Tab Content Area
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: _buildTabContent(),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                child: _buildTabBar(),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Divider(color: Colors.white12, height: 16),
-              ),
-
-              // Tab Content Area
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 220),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: _buildTabContent(),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 
   Widget _buildTabBar() {
@@ -947,8 +990,10 @@ class _DashboardPageState extends State<DashboardPage>
                       });
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: isCurrent
                             ? Colors.cyanAccent.withValues(alpha: 0.15)
@@ -1047,14 +1092,17 @@ class _DashboardPageState extends State<DashboardPage>
                       });
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 4),
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _color1 == color ? Colors.white : Colors.transparent,
+                          color: _color1 == color
+                              ? Colors.white
+                              : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -1087,14 +1135,17 @@ class _DashboardPageState extends State<DashboardPage>
                       });
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 4),
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _color2 == color ? Colors.white : Colors.transparent,
+                          color: _color2 == color
+                              ? Colors.white
+                              : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -1126,7 +1177,9 @@ class _DashboardPageState extends State<DashboardPage>
               : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? Colors.cyanAccent : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? Colors.cyanAccent
+                : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
