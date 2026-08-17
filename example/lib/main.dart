@@ -784,7 +784,7 @@ class _DashboardPageState extends State<DashboardPage>
 
             // Radial Dispersion Slider
             _buildSlider(
-              label: 'شدة التشتت الإشعاعي (Radial Dispersion)',
+              label: 'Radial Dispersion',
               value: _dispersion,
               min: 0.0,
               max: 2.0,
