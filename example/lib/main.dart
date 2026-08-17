@@ -730,7 +730,7 @@ class _DashboardPageState extends State<DashboardPage>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
-                'اختر خوارزمية تشويه الجسيمات 3D:',
+                'Choose a 3D Particle Displacement Algorithm:',
                 style: TextStyle(
                   color: Colors.cyanAccent,
                   fontSize: 12,
