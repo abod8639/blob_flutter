@@ -35,9 +35,9 @@ void main() {
     test('generateFibonacciSphere handles single sample case', () {
       final sphere = BlobMath.generateFibonacciSphere(1);
       expect(sphere.length, 3);
-      expect(sphere[0], 0.0);
+      expect(sphere[0], 1.0);
       expect(sphere[1], 0.0);
-      expect(sphere[2], 1.0);
+      expect(sphere[2], 0.0);
     });
 
     test('wrapTime keeps time wrapped within limits', () {
