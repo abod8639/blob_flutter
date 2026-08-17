@@ -754,7 +754,7 @@ class _DashboardPageState extends State<DashboardPage>
           children: [
             // Touch Radius Factor Slider
             _buildSlider(
-              label: 'قطر التفاعل باللمس (Touch Radius Factor)',
+              label: 'Touch Radius Factor',
               value: _touchRadiusFactor,
               min: 0.1,
               max: 3.0,
