@@ -848,7 +848,7 @@ class _DashboardPageState extends State<DashboardPage>
         return Column(
           children: [
             _buildSlider(
-              label: 'عدد الجسيمات (Particle Count)',
+              label: 'Particle Count',
               value: _particleCount.toDouble(),
               min: 1000,
               max: 20000,
@@ -859,7 +859,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'نصف القطر (Base Radius)',
+              label: 'Base Radius',
               value: _baseRadius,
               min: 50.0,
               max: 300.0,
@@ -870,7 +870,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'حجم النقطة (Point Size)',
+              label: 'Point Size',
               value: _pointSize,
               min: 0.5,
               max: 5.0,
@@ -881,7 +881,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'سعة التشوه (Blobiness)',
+              label: 'Blobiness',
               value: _blobiness,
               min: 0.0,
               max: 4.0,
@@ -893,7 +893,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'تردد وكثافة التوجس (Noise Frequency)',
+              label: 'Noise Frequency',
               value: _noiseFrequency,
               min: 0.1,
               max: 3.0,
@@ -905,7 +905,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'سرعة الحركة (Animation Speed)',
+              label: 'Animation Speed',
               value: _speed,
               min: 0.0,
               max: 5.0,
@@ -917,7 +917,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'الدوران التلقائي (Auto Rotation)',
+              label: 'Auto Rotation',
               value: _autoRotationSpeed,
               min: -3.0,
               max: 3.0,
@@ -929,7 +929,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'معامل الخمود والتخميد (Damping)',
+              label: 'Damping',
               value: _dampingFactor,
               min: 0.80,
               max: 1.00,
@@ -941,7 +941,7 @@ class _DashboardPageState extends State<DashboardPage>
               },
             ),
             _buildSlider(
-              label: 'مسافة الكاميرا (Camera View Distance)',
+              label: 'Camera View Distance',
               value: _viewDistance,
               min: 0.8,
               max: 5.0,
