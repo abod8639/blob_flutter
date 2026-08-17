@@ -353,7 +353,7 @@ class _DashboardPageState extends State<DashboardPage>
                         IconButton(
                           icon: const Icon(Icons.restart_alt,
                               color: Colors.white70),
-                          tooltip: 'إعادة ضبط الدوران',
+                          tooltip: 'Reset Rotation',
                           onPressed: () => _blobController.resetRotation(),
                         ),
                         IconButton(
@@ -364,8 +364,8 @@ class _DashboardPageState extends State<DashboardPage>
                             color: Colors.cyanAccent,
                           ),
                           tooltip: _isPanelExpanded
-                              ? 'إخفاء لوحة التحكم'
-                              : 'إظهار لوحة التحكم',
+                              ? 'Hide Control Panel'
+                              : 'Show Control Panel',
                           onPressed: () {
                             setState(() {
                               _isPanelExpanded = !_isPanelExpanded;
@@ -1114,7 +1114,7 @@ class _DashboardPageState extends State<DashboardPage>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
-                'تخصيص اللون الثانوي (Color 2):',
+                'Customize Secondary Color (Color 2):',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
