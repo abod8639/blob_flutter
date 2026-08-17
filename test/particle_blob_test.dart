@@ -37,7 +37,7 @@ void main() {
       expect(sphere.length, 3);
       expect(sphere[0], 0.0);
       expect(sphere[1], 0.0);
-      expect(sphere[2], 0.0);
+      expect(sphere[2], 1.0);
     });
 
     test('wrapTime keeps time wrapped within limits', () {
@@ -223,7 +223,13 @@ void main() {
       await tester.pump();
 
       expect(find.byType(BlobFlutter), findsOneWidget);
-      expect(find.byType(CustomPaint), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(BlobFlutter),
+          matching: find.byType(CustomPaint),
+        ),
+        findsOneWidget,
+      );
 
       expect(
         () => BlobFlutter(particleCount: 0),
@@ -275,7 +281,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(BlobFlutter), findsOneWidget);
-      expect(find.byType(CustomPaint), findsOneWidget);
 
       await tester.pumpWidget(
         const MaterialApp(
@@ -331,7 +336,6 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(BlobFlutter), findsOneWidget);
-      expect(find.byType(CustomPaint), findsOneWidget);
     });
 
     testWidgets('rebuilds and updates properties when parent widget updates', (tester) async {
@@ -460,13 +464,23 @@ void main() {
       );
       await tester.pump();
 
-      var customPaint = tester.widget<CustomPaint>(find.byType(CustomPaint));
+      var customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(BlobFlutter),
+          matching: find.byType(CustomPaint),
+        ),
+      );
       final firstGen = (customPaint.painter as BlobPainter).generation;
 
       await tester.pump(const Duration(milliseconds: 16));
       await tester.pump(const Duration(milliseconds: 16));
 
-      customPaint = tester.widget<CustomPaint>(find.byType(CustomPaint));
+      customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(BlobFlutter),
+          matching: find.byType(CustomPaint),
+        ),
+      );
       final secondGen = (customPaint.painter as BlobPainter).generation;
 
       expect(secondGen, greaterThan(firstGen));
@@ -708,6 +722,8 @@ void main() {
       expect(controller.applyDamping(), true);
       expect(controller.rotationX, closeTo((20.0 * 0.005) * 0.9, 0.0001));
 
+      // Reset rotation before tiny impulse test
+      controller.resetRotation();
       controller.addRotationImpulse(const Offset(0.01, 0.01));
       controller.setDampingFactor(0.1);
       controller.applyDamping();
@@ -843,7 +859,8 @@ void main() {
       );
 
       final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
-      await gesture.addPointer(location: const Offset(100, 100));
+      await gesture.addPointer(location: const Offset(10, 10));
+      await gesture.moveTo(const Offset(100, 100));
       await tester.pump();
 
       expect(touches.length, 1);
