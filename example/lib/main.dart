@@ -666,10 +666,10 @@ class _DashboardPageState extends State<DashboardPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildTabButton(0, 'الخوارزميات', Icons.alt_route),
-          _buildTabButton(1, 'اللمس', Icons.touch_app),
-          _buildTabButton(2, 'الفيزياء', Icons.filter_tilt_shift),
-          _buildTabButton(3, 'الألوان', Icons.palette),
+          _buildTabButton(0, 'Algorithms', Icons.alt_route),
+          _buildTabButton(1, 'Touch', Icons.touch_app),
+          _buildTabButton(2, 'Physics', Icons.filter_tilt_shift),
+          _buildTabButton(3, 'colors', Icons.palette),
         ],
       ),
     );
