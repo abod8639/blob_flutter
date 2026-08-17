@@ -964,7 +964,7 @@ class _DashboardPageState extends State<DashboardPage>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
-                'السمات اللونية الجاهزة (Preset Themes):',
+                'Preset Themes:',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
@@ -1039,21 +1039,21 @@ class _DashboardPageState extends State<DashboardPage>
               children: [
                 _buildActionButton(
                   icon: Icons.mic,
-                  label: 'الأمر الصوتي',
+                  label: 'Speech Command',
                   isActive: _isListening,
                   onTap: _toggleListening,
                   activeColor: Colors.redAccent,
                 ),
                 _buildActionButton(
                   icon: Icons.graphic_eq,
-                  label: 'النبض الصوتي',
+                  label: 'Audio Pulse',
                   isActive: _isAudioPulseMode,
                   onTap: _togglePulseMode,
                   activeColor: Colors.purpleAccent,
                 ),
                 _buildActionButton(
                   icon: Icons.flash_on,
-                  label: 'دفعة عشوائية',
+                  label: 'Random Boost',
                   isActive: false,
                   onTap: () {
                     _blobController.addRotationImpulse(
