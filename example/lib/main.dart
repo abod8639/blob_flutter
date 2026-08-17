@@ -108,6 +108,9 @@ class _DashboardPageState extends State<DashboardPage>
   void initState() {
     super.initState();
     _blobController = BlobController(
+      radius: _baseRadius,
+      pointSize: _pointSize,
+      particleCount: _particleCount,
       dampingFactor: _dampingFactor,
       tapScaleFactor: _tapScaleFactor,
       touchRadiusFactor: _touchRadiusFactor,
@@ -855,6 +858,7 @@ class _DashboardPageState extends State<DashboardPage>
               onChanged: (val) {
                 setState(() {
                   _particleCount = val.toInt();
+                  _blobController.setParticleCount(_particleCount);
                 });
               },
             ),
@@ -866,6 +870,7 @@ class _DashboardPageState extends State<DashboardPage>
               onChanged: (val) {
                 setState(() {
                   _baseRadius = val;
+                  _blobController.setRadius(val);
                 });
               },
             ),
@@ -877,6 +882,19 @@ class _DashboardPageState extends State<DashboardPage>
               onChanged: (val) {
                 setState(() {
                   _pointSize = val;
+                  _blobController.setPointSize(val);
+                });
+              },
+            ),
+            _buildSlider(
+              label: 'Zoom Scale (Pinch-to-scale)',
+              value: _blobController.scale,
+              min: 0.2,
+              max: 3.0,
+              displayUnit: 'x',
+              onChanged: (val) {
+                setState(() {
+                  _blobController.setScale(val);
                 });
               },
             ),
