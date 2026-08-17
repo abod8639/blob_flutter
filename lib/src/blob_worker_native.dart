@@ -123,6 +123,9 @@ class BlobWorker {
       BlobMath.projectParticles(
         count:             p.count,
         radius:            p.radius,
+        scale:             p.scale,
+        centerOffsetX:     p.centerOffsetX,
+        centerOffsetY:     p.centerOffsetY,
         blobiness:         p.blobiness,
         dispersion:        p.dispersion,
         rotationX:         p.rotationX,
