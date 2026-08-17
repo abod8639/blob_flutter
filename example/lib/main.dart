@@ -1071,7 +1071,7 @@ class _DashboardPageState extends State<DashboardPage>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
-                'تخصيص اللون الأساسي (Color 1):',
+                'Customize Primary Color (Color 1):',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
