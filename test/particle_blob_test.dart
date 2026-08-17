@@ -984,7 +984,7 @@ void main() {
       expect(canvas.paint?.strokeWidth, 3.0);
       expect(canvas.paint?.strokeCap, StrokeCap.round);
       expect(canvas.paint?.isAntiAlias, true);
-      expect(canvas.paint?.color.value, const Color(0xFF4CAF50).value);
+      expect(canvas.paint?.color.toARGB32(), const Color(0xFF4CAF50).toARGB32());
       expect(canvas.paint?.shader, isNull);
     });
   });
