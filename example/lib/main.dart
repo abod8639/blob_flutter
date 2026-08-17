@@ -769,7 +769,7 @@ class _DashboardPageState extends State<DashboardPage>
 
             // Tap Scale Factor
             _buildSlider(
-              label: 'حساسية التشتت باللمس (Tap Scale Factor)',
+              label: 'Tap Scale Factor',
               value: _tapScaleFactor,
               min: 0.0,
               max: 3.0,
