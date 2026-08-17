@@ -850,125 +850,156 @@ class _DashboardPageState extends State<DashboardPage>
         // Tab 2: Physics & Geometry
         return Column(
           children: [
-            _buildSlider(
-              label: 'Particle Count',
-              value: _particleCount.toDouble(),
-              min: 1000,
-              max: 20000,
-              onChanged: (val) {
-                setState(() {
-                  _particleCount = val.toInt();
-                  _blobController.setParticleCount(_particleCount);
-                });
-              },
+            // Group 1: Geometry & Structure
+            _buildControlGroup(
+              title: 'Geometry & Structure',
+              icon: Icons.scatter_plot,
+              children: [
+                _buildSlider(
+                  label: 'Particle Count',
+                  value: _particleCount.toDouble(),
+                  min: 1000,
+                  max: 20000,
+                  onChanged: (val) {
+                    setState(() {
+                      _particleCount = val.toInt();
+                      _blobController.setParticleCount(_particleCount);
+                    });
+                  },
+                ),
+                _buildSlider(
+                  label: 'Base Radius',
+                  value: _baseRadius,
+                  min: 50.0,
+                  max: 300.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _baseRadius = val;
+                      _blobController.setRadius(val);
+                    });
+                  },
+                ),
+                _buildSlider(
+                  label: 'Point Size',
+                  value: _pointSize,
+                  min: 0.5,
+                  max: 5.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _pointSize = val;
+                      _blobController.setPointSize(val);
+                    });
+                  },
+                ),
+              ],
             ),
-            _buildSlider(
-              label: 'Base Radius',
-              value: _baseRadius,
-              min: 50.0,
-              max: 300.0,
-              onChanged: (val) {
-                setState(() {
-                  _baseRadius = val;
-                  _blobController.setRadius(val);
-                });
-              },
+
+            // Group 2: Noise & Morphology
+            _buildControlGroup(
+              title: 'Noise & Morphology',
+              icon: Icons.waves,
+              children: [
+                _buildSlider(
+                  label: 'Blobiness',
+                  value: _blobiness,
+                  min: 0.0,
+                  max: 4.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _blobiness = val;
+                      _blobController.setBlobiness(val);
+                    });
+                  },
+                ),
+                _buildSlider(
+                  label: 'Noise Frequency',
+                  value: _noiseFrequency,
+                  min: 0.1,
+                  max: 3.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _noiseFrequency = val;
+                      _blobController.setNoiseFrequency(val);
+                    });
+                  },
+                ),
+              ],
             ),
-            _buildSlider(
-              label: 'Point Size',
-              value: _pointSize,
-              min: 0.5,
-              max: 5.0,
-              onChanged: (val) {
-                setState(() {
-                  _pointSize = val;
-                  _blobController.setPointSize(val);
-                });
-              },
+
+            // Group 3: Physics & Dynamics
+            _buildControlGroup(
+              title: 'Physics & Dynamics',
+              icon: Icons.motion_photos_on,
+              children: [
+                _buildSlider(
+                  label: 'Animation Speed',
+                  value: _speed,
+                  min: 0.0,
+                  max: 5.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _speed = val;
+                      _blobController.setSpeed(val);
+                    });
+                  },
+                ),
+                _buildSlider(
+                  label: 'Auto Rotation',
+                  value: _autoRotationSpeed,
+                  min: -3.0,
+                  max: 3.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _autoRotationSpeed = val;
+                      _blobController.setAutoRotationSpeed(val);
+                    });
+                  },
+                ),
+                _buildSlider(
+                  label: 'Damping',
+                  value: _dampingFactor,
+                  min: 0.80,
+                  max: 1.00,
+                  onChanged: (val) {
+                    setState(() {
+                      _dampingFactor = val;
+                      _blobController.setDampingFactor(val);
+                    });
+                  },
+                ),
+              ],
             ),
-            _buildSlider(
-              label: 'Zoom Scale (Pinch-to-scale)',
-              value: _blobController.scale,
-              min: 0.2,
-              max: 3.0,
-              displayUnit: 'x',
-              onChanged: (val) {
-                setState(() {
-                  _blobController.setScale(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Blobiness',
-              value: _blobiness,
-              min: 0.0,
-              max: 4.0,
-              onChanged: (val) {
-                setState(() {
-                  _blobiness = val;
-                  _blobController.setBlobiness(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Noise Frequency',
-              value: _noiseFrequency,
-              min: 0.1,
-              max: 3.0,
-              onChanged: (val) {
-                setState(() {
-                  _noiseFrequency = val;
-                  _blobController.setNoiseFrequency(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Animation Speed',
-              value: _speed,
-              min: 0.0,
-              max: 5.0,
-              onChanged: (val) {
-                setState(() {
-                  _speed = val;
-                  _blobController.setSpeed(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Auto Rotation',
-              value: _autoRotationSpeed,
-              min: -3.0,
-              max: 3.0,
-              onChanged: (val) {
-                setState(() {
-                  _autoRotationSpeed = val;
-                  _blobController.setAutoRotationSpeed(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Damping',
-              value: _dampingFactor,
-              min: 0.80,
-              max: 1.00,
-              onChanged: (val) {
-                setState(() {
-                  _dampingFactor = val;
-                  _blobController.setDampingFactor(val);
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Camera View Distance',
-              value: _viewDistance,
-              min: 0.8,
-              max: 5.0,
-              onChanged: (val) {
-                setState(() {
-                  _viewDistance = val;
-                  _blobController.setViewDistance(val);
-                });
-              },
+
+            // Group 4: Camera & Viewport
+            _buildControlGroup(
+              title: 'Camera & Viewport',
+              icon: Icons.camera_alt_outlined,
+              children: [
+                _buildSlider(
+                  label: 'Zoom Scale (Pinch-to-scale)',
+                  value: _blobController.scale,
+                  min: 0.2,
+                  max: 3.0,
+                  displayUnit: 'x',
+                  onChanged: (val) {
+                    setState(() {
+                      _blobController.setScale(val);
+                    });
+                  },
+                ),
+                _buildSlider(
+                  label: 'Camera View Distance',
+                  value: _viewDistance,
+                  min: 0.8,
+                  max: 5.0,
+                  onChanged: (val) {
+                    setState(() {
+                      _viewDistance = val;
+                      _blobController.setViewDistance(val);
+                    });
+                  },
+                ),
+              ],
             ),
           ],
         );
@@ -1262,6 +1293,49 @@ class _DashboardPageState extends State<DashboardPage>
               fontWeight: FontWeight.bold,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControlGroup({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            child: Row(
+              children: [
+                Icon(icon, size: 14, color: Colors.cyanAccent),
+                const SizedBox(width: 6),
+                Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.cyanAccent,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          ...children,
         ],
       ),
     );
