@@ -2,14 +2,17 @@ import 'dart:typed_data';
 
 /// Flat, isolate-safe bundle of per-frame particle-projection parameters.
 ///
-/// **Why flat?** Dart isolates communicate by copying messages.  Custom class
+/// **Why flat?** Dart isolates communicate by copying messages. Custom class
 /// instances are not directly transferable, but primitives and typed-data
-/// buffers are.  [ProjectParamsFlat] serialises everything into a plain [List]
+/// buffers are. [ProjectParamsFlat] serialises everything into a plain [List]
 /// (via [toMessage]) that the Dart runtime can copy cheaply across isolate
 /// boundaries without reflection or manual serialisation code.
 class ProjectParamsFlat {
-  final int    count;
+  final int count;
   final double radius;
+  final double scale;
+  final double centerOffsetX;
+  final double centerOffsetY;
   final double blobiness;
   final double dispersion;
   final double rotationX;
@@ -33,6 +36,9 @@ class ProjectParamsFlat {
   const ProjectParamsFlat({
     required this.count,
     required this.radius,
+    this.scale = 1.0,
+    this.centerOffsetX = 0.0,
+    this.centerOffsetY = 0.0,
     required this.blobiness,
     required this.dispersion,
     required this.rotationX,
@@ -51,34 +57,46 @@ class ProjectParamsFlat {
   /// Packs all fields into a [List] that satisfies Dart's isolate message
   /// protocol (primitives + [Float32List]).
   List<Object?> toMessage() => [
-    count,
-    radius, blobiness, dispersion,
-    rotationX, rotationY,
-    time, viewportWidth, viewportHeight,
-    autoRotationSpeed, noiseFrequency, viewDistance,
-    noiseTypeIndex,
-    touchRadiusFactor,
-    encodedTouches,
-  ];
+        count,
+        radius,
+        scale,
+        centerOffsetX,
+        centerOffsetY,
+        blobiness,
+        dispersion,
+        rotationX,
+        rotationY,
+        time,
+        viewportWidth,
+        viewportHeight,
+        autoRotationSpeed,
+        noiseFrequency,
+        viewDistance,
+        noiseTypeIndex,
+        touchRadiusFactor,
+        encodedTouches,
+      ];
 
   /// Restores a [ProjectParamsFlat] from a message previously produced by
   /// [toMessage].
-  factory ProjectParamsFlat.fromMessage(List<dynamic> m) =>
-      ProjectParamsFlat(
-        count:             m[0]  as int,
-        radius:            m[1]  as double,
-        blobiness:         m[2]  as double,
-        dispersion:        m[3]  as double,
-        rotationX:         m[4]  as double,
-        rotationY:         m[5]  as double,
-        time:              m[6]  as double,
-        viewportWidth:     m[7]  as double,
-        viewportHeight:    m[8]  as double,
-        autoRotationSpeed: m[9]  as double,
-        noiseFrequency:    m[10] as double,
-        viewDistance:      m[11] as double,
-        noiseTypeIndex:    m[12] as int,
-        touchRadiusFactor: m[13] as double,
-        encodedTouches:    m[14] as Float32List,
+  factory ProjectParamsFlat.fromMessage(List<dynamic> m) => ProjectParamsFlat(
+        count: m[0] as int,
+        radius: m[1] as double,
+        scale: m[2] as double,
+        centerOffsetX: m[3] as double,
+        centerOffsetY: m[4] as double,
+        blobiness: m[5] as double,
+        dispersion: m[6] as double,
+        rotationX: m[7] as double,
+        rotationY: m[8] as double,
+        time: m[9] as double,
+        viewportWidth: m[10] as double,
+        viewportHeight: m[11] as double,
+        autoRotationSpeed: m[12] as double,
+        noiseFrequency: m[13] as double,
+        viewDistance: m[14] as double,
+        noiseTypeIndex: m[15] as int,
+        touchRadiusFactor: m[16] as double,
+        encodedTouches: m[17] as Float32List,
       );
 }
