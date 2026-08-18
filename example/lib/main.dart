@@ -263,22 +263,6 @@ class _DashboardPageState extends State<DashboardPage>
     return Scaffold(
       body: Stack(
         children: [
-          // Background ambient light glow matching current primary color
-          // Positioned.fill(
-          //   child: AnimatedContainer(
-          //     duration: const Duration(milliseconds: 500),
-          //     decoration: BoxDecoration(
-          //       gradient: RadialGradient(
-          //         center: Alignment.center,
-          //         radius: 0.9,
-          //         colors: [
-          //           _color1.withValues(alpha: 0.12),
-          //           const Color(0xFF070A12),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
 
           // 3D Blob Canvas Area (Fills entire screen)
           Positioned.fill(
