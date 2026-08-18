@@ -41,7 +41,7 @@ class _DashboardPageState extends State<DashboardPage>
   late Animation<double> _pulseAnimation;
 
   // Blob Geometry & Physics State
-  int _particleCount = 8000;
+  int _particleCount = 5000;
   double _baseRadius = 150.0;
   double _pointSize = 2.0;
   double _blobiness = 1.0;
