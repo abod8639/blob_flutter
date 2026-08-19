@@ -368,48 +368,48 @@ class _DashboardPageState extends State<DashboardPage>
           ),
 
           // Quick Noise Selection Bar (Floating Top Carousel)
-          Positioned(
-            top: 75,
-            left: 16,
-            right: 16,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: BlobNoiseType.values.map((type) {
-                  final bool isSelected = _noiseType == type;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ActionChip(
-                      elevation: isSelected ? 4 : 0,
-                      backgroundColor: isSelected
-                          ? Colors.cyanAccent.withValues(alpha: 0.25)
-                          : Colors.black.withValues(alpha: 0.4),
-                      side: BorderSide(
-                        color: isSelected ? Colors.cyanAccent : Colors.white24,
-                        width: isSelected ? 1.5 : 0.8,
-                      ),
-                      label: Text(
-                        _getNoiseShortName(type),
-                        style: TextStyle(
-                          color:
-                              isSelected ? Colors.cyanAccent : Colors.white70,
-                          fontSize: 11,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _noiseType = type;
-                          _blobController.setNoiseType(type);
-                        });
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
+          // Positioned(
+          //   top: 80,
+          //   left: 16,
+          //   right: 16,
+          //   child: SingleChildScrollView(
+          //     scrollDirection: Axis.horizontal,
+          //     child: Row(
+          //       children: BlobNoiseType.values.map((type) {
+          //         final bool isSelected = _noiseType == type;
+          //         return Padding(
+          //           padding: const EdgeInsets.only(right: 6),
+          //           child: ActionChip(
+          //             elevation: isSelected ? 4 : 0,
+          //             backgroundColor: isSelected
+          //                 ? Colors.cyanAccent.withValues(alpha: 0.25)
+          //                 : Colors.black.withValues(alpha: 0.4),
+          //             side: BorderSide(
+          //               color: isSelected ? Colors.cyanAccent : Colors.white24,
+          //               width: isSelected ? 1.5 : 0.8,
+          //             ),
+          //             label: Text(
+          //               _getNoiseShortName(type),
+          //               style: TextStyle(
+          //                 color:
+          //                     isSelected ? Colors.cyanAccent : Colors.white70,
+          //                 fontSize: 11,
+          //                 fontWeight:
+          //                     isSelected ? FontWeight.bold : FontWeight.normal,
+          //               ),
+          //             ),
+          //             onPressed: () {
+          //               setState(() {
+          //                 _noiseType = type;
+          //                 _blobController.setNoiseType(type);
+          //               });
+          //             },
+          //           ),
+          //         );
+          //       }).toList(),
+          //     ),
+          //   ),
+          // ),
 
           // Floating Collapsible Control Panel (Bottom)
           Positioned(
