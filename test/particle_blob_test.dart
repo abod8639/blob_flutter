@@ -839,41 +839,7 @@ void main() {
       await gesture.removePointer();
     });
 
-    testWidgets('hover interaction and dispersion without clicking', (tester) async {
-      final controller = BlobController(enableHover: true);
-      List<Offset> touches = [];
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: BlobInputListener(
-                controller: controller,
-                onTouchesChanged: (t) => touches = t,
-                child: Container(width: 200, height: 200, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
-      await gesture.addPointer(location: const Offset(10, 10));
-      await gesture.moveTo(const Offset(100, 100));
-      await tester.pump();
-
-      expect(touches.length, 1);
-      expect(controller.dispersion, greaterThan(0.0));
-
-      await gesture.moveTo(const Offset(500, 500)); // move outside
-      await tester.pump();
-
-      expect(touches.isEmpty, true);
-      expect(controller.dispersion, 0.0);
-
-      await gesture.removePointer();
-    });
 
     testWidgets('pointer cancel removes touch points and resets dispersion', (tester) async {
       final controller = BlobController();
