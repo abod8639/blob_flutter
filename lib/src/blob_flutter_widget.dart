@@ -61,6 +61,10 @@ class BlobFlutter extends StatefulWidget {
   /// Supports [LinearGradient], [RadialGradient], and [SweepGradient].
   final Gradient gradient;
 
+  /// Animation speed multiplier for procedural noise deformation.
+  /// Range: [0.0, 10.0]. Default: `1.0`. Set to `0.0` to pause deformation.
+  final double speed;
+
   /// Whether the color gradient is dynamically animated across the blob
   /// or stays static in fixed position. Default: `true`.
   final bool isColorAnimated;
@@ -86,10 +90,11 @@ class BlobFlutter extends StatefulWidget {
     this.particleCount = 5000,
     this.radius = 150.0,
     this.pointSize = 2.0,
+    double speed = 1.0,
+    double? animationSpeed,
     this.tapScaleFactor = 0.40,
     this.touchRadiusFactor = 0.30,
     this.controller,
-    // this.animationSpeed
     this.gradient = const LinearGradient(
       colors: [Colors.blueAccent, Colors.purpleAccent],
     ),
@@ -98,9 +103,13 @@ class BlobFlutter extends StatefulWidget {
     this.waveIntensity = 1.0,
     this.enableHover = false,
     this.noiseType = BlobNoiseType.harmonic,
-  })  : assert(particleCount > 0, 'particleCount must be greater than 0'),
+  })  : speed = animationSpeed ?? speed,
+        assert(particleCount > 0, 'particleCount must be greater than 0'),
         assert(radius > 0.0, 'radius must be greater than 0.0'),
         assert(pointSize > 0.0, 'pointSize must be greater than 0.0'),
+        assert(speed >= 0.0, 'speed must be greater than or equal to 0.0'),
+        assert(animationSpeed == null || animationSpeed >= 0.0,
+            'animationSpeed must be greater than or equal to 0.0'),
         assert(tapScaleFactor >= 0.0,
             'tapScaleFactor must be greater than or equal to 0.0'),
         assert(touchRadiusFactor >= 0.0,
@@ -205,8 +214,10 @@ class _ParticleBlobState extends State<BlobFlutter>
           radius: widget.radius,
           pointSize: widget.pointSize,
           particleCount: widget.particleCount,
+          speed: widget.speed,
           tapScaleFactor: widget.tapScaleFactor,
           touchRadiusFactor: widget.touchRadiusFactor,
+          enableHover: widget.enableHover,
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
@@ -249,8 +260,10 @@ class _ParticleBlobState extends State<BlobFlutter>
             radius: widget.radius,
             pointSize: widget.pointSize,
             particleCount: widget.particleCount,
+            speed: widget.speed,
             tapScaleFactor: widget.tapScaleFactor,
             touchRadiusFactor: widget.touchRadiusFactor,
+            enableHover: widget.enableHover,
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
@@ -270,6 +283,9 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.pointSize != widget.pointSize) {
         _controller.setPointSize(widget.pointSize);
+      }
+      if (oldWidget.speed != widget.speed) {
+        _controller.setSpeed(widget.speed);
       }
       if (oldWidget.tapScaleFactor != widget.tapScaleFactor) {
         _controller.setTapScaleFactor(widget.tapScaleFactor);
