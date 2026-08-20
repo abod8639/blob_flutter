@@ -305,6 +305,8 @@ class BlobMath {
     final int touchCount = activeTouches.length;
     final double effectiveTouchRadius =
         effectiveRadius * 2.0 * touchRadiusFactor;
+    final double effectiveTouchRadiusSq =
+        effectiveTouchRadius * effectiveTouchRadius;
 
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
     final _NoiseFunc noise = _selectNoise(noiseType);
@@ -341,17 +343,23 @@ class BlobMath {
       final double screenX = centerX + rx * baseScale * 2.0;
       final double screenY = centerY + ry * baseScale * 2.0;
 
-      // Direction-aware touch dispersion based on actual screen position
+      // Direction-aware touch dispersion with strong central peak and smooth edge fade-out
       double extraPush = 0.0;
       if (hasPointers) {
         for (int t = 0; t < touchCount; t++) {
           final Offset touch = activeTouches[t];
           final double dx = screenX - touch.dx;
           final double dy = screenY - touch.dy;
-          final double dist = sqrt(dx * dx + dy * dy);
-          final double influence =
-              (1.0 - (dist / effectiveTouchRadius).clamp(0.0, 1.0));
-          extraPush += dispersion * influence * 2.0;
+          final double distSq = dx * dx + dy * dy;
+          if (distSq < effectiveTouchRadiusSq) {
+            final double dist = sqrt(distSq);
+            // Normalized distance: 0.0 at center, 1.0 at edge
+            final double normDist = dist / effectiveTouchRadius;
+            final double tDist = 1.0 - normDist;
+            // Smooth quadratic falloff: strong effect at center, vanishing smoothly at the edges
+            final double influence = tDist * tDist;
+            extraPush += dispersion * influence * 2.5;
+          }
         }
       } else if (dispersion > 0.0) {
         // Controller-driven uniform radial dispersion
