@@ -248,6 +248,14 @@ void main() {
         throwsAssertionError,
       );
       expect(
+        () => BlobFlutter(speed: -0.1),
+        throwsAssertionError,
+      );
+      expect(
+        () => BlobFlutter(animationSpeed: -0.1),
+        throwsAssertionError,
+      );
+      expect(
         () => BlobFlutter(colorAnimationSpeed: -0.1),
         throwsAssertionError,
       );
@@ -378,6 +386,46 @@ void main() {
 
       inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller.tapScaleFactor, 2.0);
+
+      // Rebuild with speed
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                particleCount: 500,
+                speed: 3.5,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      expect(inputListener.controller.speed, 3.5);
+
+      // Rebuild with animationSpeed alias
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                particleCount: 500,
+                animationSpeed: 2.2,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      expect(inputListener.controller.speed, 2.2);
     });
 
     testWidgets('handles dynamic controller swapping', (tester) async {
@@ -500,6 +548,12 @@ void main() {
         alignment: Alignment.topRight,
         dampingFactor: 0.9,
         tapScaleFactor: 2.0,
+        speed: 2.5,
+        autoRotationSpeed: 1.2,
+        blobiness: 1.5,
+        dispersion: 0.3,
+        noiseFrequency: 1.8,
+        viewDistance: 2.5,
         isColorAnimated: false,
         colorAnimationSpeed: 2.5,
         waveIntensity: 0.5,
@@ -517,12 +571,13 @@ void main() {
       expect(controller.effectiveRadius, 180.0 * 1.2);
       expect(controller.dampingFactor, 0.9);
       expect(controller.tapScaleFactor, 2.0);
-      expect(controller.blobiness, 1.0);
-      expect(controller.speed, 1.0);
-      expect(controller.dispersion, 0.0);
-      expect(controller.autoRotationSpeed, 0.5);
-      expect(controller.noiseFrequency, 1.0);
-      expect(controller.viewDistance, 2.0);
+      expect(controller.blobiness, 1.5);
+      expect(controller.speed, 2.5);
+      expect(controller.animationSpeed, 2.5);
+      expect(controller.dispersion, 0.3);
+      expect(controller.autoRotationSpeed, 1.2);
+      expect(controller.noiseFrequency, 1.8);
+      expect(controller.viewDistance, 2.5);
       expect(controller.isColorAnimated, false);
       expect(controller.colorAnimationSpeed, 2.5);
       expect(controller.waveIntensity, 0.5);
@@ -534,11 +589,16 @@ void main() {
       expect(() => BlobController(radius: 0.0), throwsAssertionError);
       expect(() => BlobController(pointSize: 0.0), throwsAssertionError);
       expect(() => BlobController(particleCount: 0), throwsAssertionError);
+      expect(() => BlobController(speed: -0.1), throwsAssertionError);
       expect(() => BlobController(scale: 0.0), throwsAssertionError);
       expect(() => BlobController(minScale: 5.0, maxScale: 2.0), throwsAssertionError);
       expect(() => BlobController(dampingFactor: -0.1), throwsAssertionError);
       expect(() => BlobController(dampingFactor: 1.1), throwsAssertionError);
       expect(() => BlobController(tapScaleFactor: -0.5), throwsAssertionError);
+      expect(() => BlobController(blobiness: -0.1), throwsAssertionError);
+      expect(() => BlobController(dispersion: -0.1), throwsAssertionError);
+      expect(() => BlobController(noiseFrequency: -0.1), throwsAssertionError);
+      expect(() => BlobController(viewDistance: 0.0), throwsAssertionError);
       expect(() => BlobController(colorAnimationSpeed: -0.1), throwsAssertionError);
       expect(() => BlobController(waveIntensity: -0.1), throwsAssertionError);
     });
@@ -597,6 +657,10 @@ void main() {
       expect(controller.speed, 10.0);
       controller.setSpeed(-2.0); // clamped to 0.0
       expect(controller.speed, 0.0);
+
+      controller.setAnimationSpeed(4.5);
+      expect(controller.animationSpeed, 4.5);
+      expect(controller.speed, 4.5);
 
       controller.setDispersion(4.0); // clamped to 3.0
       expect(controller.dispersion, 3.0);
