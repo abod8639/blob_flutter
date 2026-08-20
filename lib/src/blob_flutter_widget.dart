@@ -86,9 +86,10 @@ class BlobFlutter extends StatefulWidget {
     this.particleCount = 5000,
     this.radius = 150.0,
     this.pointSize = 2.0,
-    this.tapScaleFactor = 1.0,
-    this.touchRadiusFactor = 1.0,
+    this.tapScaleFactor = 0.40,
+    this.touchRadiusFactor = 0.30,
     this.controller,
+    // this.animationSpeed
     this.gradient = const LinearGradient(
       colors: [Colors.blueAccent, Colors.purpleAccent],
     ),
@@ -209,7 +210,6 @@ class _ParticleBlobState extends State<BlobFlutter>
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
-          enableHover: widget.enableHover,
           noiseType: widget.noiseType,
           gradient: widget.gradient,
         );
@@ -254,7 +254,6 @@ class _ParticleBlobState extends State<BlobFlutter>
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
-            enableHover: widget.enableHover,
             noiseType: widget.noiseType,
             gradient: widget.gradient,
           );
