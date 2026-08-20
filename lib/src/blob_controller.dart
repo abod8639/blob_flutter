@@ -67,6 +67,7 @@ class BlobController extends ChangeNotifier {
     double radius = 150.0,
     double pointSize = 2.0,
     int particleCount = 5000,
+    double speed = 1.0,
     double scale = 1.0,
     double minScale = 0.1,
     double maxScale = 10.0,
@@ -75,6 +76,12 @@ class BlobController extends ChangeNotifier {
     double dampingFactor = 0.92,
     double tapScaleFactor = 1.0,
     double touchRadiusFactor = 1.0,
+    double autoRotationSpeed = 0.5,
+    double blobiness = 1.0,
+    double dispersion = 0.0,
+    double noiseFrequency = 1.0,
+    double viewDistance = 2.0,
+    bool enableHover = false,
     bool isColorAnimated = true,
     double colorAnimationSpeed = 1.0,
     double waveIntensity = 1.0,
@@ -84,6 +91,7 @@ class BlobController extends ChangeNotifier {
   })  : _radius = radius,
         _pointSize = pointSize,
         _particleCount = particleCount,
+        _speed = speed,
         _scale = scale,
         _minScale = minScale,
         _maxScale = maxScale,
@@ -92,6 +100,12 @@ class BlobController extends ChangeNotifier {
         _dampingFactor = dampingFactor,
         _tapScaleFactor = tapScaleFactor,
         _touchRadiusFactor = touchRadiusFactor,
+        _autoRotationSpeed = autoRotationSpeed,
+        _blobiness = blobiness,
+        _dispersion = dispersion,
+        _noiseFrequency = noiseFrequency,
+        _viewDistance = viewDistance,
+        _enableHover = enableHover,
         _isColorAnimated = isColorAnimated,
         _colorAnimationSpeed = colorAnimationSpeed,
         _waveIntensity = waveIntensity,
@@ -101,6 +115,7 @@ class BlobController extends ChangeNotifier {
         assert(radius > 0.0, 'radius must be greater than 0.0'),
         assert(pointSize > 0.0, 'pointSize must be greater than 0.0'),
         assert(particleCount > 0, 'particleCount must be greater than 0'),
+        assert(speed >= 0.0, 'speed must be greater than or equal to 0.0'),
         assert(scale > 0.0, 'scale must be greater than 0.0'),
         assert(minScale > 0.0 && minScale <= maxScale,
             'minScale must be > 0.0 and <= maxScale'),
@@ -110,6 +125,11 @@ class BlobController extends ChangeNotifier {
             'tapScaleFactor must be greater than or equal to 0.0'),
         assert(touchRadiusFactor >= 0.0,
             'touchRadiusFactor must be greater than or equal to 0.0'),
+        assert(blobiness >= 0.0, 'blobiness must be greater than or equal to 0.0'),
+        assert(dispersion >= 0.0, 'dispersion must be greater than or equal to 0.0'),
+        assert(noiseFrequency >= 0.0,
+            'noiseFrequency must be greater than or equal to 0.0'),
+        assert(viewDistance > 0.0, 'viewDistance must be greater than 0.0'),
         assert(colorAnimationSpeed >= 0.0,
             'colorAnimationSpeed must be greater than or equal to 0.0'),
         assert(waveIntensity >= 0.0,
@@ -152,6 +172,9 @@ class BlobController extends ChangeNotifier {
 
   /// Animation speed multiplier. 1.0 = normal, 2.0 = double, 0.5 = half.
   double get speed => _speed;
+
+  /// Alias for [speed].
+  double get animationSpeed => _speed;
 
   /// Radial dispersion. 0.0 = default shape, 1.0 = particles pushed far out.
   double get dispersion => _dispersion;
@@ -321,6 +344,9 @@ class BlobController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Alias for [setSpeed].
+  void setAnimationSpeed(double value) => setSpeed(value);
 
   /// Sets the dispersion level. Clamped to [0.0, 3.0].
   void setDispersion(double value) {
