@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
-import 'dart:ui' show Offset;
-
 import 'blob_compute_params.dart';
 import 'blob_math.dart';
 import 'blob_noise_type.dart';
@@ -112,12 +110,6 @@ class BlobWorker {
 
       final p = ProjectParamsFlat.fromMessage(msg.cast<dynamic>());
 
-      // Decode packed touch positions.
-      final touches = <Offset>[];
-      for (int i = 0; i + 1 < p.encodedTouches.length; i += 2) {
-        touches.add(Offset(p.encodedTouches[i], p.encodedTouches[i + 1]));
-      }
-
       // Compute projected positions into a fresh buffer.
       final output = Float32List(count * 2);
       BlobMath.projectParticles(
@@ -133,7 +125,7 @@ class BlobWorker {
         time:              p.time,
         viewportWidth:     p.viewportWidth,
         viewportHeight:    p.viewportHeight,
-        activeTouches:     touches,
+        activeTouches:     p.encodedTouches,
         baseSphere:        sphere,
         projectedPoints:   output,
         autoRotationSpeed: p.autoRotationSpeed,
