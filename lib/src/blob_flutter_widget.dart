@@ -81,6 +81,14 @@ class BlobFlutter extends StatefulWidget {
   /// Default: `false`.
   final bool enableHover;
 
+  /// Whether dragging/swiping rotates the blob in 3D.
+  /// Default: `false`.
+  final bool enableDragRotation;
+
+  /// Whether moving the mouse cursor without clicking rotates the blob in 3D.
+  /// Default: `false`.
+  final bool enableHoverRotation;
+
   /// The procedural 3D noise deformation algorithm used to shape the blob.
   /// Default: [BlobNoiseType.harmonic].
   final BlobNoiseType noiseType;
@@ -102,6 +110,8 @@ class BlobFlutter extends StatefulWidget {
     this.colorAnimationSpeed = 1.0,
     this.waveIntensity = 1.0,
     this.enableHover = false,
+    this.enableDragRotation = false,
+    this.enableHoverRotation = false,
     this.noiseType = BlobNoiseType.harmonic,
   })  : speed = animationSpeed ?? speed,
         assert(particleCount > 0, 'particleCount must be greater than 0'),
@@ -218,6 +228,8 @@ class _ParticleBlobState extends State<BlobFlutter>
           tapScaleFactor: widget.tapScaleFactor,
           touchRadiusFactor: widget.touchRadiusFactor,
           enableHover: widget.enableHover,
+          enableDragRotation: widget.enableDragRotation,
+          enableHoverRotation: widget.enableHoverRotation,
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
@@ -264,6 +276,8 @@ class _ParticleBlobState extends State<BlobFlutter>
             tapScaleFactor: widget.tapScaleFactor,
             touchRadiusFactor: widget.touchRadiusFactor,
             enableHover: widget.enableHover,
+            enableDragRotation: widget.enableDragRotation,
+            enableHoverRotation: widget.enableHoverRotation,
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
@@ -307,6 +321,12 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.enableHover != widget.enableHover) {
         _controller.setEnableHover(widget.enableHover);
+      }
+      if (oldWidget.enableDragRotation != widget.enableDragRotation) {
+        _controller.setEnableDragRotation(widget.enableDragRotation);
+      }
+      if (oldWidget.enableHoverRotation != widget.enableHoverRotation) {
+        _controller.setEnableHoverRotation(widget.enableHoverRotation);
       }
       if (oldWidget.noiseType != widget.noiseType) {
         _controller.setNoiseType(widget.noiseType);
