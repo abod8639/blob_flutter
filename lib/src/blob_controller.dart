@@ -51,6 +51,8 @@ class BlobController extends ChangeNotifier {
   double _touchRadiusFactor = 1.0;
   bool _enableHover = false;
   bool _enablePinchToScale = true;
+  bool _enableDragRotation = false;
+  bool _enableHoverRotation = false;
 
   // ── Color & Shaders ───────────────────────────────────────────────────────
   bool _isRainbowMode = false;
@@ -86,6 +88,8 @@ class BlobController extends ChangeNotifier {
     double colorAnimationSpeed = 1.0,
     double waveIntensity = 1.0,
     bool enablePinchToScale = true,
+    bool enableDragRotation = false,
+    bool enableHoverRotation = false,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
     Gradient? gradient,
   })  : _radius = radius,
@@ -110,6 +114,8 @@ class BlobController extends ChangeNotifier {
         _colorAnimationSpeed = colorAnimationSpeed,
         _waveIntensity = waveIntensity,
         _enablePinchToScale = enablePinchToScale,
+        _enableDragRotation = enableDragRotation,
+        _enableHoverRotation = enableHoverRotation,
         _noiseType = noiseType,
         _gradient = gradient,
         assert(radius > 0.0, 'radius must be greater than 0.0'),
@@ -208,6 +214,12 @@ class BlobController extends ChangeNotifier {
 
   /// Whether pinch-to-scale two-finger zoom interaction is enabled.
   bool get enablePinchToScale => _enablePinchToScale;
+
+  /// Whether dragging/swiping rotates the blob in 3D.
+  bool get enableDragRotation => _enableDragRotation;
+
+  /// Whether moving the mouse cursor without clicking rotates the blob in 3D.
+  bool get enableHoverRotation => _enableHoverRotation;
 
   // ── Color & Shader Getters ────────────────────────────────────────────────
 
@@ -471,6 +483,22 @@ class BlobController extends ChangeNotifier {
 
   /// Alias for [setEnableHover].
   void setIsHoverEnabled(bool value) => setEnableHover(value);
+
+  /// Sets whether dragging/swiping rotates the blob in 3D.
+  void setEnableDragRotation(bool value) {
+    if (_enableDragRotation != value) {
+      _enableDragRotation = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets whether moving the mouse cursor without clicking rotates the blob in 3D.
+  void setEnableHoverRotation(bool value) {
+    if (_enableHoverRotation != value) {
+      _enableHoverRotation = value;
+      notifyListeners();
+    }
+  }
 
   // ── Drag Rotation & Damping ───────────────────────────────────────────────
 
