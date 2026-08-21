@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'dart:ui' show Offset;
 
 import 'blob_compute_params.dart';
 import 'blob_math.dart';
@@ -29,12 +28,6 @@ class BlobWorker {
   /// Runs [BlobMath.projectParticles] synchronously and returns a completed
   /// [Future] wrapping the result buffer.
   Future<Float32List?> compute(ProjectParamsFlat p) {
-    // Decode touch positions.
-    final touches = <Offset>[];
-    for (int i = 0; i + 1 < p.encodedTouches.length; i += 2) {
-      touches.add(Offset(p.encodedTouches[i], p.encodedTouches[i + 1]));
-    }
-
     BlobMath.projectParticles(
       count:             p.count,
       radius:            p.radius,
@@ -48,7 +41,7 @@ class BlobWorker {
       time:              p.time,
       viewportWidth:     p.viewportWidth,
       viewportHeight:    p.viewportHeight,
-      activeTouches:     touches,
+      activeTouches:     p.encodedTouches,
       baseSphere:        _sphere,
       projectedPoints:   _output,
       autoRotationSpeed: p.autoRotationSpeed,
