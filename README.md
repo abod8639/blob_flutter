@@ -134,9 +134,36 @@ BlobFlutter(
 
 ## Controller Usage
 
-The `BlobController` allows full programmatic control over geometry, noise algorithms, animation velocity, physics damping, and shader properties at runtime.
+The `BlobController` gives you full programmatic control over 3D geometry, procedural noise algorithms, animation velocity, touch physics, and shaders at runtime:
 
 ```dart
+import 'package:blob_flutter/blob_flutter.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const ParticleBlobExampleApp());
+}
+
+class ParticleBlobExampleApp extends StatelessWidget {
+  const ParticleBlobExampleApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BlobFlutter 3D Control Center',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF060911),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.cyanAccent,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: const MyBlobScreen(),
+    );
+  }
+}
+
 class MyBlobScreen extends StatefulWidget {
   const MyBlobScreen({super.key});
 
@@ -145,22 +172,12 @@ class MyBlobScreen extends StatefulWidget {
 }
 
 class _MyBlobScreenState extends State<MyBlobScreen> {
-  late final BlobController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = BlobController(
-      dampingFactor: 0.95,
-      tapScaleFactor: 1.0,
-      touchRadiusFactor: 1.0,
-      noiseType: BlobNoiseType.simplex,
-      isColorAnimated: true,
-      colorAnimationSpeed: 1.2,
-      waveIntensity: 1.0,
-      enableHover: true,
-    );
-  }
+  final _controller = BlobController(
+    noiseType: BlobNoiseType.simplex,
+    dampingFactor: 0.95,
+    enableHover: true,
+    isColorAnimated: true,
+  );
 
   @override
   void dispose() {
@@ -168,30 +185,64 @@ class _MyBlobScreenState extends State<MyBlobScreen> {
     super.dispose();
   }
 
-  void _triggerPulse() {
-    // Dynamic runtime modifications
-    _controller.setBlobiness(2.5);
-    _controller.setDispersion(1.5);
-    _controller.setSpeed(2.0);
-    _controller.setNoiseType(BlobNoiseType.spiky);
-    _controller.setAutoRotationSpeed(1.2);
-    _controller.setIsRainbowMode(true);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF070A12),
       body: Center(
         child: BlobFlutter(
           controller: _controller,
-          particleCount: 6000,
-          radius: 160.0,
-          pointSize: 2.2,
+          particleCount: 5000,
+          tapScaleFactor:  0.5,
+          touchRadiusFactor:  0.5,
+          // radius: MediaQuery.of(context).size.width * 0.35,
         ),
+      ),
+      floatingActionButton: Wrap(
+        spacing: 8,
+        children: [
+          // 1. Morph / Cycle 3D Noise Algorithms
+          FloatingActionButton.small(
+            heroTag: 'noise',
+            tooltip: 'Next Noise Algorithm',
+            onPressed: () {
+              final nextIndex =
+                  (_controller.noiseType.index + 1) % BlobNoiseType.values.length;
+              _controller.setNoiseType(BlobNoiseType.values[nextIndex]);
+            },
+            child: const Icon(Icons.blur_on),
+          ),
+
+          // 3. GPU Rainbow Shader Toggle
+          FloatingActionButton.small(
+            heroTag: 'rainbow',
+            onPressed: () =>
+                _controller.setIsRainbowMode(!_controller.isRainbowMode),
+            child: const Icon(Icons.palette),
+          ),
+          // 4. Zoom / Scale Multiplier
+          FloatingActionButton.small(
+            heroTag: 'zoom in',
+            onPressed: () => _controller.zoomIn(0.2),
+            child: const Icon(Icons.zoom_in),
+          ),
+          FloatingActionButton.small(
+            heroTag: 'zoom out',
+            onPressed: () => _controller.zoomOut(0.2),
+            child: const Icon(Icons.zoom_out),
+          ),
+          // 5. Reset Inertia & Geometry
+          FloatingActionButton.small(
+            heroTag: 'reset',
+            onPressed: () => _controller.resetAll(),
+            child: const Icon(Icons.restart_alt),
+          ),
+        ],
       ),
     );
   }
 }
+
 ```
 
 ---
@@ -205,6 +256,7 @@ class _MyBlobScreenState extends State<MyBlobScreen> {
 | `particleCount` | `int` | `5000` | Total number of particles distributed over the Fibonacci sphere. |
 | `radius` | `double` | `150.0` | Base radius of the 3D sphere in logical pixels. |
 | `pointSize` | `double` | `2.0` | Diameter of each rendered particle point in logical pixels. |
+| `speed` / `animationSpeed` | `double` | `1.0` | Playback speed multiplier for procedural noise deformation animation (`0.0` to pause). |
 | `controller` | `BlobController?` | `null` | Optional external controller for programmatic manipulation. |
 | `noiseType` | `BlobNoiseType` | `BlobNoiseType.harmonic` | Procedural 3D noise algorithm used for deformation. |
 | `gradient` | `Gradient` | `LinearGradient(...)` | Color gradient. Supports `LinearGradient`, `RadialGradient`, and `SweepGradient`. |
