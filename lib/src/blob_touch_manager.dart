@@ -12,6 +12,7 @@ class BlobTouchManager {
 
   List<Offset> get activeTouches => _activeTouches;
   List<Offset> get localTouches => _localTouches;
+  Float32List get localTouchesFlat => _encodedTouches;
   Float32List get encodedTouches => _encodedTouches;
 
   void updateActiveTouches(List<Offset> touches) {
