@@ -1,7 +1,5 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
-
 import 'blob_noise_type.dart';
 
 /// Function signature for a single-particle noise displacement function.
@@ -225,6 +223,8 @@ class BlobMath {
     }
   }
 
+  static final Map<int, Float32List> _sphereCache = {};
+
   /// Generates points evenly distributed on a unit sphere using the Fibonacci
   /// lattice algorithm, stored in a flat [Float32List] of length [samples * 3].
   ///
@@ -233,21 +233,24 @@ class BlobMath {
   /// BUG-01 fix: Guards against [samples] <= 1 to prevent division by zero.
   static Float32List generateFibonacciSphere(int samples) {
     assert(samples > 0, 'samples must be greater than 0');
-    final buffer = Float32List(samples * 3);
+    // PERF-08: Fibonacci Sphere Caching
+    return _sphereCache.putIfAbsent(samples, () {
+      final buffer = Float32List(samples * 3);
 
-    for (int i = 0; i < samples; i++) {
-      // BUG-01: safe division — when samples == 1, y = 0.0
-      final double y =
-          samples > 1 ? 1.0 - (i / (samples - 1)) * 2.0 : 0.0;
+      for (int i = 0; i < samples; i++) {
+        // BUG-01: safe division — when samples == 1, y = 0.0
+        final double y =
+            samples > 1 ? 1.0 - (i / (samples - 1)) * 2.0 : 0.0;
 
-      final double radiusAtY = sqrt((1.0 - y * y).clamp(0.0, 1.0));
-      final double theta = _goldenAngle * i;
+        final double radiusAtY = sqrt((1.0 - y * y).clamp(0.0, 1.0));
+        final double theta = _goldenAngle * i;
 
-      buffer[i * 3]     = cos(theta) * radiusAtY; // x
-      buffer[i * 3 + 1] = y;                       // y
-      buffer[i * 3 + 2] = sin(theta) * radiusAtY; // z
-    }
-    return buffer;
+        buffer[i * 3]     = cos(theta) * radiusAtY; // x
+        buffer[i * 3 + 1] = y;                       // y
+        buffer[i * 3 + 2] = sin(theta) * radiusAtY; // z
+      }
+      return buffer;
+    });
   }
 
   /// Wraps [time] to stay within [0, 2π * 100] to prevent floating-point
@@ -275,7 +278,7 @@ class BlobMath {
     required double time,
     required double viewportWidth,
     required double viewportHeight,
-    required List<Offset> activeTouches,
+    required Float32List activeTouches,
     required Float32List baseSphere,
     required Float32List projectedPoints,
     required double autoRotationSpeed,
@@ -302,7 +305,7 @@ class BlobMath {
 
     // Cache variables for touch interaction
     final bool hasPointers = activeTouches.isNotEmpty;
-    final int touchCount = activeTouches.length;
+    final int touchCount = activeTouches.length ~/ 2;
     final double effectiveTouchRadius =
         effectiveRadius * 2.0 * touchRadiusFactor;
     final double effectiveTouchRadiusSq =
@@ -347,18 +350,18 @@ class BlobMath {
       double extraPush = 0.0;
       if (hasPointers) {
         for (int t = 0; t < touchCount; t++) {
-          final Offset touch = activeTouches[t];
-          final double dx = screenX - touch.dx;
-          final double dy = screenY - touch.dy;
+          final double touchDx = activeTouches[t * 2];
+          final double touchDy = activeTouches[t * 2 + 1];
+          final double dx = screenX - touchDx;
+          final double dy = screenY - touchDy;
           final double distSq = dx * dx + dy * dy;
           if (distSq < effectiveTouchRadiusSq) {
-            final double dist = sqrt(distSq);
-            // Normalized distance: 0.0 at center, 1.0 at edge
-            final double normDist = dist / effectiveTouchRadius;
-            final double tDist = 1.0 - normDist;
+            // PERF-03: Avoid sqrt by using squared distances for influence calculation
+            final double normDistSq = distSq / effectiveTouchRadiusSq;
+            final double influence = 1.0 - normDistSq;
             // Smooth quadratic falloff: strong effect at center, vanishing smoothly at the edges
-            final double influence = tDist * tDist;
-            extraPush += dispersion * influence * 2.5;
+            final double smoothInfluence = influence * influence;
+            extraPush += dispersion * smoothInfluence * 2.5;
           }
         }
       } else if (dispersion > 0.0) {
