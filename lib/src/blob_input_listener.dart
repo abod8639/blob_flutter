@@ -77,9 +77,9 @@ class _BlobInputListenerState extends State<BlobInputListener> {
       opaque: true,
       onHover: (event) {
         if (_touchPoints.isEmpty) {
-          // Phase-3 throttle: suppress notifyListeners for micro-movements
-          // (< 1.5 logical pixels) that would not produce visible rotation change.
-          if (event.localDelta.distanceSquared >= 2.25) {
+          // Suppress rotation on hover unless explicitly enabled in controller
+          if (widget.controller.enableHoverRotation &&
+              event.localDelta.distanceSquared >= 2.25) {
             widget.controller.addRotationImpulse(event.localDelta * 0.3);
           }
 
@@ -111,7 +111,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
                 widget.controller.enablePinchToScale &&
                 details.scale != 1.0) {
               widget.controller.setScale(_baseScale * details.scale);
-            } else {
+            } else if (widget.controller.enableDragRotation) {
               // Drag / pan rotation impulse
               widget.controller.addRotationImpulse(details.focalPointDelta);
             }
