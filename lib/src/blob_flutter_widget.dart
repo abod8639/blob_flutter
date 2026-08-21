@@ -403,7 +403,7 @@ class _ParticleBlobState extends State<BlobFlutter>
         time: _time,
         viewportWidth: _cachedSize.width,
         viewportHeight: _cachedSize.height,
-        activeTouches: _touchManager.localTouches,
+        activeTouches: _touchManager.localTouchesFlat,
         baseSphere: _baseSphere,
         projectedPoints: _projectedPoints,
         autoRotationSpeed: _controller.autoRotationSpeed,
