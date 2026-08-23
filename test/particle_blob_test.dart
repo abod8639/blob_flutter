@@ -809,7 +809,7 @@ void main() {
   });
 
   group('BlobInputListener Widget Tests', () {
-    testWidgets('detects pointer gestures and updates controller values', (tester) async {
+    testWidgets('does not rotate on drag by default unless enableDragRotation is true', (tester) async {
       final controller = BlobController();
       List<Offset> touches = [];
 
@@ -834,14 +834,24 @@ void main() {
       await gesture.moveBy(const Offset(20, 30));
       await tester.pump();
 
-      expect(controller.rotationX, isNot(0.0));
-      expect(controller.rotationY, isNot(0.0));
+      // By default, rotation is disabled on drag
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
       expect(touches.length, 1);
 
       await gesture.up();
       await tester.pump();
-
       expect(touches.isEmpty, true);
+
+      // Now enable drag rotation and test
+      controller.setEnableDragRotation(true);
+      final gesture2 = await tester.startGesture(const Offset(100, 100));
+      await gesture2.moveBy(const Offset(20, 30));
+      await tester.pump();
+
+      expect(controller.rotationX, isNot(0.0));
+      expect(controller.rotationY, isNot(0.0));
+      await gesture2.up();
     });
 
     testWidgets('applies tapScaleFactor to dispersion output', (tester) async {
@@ -874,8 +884,8 @@ void main() {
       expect(controller.dispersion, 0.0);
     });
 
-    testWidgets('mouse hover triggers subtle rotation impulse when no active touches', (tester) async {
-      final controller = BlobController();
+    testWidgets('mouse hover only triggers rotation impulse when enableHoverRotation is true', (tester) async {
+      final controller = BlobController(enableHoverRotation: true);
 
       await tester.pumpWidget(
         MaterialApp(
