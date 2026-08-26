@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:blob_flutter/blob_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -33,29 +31,22 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
-        child: ListView(
-          children: [
-             for(int i = 1 ; i< 5 ; i++)
-              Container(
-            height: 200,
-            color: Colors.black,
-            ),
+        child: 
             SizedBox(
-              height: 600,
+              // height: 600,
               child: BlobFlutter(
-                controller:BlobController(
-                  
-                ) ,
-                  particleCount: 1000,
+                // controller:BlobController(
+                //   speed: 0,
+                //   // particleCount: 
+                // ) ,
+                  particleCount: 10000,
                   radius: 200,
                   pointSize: 1.5,
-                  colorAnimationSpeed: 0,
-
-
-                  noiseType: BlobNoiseType.simplex,
-                  waveIntensity: 2,
+                  speed: 1,                  
+                  noiseType: BlobNoiseType.fractal,
+                  waveIntensity: 5,
                   enableHover: true,
                   gradient: const LinearGradient(
                     colors: [Colors.cyanAccent, Colors.purpleAccent],
@@ -65,13 +56,9 @@ class DashboardPage extends StatelessWidget {
                 
               ),
             ),
-          for(int i = 1 ; i< 10 ; i++)
-           Container(
-            height: 200,
-            color: Colors.black,
-            )
-          ],
-        ),
+
+          
+        
       ),
     );
   }
