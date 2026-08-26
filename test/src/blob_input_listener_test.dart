@@ -134,10 +134,11 @@ void main() {
 
       final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
+      await gesture.moveTo(const Offset(60, 60));
       await tester.pump();
 
       expect(touches.length, 1);
-      expect(touches.first, const Offset(50, 50));
+      expect(touches.first, const Offset(60, 60));
       expect(controller.dispersion, closeTo(0.5, 0.0001));
 
       // Moving mouse out clears hover
@@ -207,6 +208,7 @@ void main() {
 
       final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
+      await gesture.moveTo(const Offset(60, 60));
       await tester.pump();
       expect(touches.isNotEmpty, true);
 
