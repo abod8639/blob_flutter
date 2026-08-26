@@ -48,7 +48,7 @@ class DashboardPage extends StatelessWidget {
                   noiseType: BlobNoiseType.fractal,
                   waveIntensity: 5,
                   enableHover: true,
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [Colors.cyanAccent, Colors.purpleAccent],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
