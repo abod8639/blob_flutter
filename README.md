@@ -130,6 +130,25 @@ BlobFlutter(
 )
 ```
 
+### Widget Properties (`BlobFlutter`)
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `particleCount` | `int` | `5000` | Total number of particles distributed over the Fibonacci sphere. |
+| `radius` | `double` | `150.0` | Base radius of the 3D sphere in logical pixels. |
+| `pointSize` | `double` | `2.0` | Diameter of each rendered particle point in logical pixels. |
+| `speed` / `animationSpeed` | `double` | `1.0` | Playback speed multiplier for procedural noise deformation animation (`0.0` to pause). |
+| `controller` | `BlobController?` | `null` | Optional external controller for programmatic manipulation. |
+| `noiseType` | `BlobNoiseType` | `BlobNoiseType.harmonic` | Procedural 3D noise algorithm used for deformation. |
+| `gradient` | `Gradient` | `LinearGradient(...)` | Color gradient. Supports `LinearGradient`, `RadialGradient`, and `SweepGradient`. |
+| `tapScaleFactor` | `double` | `1.0` | Scale multiplier for particle dispersion upon touch/click interaction. |
+| `touchRadiusFactor` | `double` | `1.0` | Multiplier for the spatial influence radius of touch points. |
+| `isColorAnimated` | `bool` | `true` | When `true`, animates the color gradient flow across the surface. |
+| `colorAnimationSpeed` | `double` | `1.0` | Speed multiplier for color waves. Set to `0.0` for static gradient colors. |
+| `waveIntensity` | `double` | `1.0` | Intensity of liquid wave distortion in the fragment shader. |
+| `enableHover` | `bool` | `false` | Enables particle dispersion and interaction on mouse cursor movement. |
+
+
 ---
 
 ## Controller Usage
@@ -247,25 +266,8 @@ class _MyBlobScreenState extends State<MyBlobScreen> {
 
 ---
 
-## Customization Properties
+<!-- ## Customization Properties -->
 
-### Widget Properties (`BlobFlutter`)
-
-| Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `particleCount` | `int` | `5000` | Total number of particles distributed over the Fibonacci sphere. |
-| `radius` | `double` | `150.0` | Base radius of the 3D sphere in logical pixels. |
-| `pointSize` | `double` | `2.0` | Diameter of each rendered particle point in logical pixels. |
-| `speed` / `animationSpeed` | `double` | `1.0` | Playback speed multiplier for procedural noise deformation animation (`0.0` to pause). |
-| `controller` | `BlobController?` | `null` | Optional external controller for programmatic manipulation. |
-| `noiseType` | `BlobNoiseType` | `BlobNoiseType.harmonic` | Procedural 3D noise algorithm used for deformation. |
-| `gradient` | `Gradient` | `LinearGradient(...)` | Color gradient. Supports `LinearGradient`, `RadialGradient`, and `SweepGradient`. |
-| `tapScaleFactor` | `double` | `1.0` | Scale multiplier for particle dispersion upon touch/click interaction. |
-| `touchRadiusFactor` | `double` | `1.0` | Multiplier for the spatial influence radius of touch points. |
-| `isColorAnimated` | `bool` | `true` | When `true`, animates the color gradient flow across the surface. |
-| `colorAnimationSpeed` | `double` | `1.0` | Speed multiplier for color waves. Set to `0.0` for static gradient colors. |
-| `waveIntensity` | `double` | `1.0` | Intensity of liquid wave distortion in the fragment shader. |
-| `enableHover` | `bool` | `false` | Enables particle dispersion and interaction on mouse cursor movement. |
 
 ### Controller Properties and Methods (`BlobController`)
 
