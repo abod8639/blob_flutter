@@ -2054,3 +2054,200 @@ class _CodeExportModalState extends State<_CodeExportModal> {
     );
   }
 }
+
+/// Advanced Dart syntax highlighter that produces a rich glowing TextSpan tree
+/// styled with the application's cyberpunk cyan & neon theme palette.
+class _DartSyntaxHighlighter {
+  static final _tokenRegex = RegExp(
+    r'(//[^\n]*)' // 1: comments
+    r'|(@\w+)' // 2: annotations (@override)
+    r'|("(?:\\.|[^"\\])*"|\x27(?:\\.|[^\x27\\])*\x27)' // 3: strings
+    r'|\b(true|false)\b' // 4: booleans
+    r'|\b(late|final|const|void|super|return|switch|case|default|import|class|override|new|this)\b' // 5: keywords
+    r'|\b(BlobFlutter|BlobController|LinearGradient|RadialGradient|SweepGradient|Alignment|Colors|Color|Offset|BlobNoiseType|String|double|int|bool|Gradient|State|Widget|BuildContext)\b' // 6: types / classes
+    r'|\b(0x[0-9a-fA-F]+|\d+(?:\.\d+)?)\b' // 7: numbers
+    r'|(\b\w+\b)(?=\s*:)' // 8: parameter keys (e.g. radius:)
+    r'|(\b[a-zA-Z_]\w*\b)' // 9: identifiers / properties (e.g. harmonic, cyanAccent, topLeft)
+    r'|([^\w\s])', // 10: punctuation / brackets
+    multiLine: true,
+  );
+
+  static TextSpan format(String code, {double fontSize = 12.0}) {
+    final List<TextSpan> spans = [];
+    int lastMatchEnd = 0;
+
+    for (final match in _tokenRegex.allMatches(code)) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: code.substring(lastMatchEnd, match.start),
+          style: const TextStyle(color: Colors.white70),
+        ));
+      }
+
+      final token = match.group(0)!;
+
+      if (match.group(1) != null) {
+        // Comments
+        spans.add(TextSpan(
+          text: token,
+          style: TextStyle(
+            color: Colors.cyanAccent.withValues(alpha: 0.55),
+            fontStyle: FontStyle.italic,
+          ),
+        ));
+      } else if (match.group(2) != null) {
+        // Annotations
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.pinkAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      } else if (match.group(3) != null) {
+        // Strings
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.amberAccent,
+          ),
+        ));
+      } else if (match.group(4) != null) {
+        // Booleans
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.greenAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      } else if (match.group(5) != null) {
+        // Keywords
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.purpleAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      } else if (match.group(6) != null) {
+        // Types / Classes
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.cyanAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      } else if (match.group(7) != null) {
+        // Numbers
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.orangeAccent,
+          ),
+        ));
+      } else if (match.group(8) != null) {
+        // Parameter keys
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ));
+      } else if (match.group(9) != null) {
+        // Identifiers / Properties
+        spans.add(TextSpan(
+          text: token,
+          style: TextStyle(
+            color: Colors.cyanAccent.withValues(alpha: 0.85),
+          ),
+        ));
+      } else if (match.group(10) != null) {
+        // Punctuation
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Colors.white38,
+          ),
+        ));
+      }
+
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < code.length) {
+      spans.add(TextSpan(
+        text: code.substring(lastMatchEnd),
+        style: const TextStyle(color: Colors.white70),
+      ));
+    }
+
+    return TextSpan(
+      style: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: fontSize,
+        height: 1.45,
+        letterSpacing: 0.3,
+      ),
+      children: spans,
+    );
+  }
+}
+
+/// Gutter line numbers and syntax highlighted code renderer.
+class _CodeViewWithLineNumbers extends StatelessWidget {
+  final String code;
+  final double fontSize;
+
+  const _CodeViewWithLineNumbers({
+    required this.code,
+    this.fontSize = 12.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = code.split('\n');
+    final lineCount = lines.length;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Gutter with line numbers
+        Container(
+          padding: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              right: BorderSide(
+                color: Colors.cyanAccent.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(lineCount, (i) {
+              return Text(
+                '${i + 1}'.padLeft(2, '0'),
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: fontSize,
+                  height: 1.45,
+                  color: Colors.cyanAccent.withValues(alpha: 0.35),
+                  fontWeight: FontWeight.w500,
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Code with rich syntax highlighting
+        SelectableText.rich(
+          _DartSyntaxHighlighter.format(code, fontSize: fontSize),
+        ),
+      ],
+    );
+  }
+}
