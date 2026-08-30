@@ -225,6 +225,173 @@ class _DashboardPageState extends State<DashboardPage>
     });
   }
 
+  String _colorToCode(Color c) {
+    if (c == Colors.cyanAccent) return 'Colors.cyanAccent';
+    if (c == Colors.purpleAccent) return 'Colors.purpleAccent';
+    if (c == Colors.pinkAccent) return 'Colors.pinkAccent';
+    if (c == Colors.blueAccent) return 'Colors.blueAccent';
+    if (c == Colors.greenAccent) return 'Colors.greenAccent';
+    if (c == Colors.tealAccent) return 'Colors.tealAccent';
+    if (c == Colors.amberAccent) return 'Colors.amberAccent';
+    if (c == Colors.orangeAccent) return 'Colors.orangeAccent';
+    if (c == Colors.deepOrangeAccent) return 'Colors.deepOrangeAccent';
+    if (c == Colors.white) return 'Colors.white';
+    final hex = c.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
+    return 'const Color(0x$hex)';
+  }
+
+  String _formatDouble(double val) {
+    if (val % 1 == 0) {
+      return '${val.toInt()}.0';
+    }
+    return val.toStringAsFixed(2);
+  }
+
+  String _generateGradientCode() {
+    final c1 = _colorToCode(_color1);
+    final c2 = _colorToCode(_color2);
+    switch (_gradientTypeIndex) {
+      case 0:
+        return 'const LinearGradient(\n'
+            '          colors: [$c1, $c2],\n'
+            '          begin: Alignment.topCenter,\n'
+            '          end: Alignment.bottomCenter,\n'
+            '        )';
+      case 1:
+        return 'const LinearGradient(\n'
+            '          colors: [$c1, $c2],\n'
+            '          begin: Alignment.centerLeft,\n'
+            '          end: Alignment.centerRight,\n'
+            '        )';
+      case 2:
+        return 'const LinearGradient(\n'
+            '          colors: [$c1, $c2],\n'
+            '          begin: Alignment.topLeft,\n'
+            '          end: Alignment.bottomRight,\n'
+            '        )';
+      case 3:
+        return 'const RadialGradient(\n'
+            '          colors: [$c1, $c2],\n'
+            '          radius: 0.85,\n'
+            '        )';
+      case 4:
+        return 'const SweepGradient(\n'
+            '          colors: [$c1, $c2],\n'
+            '        )';
+      default:
+        return 'const LinearGradient(\n'
+            '          colors: [$c1, $c2],\n'
+            '        )';
+    }
+  }
+
+  String _generateSimpleWidgetCode() {
+    final buffer = StringBuffer();
+    buffer.writeln('BlobFlutter(');
+    buffer.writeln('  radius: ${_formatDouble(_radius)},');
+    buffer.writeln('  pointSize: ${_formatDouble(_pointSize)},');
+    buffer.writeln('  particleCount: $_particleCount,');
+    buffer.writeln('  noiseType: BlobNoiseType.${_noiseType.name},');
+    if (_speed != 1.0) {
+      buffer.writeln('  speed: ${_formatDouble(_speed)},');
+    }
+    if (!_isColorAnimated) {
+      buffer.writeln('  isColorAnimated: false,');
+    }
+    if (_colorAnimationSpeed != 1.0) {
+      buffer.writeln('  colorAnimationSpeed: ${_formatDouble(_colorAnimationSpeed)},');
+    }
+    if (_waveIntensity != 1.0) {
+      buffer.writeln('  waveIntensity: ${_formatDouble(_waveIntensity)},');
+    }
+    if (_enableHover) {
+      buffer.writeln('  enableHover: true,');
+    }
+    buffer.writeln('  gradient: ${_generateGradientCode()},');
+    buffer.write(')');
+    return buffer.toString();
+  }
+
+  String _generateControllerCode() {
+    final buffer = StringBuffer();
+    buffer.writeln('// 1. Controller Initialization in State');
+    buffer.writeln('late final BlobController _controller;');
+    buffer.writeln();
+    buffer.writeln('@override');
+    buffer.writeln('void initState() {');
+    buffer.writeln('  super.initState();');
+    buffer.writeln('  _controller = BlobController(');
+    buffer.writeln('    radius: ${_formatDouble(_radius)},');
+    buffer.writeln('    pointSize: ${_formatDouble(_pointSize)},');
+    buffer.writeln('    particleCount: $_particleCount,');
+    if (_scale != 1.0) {
+      buffer.writeln('    scale: ${_formatDouble(_scale)},');
+    }
+    if (_dampingFactor != 0.92) {
+      buffer.writeln('    dampingFactor: ${_formatDouble(_dampingFactor)},');
+    }
+    if (_tapScaleFactor != 1.0) {
+      buffer.writeln('    tapScaleFactor: ${_formatDouble(_tapScaleFactor)},');
+    }
+    if (_touchRadiusFactor != 1.0) {
+      buffer.writeln('    touchRadiusFactor: ${_formatDouble(_touchRadiusFactor)},');
+    }
+    if (!_isColorAnimated) {
+      buffer.writeln('    isColorAnimated: false,');
+    }
+    if (_colorAnimationSpeed != 1.0) {
+      buffer.writeln('    colorAnimationSpeed: ${_formatDouble(_colorAnimationSpeed)},');
+    }
+    if (_waveIntensity != 1.0) {
+      buffer.writeln('    waveIntensity: ${_formatDouble(_waveIntensity)},');
+    }
+    if (_enableHover) {
+      buffer.writeln('    enableHover: true,');
+    }
+    if (!_enablePinchToScale) {
+      buffer.writeln('    enablePinchToScale: false,');
+    }
+    if (_isRainbowMode) {
+      buffer.writeln('    isRainbowMode: true,');
+    }
+    buffer.writeln('    noiseType: BlobNoiseType.${_noiseType.name},');
+    buffer.writeln('    gradient: ${_generateGradientCode()},');
+    buffer.writeln('  );');
+    if (_autoRotationSpeed != 0.5) {
+      buffer.writeln('  _controller.setAutoRotationSpeed(${_formatDouble(_autoRotationSpeed)});');
+    }
+    if (_noiseFrequency != 1.0) {
+      buffer.writeln('  _controller.setNoiseFrequency(${_formatDouble(_noiseFrequency)});');
+    }
+    if (_viewDistance != 2.0) {
+      buffer.writeln('  _controller.setViewDistance(${_formatDouble(_viewDistance)});');
+    }
+    buffer.writeln('}');
+    buffer.writeln();
+    buffer.writeln('@override');
+    buffer.writeln('void dispose() {');
+    buffer.writeln('  _controller.dispose();');
+    buffer.writeln('  super.dispose();');
+    buffer.writeln('}');
+    buffer.writeln();
+    buffer.writeln('// 2. Widget Placement');
+    buffer.writeln('BlobFlutter(');
+    buffer.writeln('  controller: _controller,');
+    buffer.write(')');
+    return buffer.toString();
+  }
+
+  void _showCodeExportDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      builder: (ctx) => _CodeExportModal(
+        simpleCode: _generateSimpleWidgetCode(),
+        controllerCode: _generateControllerCode(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
