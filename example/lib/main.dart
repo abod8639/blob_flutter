@@ -473,6 +473,11 @@ class _DashboardPageState extends State<DashboardPage>
                     Row(
                       children: [
                         IconButton(
+                          icon: const Icon(Icons.code_rounded, color: Colors.cyanAccent),
+                          tooltip: 'Export & Copy Code',
+                          onPressed: _showCodeExportDialog,
+                        ),
+                        IconButton(
                           icon: const Icon(Icons.restart_alt, color: Colors.white70),
                           tooltip: 'Reset Geometry & Transform',
                           onPressed: () {
@@ -644,11 +649,22 @@ class _DashboardPageState extends State<DashboardPage>
                           ),
                         ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white70, size: 20),
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => setState(() => _isPanelExpanded = false),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.code_rounded,
+                                color: Colors.cyanAccent, size: 20),
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Export & Copy Code',
+                            onPressed: _showCodeExportDialog,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded,
+                                color: Colors.white70, size: 20),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => setState(() => _isPanelExpanded = false),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -666,6 +682,7 @@ class _DashboardPageState extends State<DashboardPage>
                       _buildNavTab(3, 'Physics', Icons.touch_app_rounded),
                       _buildNavTab(4, 'Shaders', Icons.palette_rounded),
                       _buildNavTab(5, 'Presets', Icons.auto_awesome_rounded),
+                      _buildNavTab(6, 'Export Code', Icons.code_rounded),
                     ],
                   ),
                 ),
