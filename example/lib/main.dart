@@ -869,13 +869,10 @@ class _DashboardPageState extends State<DashboardPage>
               const Divider(color: Colors.white10, height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Text(
-                  _generateSimpleWidgetCode(),
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
+                child: SelectableText.rich(
+                  _DartSyntaxHighlighter.format(
+                    _generateSimpleWidgetCode(),
                     fontSize: 10.5,
-                    color: Color(0xFFE2E8F0),
-                    height: 1.4,
                   ),
                 ),
               ),
@@ -1859,15 +1856,9 @@ class _CodeExportModalState extends State<_CodeExportModal> {
                             padding: const EdgeInsets.all(16),
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
-                              child: SelectableText(
-                                _currentCode,
-                                style: const TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 12.5,
-                                  color: Color(0xFFE2E8F0),
-                                  height: 1.45,
-                                  letterSpacing: 0.3,
-                                ),
+                              child: _CodeViewWithLineNumbers(
+                                code: _currentCode,
+                                fontSize: 12.5,
                               ),
                             ),
                           ),
