@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:blob_flutter/blob_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const ParticleBlobExampleApp());
