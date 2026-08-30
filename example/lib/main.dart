@@ -763,9 +763,127 @@ class _DashboardPageState extends State<DashboardPage>
         return _buildShadersTab();
       case 5:
         return _buildPresetsTab();
+      case 6:
+        return _buildExportCodeTab();
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  // ── Tab 6: Export Code ───────────────────────────────────────────────────
+  Widget _buildExportCodeTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Ready-to-Use Flutter Code:',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyanAccent.withValues(alpha: 0.2),
+                foregroundColor: Colors.cyanAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: const Icon(Icons.open_in_full_rounded, size: 14),
+              label: const Text(
+                'Open Modal',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+              ),
+              onPressed: _showCodeExportDialog,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF030712),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.cyanAccent.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.terminal_rounded,
+                          size: 14, color: Colors.cyanAccent),
+                      SizedBox(width: 6),
+                      Text(
+                        'BlobFlutter Widget',
+                        style: TextStyle(
+                          color: Colors.cyanAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded,
+                        color: Colors.cyanAccent, size: 16),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Copy Code',
+                    onPressed: () {
+                      Clipboard.setData(
+                          ClipboardData(text: _generateSimpleWidgetCode()));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Row(
+                            children: [
+                              Icon(Icons.check_circle_rounded,
+                                  color: Colors.cyanAccent, size: 18),
+                              SizedBox(width: 8),
+                              Text('Simple widget code copied!'),
+                            ],
+                          ),
+                          backgroundColor: const Color(0xFF0B132B),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white10, height: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Text(
+                  _generateSimpleWidgetCode(),
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 10.5,
+                    color: Color(0xFFE2E8F0),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   // ── Tab 0: Algorithms ─────────────────────────────────────────────────────
