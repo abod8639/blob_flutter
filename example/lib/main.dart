@@ -1663,3 +1663,403 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 }
+
+/// Modal dialog that presents the current 3D Blob configuration as simplified, copyable Dart code.
+class _CodeExportModal extends StatefulWidget {
+  final String simpleCode;
+  final String controllerCode;
+
+  const _CodeExportModal({
+    required this.simpleCode,
+    required this.controllerCode,
+  });
+
+  @override
+  State<_CodeExportModal> createState() => _CodeExportModalState();
+}
+
+class _CodeExportModalState extends State<_CodeExportModal> {
+  int _selectedMode = 0; // 0: Simple Widget, 1: With Controller
+  bool _copied = false;
+
+  String get _currentCode =>
+      _selectedMode == 0 ? widget.simpleCode : widget.controllerCode;
+
+  void _copyToClipboard() {
+    Clipboard.setData(ClipboardData(text: _currentCode));
+    setState(() => _copied = true);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded,
+                color: Colors.cyanAccent, size: 20),
+            const SizedBox(width: 10),
+            Text(
+              _selectedMode == 0
+                  ? 'Widget code copied to clipboard!'
+                  : 'Controller code copied to clipboard!',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0B132B),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.4)),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() => _copied = false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isCompact = mediaQuery.size.width < 600;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 40,
+        vertical: 24,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 620, maxHeight: 680),
+            decoration: BoxDecoration(
+              color: const Color(0xFF080C19).withValues(alpha: 0.94),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.cyanAccent.withValues(alpha: 0.35),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.cyanAccent.withValues(alpha: 0.15),
+                  blurRadius: 30,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 14, 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.cyanAccent.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.cyanAccent.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.code_rounded,
+                          color: Colors.cyanAccent,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Generated Flutter Code',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Copy & paste directly into your Flutter UI',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: Colors.white70),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Divider(color: Colors.white10, height: 1),
+
+                // Mode Selector Bar
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildModeTab(
+                          index: 0,
+                          title: 'Simple Widget',
+                          subtitle: 'BlobFlutter(...)',
+                          icon: Icons.widgets_rounded,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildModeTab(
+                          index: 1,
+                          title: 'With Controller',
+                          subtitle: 'BlobController + BlobFlutter',
+                          icon: Icons.tune_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Code Display Area
+                Flexible(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF030712),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.cyanAccent.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: SelectableText(
+                                _currentCode,
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12.5,
+                                  color: Color(0xFFE2E8F0),
+                                  height: 1.45,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Quick floating copy badge
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: _copyToClipboard,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _copied
+                                        ? Colors.greenAccent
+                                        : Colors.white24,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _copied
+                                          ? Icons.check_rounded
+                                          : Icons.copy_rounded,
+                                      color: _copied
+                                          ? Colors.greenAccent
+                                          : Colors.cyanAccent,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      _copied ? 'Copied' : 'Copy',
+                                      style: TextStyle(
+                                        color: _copied
+                                            ? Colors.greenAccent
+                                            : Colors.cyanAccent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Bottom Action Footer
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white70,
+                            side: const BorderSide(color: Colors.white24),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          label: const Text('Close'),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _copied
+                                ? Colors.greenAccent
+                                : Colors.cyanAccent,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                            shadowColor: (_copied
+                                    ? Colors.greenAccent
+                                    : Colors.cyanAccent)
+                                .withValues(alpha: 0.5),
+                          ),
+                          icon: Icon(
+                            _copied
+                                ? Icons.check_rounded
+                                : Icons.copy_all_rounded,
+                            size: 19,
+                          ),
+                          label: Text(
+                            _copied ? 'Code Copied!' : 'Copy to Clipboard',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          onPressed: _copyToClipboard,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeTab({
+    required int index,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    final bool isSelected = _selectedMode == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedMode = index;
+          _copied = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.cyanAccent.withValues(alpha: 0.16)
+              : Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.cyanAccent : Colors.white12,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.cyanAccent : Colors.white54,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? Colors.cyanAccent : Colors.white,
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.cyanAccent.withValues(alpha: 0.8)
+                          : Colors.white38,
+                      fontSize: 9.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
