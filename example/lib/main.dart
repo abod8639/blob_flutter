@@ -1842,10 +1842,10 @@ class _CodeExportModalState extends State<_CodeExportModal> {
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF030712),
+                      color: const Color(0xFF14161E),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.cyanAccent.withValues(alpha: 0.2),
+                        color: const Color(0xFF282C3A),
                         width: 1,
                       ),
                     ),
@@ -2055,8 +2055,8 @@ class _CodeExportModalState extends State<_CodeExportModal> {
   }
 }
 
-/// Advanced Dart syntax highlighter that produces a rich glowing TextSpan tree
-/// styled with the application's cyberpunk cyan & neon theme palette.
+/// Dart syntax highlighter that styles generated code with the
+/// professional VS Code Dark+ / One Dark IDE theme palette.
 class _DartSyntaxHighlighter {
   static final _tokenRegex = RegExp(
     r'(//[^\n]*)' // 1: comments
@@ -2080,96 +2080,96 @@ class _DartSyntaxHighlighter {
       if (match.start > lastMatchEnd) {
         spans.add(TextSpan(
           text: code.substring(lastMatchEnd, match.start),
-          style: const TextStyle(color: Colors.white70),
+          style: const TextStyle(color: Color(0xFFD4D4D4)),
         ));
       }
 
       final token = match.group(0)!;
 
       if (match.group(1) != null) {
-        // Comments
+        // Comments (Doc Green)
         spans.add(TextSpan(
           text: token,
-          style: TextStyle(
-            color: Colors.cyanAccent.withValues(alpha: 0.55),
+          style: const TextStyle(
+            color: Color(0xFF6A9955),
             fontStyle: FontStyle.italic,
           ),
         ));
       } else if (match.group(2) != null) {
-        // Annotations
+        // Annotations (@override)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.pinkAccent,
+            color: Color(0xFFC586C0),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(3) != null) {
-        // Strings
+        // Strings (Warm Terracotta / Coral)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.amberAccent,
+            color: Color(0xFFCE9178),
           ),
         ));
       } else if (match.group(4) != null) {
-        // Booleans
+        // Booleans (Keyword Blue)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.greenAccent,
+            color: Color(0xFF569CD6),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(5) != null) {
-        // Keywords
+        // Keywords (VS Code Blue)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.purpleAccent,
+            color: Color(0xFF569CD6),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(6) != null) {
-        // Types / Classes
+        // Types / Classes (Mint / Emerald Teal)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.cyanAccent,
+            color: Color(0xFF4EC9B0),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(7) != null) {
-        // Numbers
+        // Numbers & Hex (Soft Sage Green)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.orangeAccent,
+            color: Color(0xFFB5CEA8),
           ),
         ));
       } else if (match.group(8) != null) {
-        // Parameter keys
+        // Parameter Keys (Light Sky Blue)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+            color: Color(0xFF9CDCFE),
+            fontWeight: FontWeight.w500,
           ),
         ));
       } else if (match.group(9) != null) {
-        // Identifiers / Properties
-        spans.add(TextSpan(
-          text: token,
-          style: TextStyle(
-            color: Colors.cyanAccent.withValues(alpha: 0.85),
-          ),
-        ));
-      } else if (match.group(10) != null) {
-        // Punctuation
+        // Identifiers / Properties / Enums (Soft Yellow / Cyan)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Colors.white38,
+            color: Color(0xFFDCDCAA),
+          ),
+        ));
+      } else if (match.group(10) != null) {
+        // Punctuation & Operators
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: Color(0xFF808080),
           ),
         ));
       }
@@ -2180,7 +2180,7 @@ class _DartSyntaxHighlighter {
     if (lastMatchEnd < code.length) {
       spans.add(TextSpan(
         text: code.substring(lastMatchEnd),
-        style: const TextStyle(color: Colors.white70),
+        style: const TextStyle(color: Color(0xFFD4D4D4)),
       ));
     }
 
@@ -2218,10 +2218,10 @@ class _CodeViewWithLineNumbers extends StatelessWidget {
         // Gutter with line numbers
         Container(
           padding: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               right: BorderSide(
-                color: Colors.cyanAccent.withValues(alpha: 0.2),
+                color: Color(0xFF282C3A),
                 width: 1,
               ),
             ),
@@ -2235,7 +2235,7 @@ class _CodeViewWithLineNumbers extends StatelessWidget {
                   fontFamily: 'monospace',
                   fontSize: fontSize,
                   height: 1.45,
-                  color: Colors.cyanAccent.withValues(alpha: 0.35),
+                  color: const Color(0xFF5C6370),
                   fontWeight: FontWeight.w500,
                 ),
               );
