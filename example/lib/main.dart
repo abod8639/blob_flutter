@@ -226,15 +226,15 @@ class _DashboardPageState extends State<DashboardPage>
   }
 
   String _colorToCode(Color c) {
-    if (c == Colors.cyanAccent) return 'Colors.cyanAccent';
-    if (c == Colors.purpleAccent) return 'Colors.purpleAccent';
-    if (c == Colors.pinkAccent) return 'Colors.pinkAccent';
-    if (c == Colors.blueAccent) return 'Colors.blueAccent';
-    if (c == Colors.greenAccent) return 'Colors.greenAccent';
-    if (c == Colors.tealAccent) return 'Colors.tealAccent';
-    if (c == Colors.amberAccent) return 'Colors.amberAccent';
-    if (c == Colors.orangeAccent) return 'Colors.orangeAccent';
-    if (c == Colors.deepOrangeAccent) return 'Colors.deepOrangeAccent';
+    if (c == Colors.cyan) return 'Colors.cyan';
+    if (c == Colors.purple) return 'Colors.purple';
+    if (c == Colors.pink) return 'Colors.pink';
+    if (c == Colors.blue) return 'Colors.blue';
+    if (c == Colors.green) return 'Colors.green';
+    if (c == Colors.teal) return 'Colors.teal';
+    if (c == Colors.amber) return 'Colors.amber';
+    if (c == Colors.orange) return 'Colors.orange';
+    if (c == Colors.deepOrange) return 'Colors.deepOrange';
     if (c == Colors.white) return 'Colors.white';
     final hex = c.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
     return 'const Color(0x$hex)';
@@ -2056,7 +2056,7 @@ class _CodeExportModalState extends State<_CodeExportModal> {
 }
 
 /// Dart syntax highlighter that styles generated code with the
-/// professional VS Code Dark+ / One Dark IDE theme palette.
+/// official Aura Dark Theme palette (Purple, Mint, Peach, Cyan, Magenta, Coral).
 class _DartSyntaxHighlighter {
   static final _tokenRegex = RegExp(
     r'(//[^\n]*)' // 1: comments
@@ -2080,96 +2080,96 @@ class _DartSyntaxHighlighter {
       if (match.start > lastMatchEnd) {
         spans.add(TextSpan(
           text: code.substring(lastMatchEnd, match.start),
-          style: const TextStyle(color: Color(0xFFD4D4D4)),
+          style: const TextStyle(color: Color(0xFFEDECEE)),
         ));
       }
 
       final token = match.group(0)!;
 
       if (match.group(1) != null) {
-        // Comments (Doc Green)
+        // Comments (Aura Muted Gray)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFF6A9955),
+            color: Color(0xFF6D6D6D),
             fontStyle: FontStyle.italic,
           ),
         ));
       } else if (match.group(2) != null) {
-        // Annotations (@override)
+        // Annotations (@override - Aura Pink)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFFC586C0),
+            color: Color(0xFFF694FF),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(3) != null) {
-        // Strings (Warm Terracotta / Coral)
+        // Strings (Aura Mint Green)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFFCE9178),
+            color: Color(0xFF61FFCA),
           ),
         ));
       } else if (match.group(4) != null) {
-        // Booleans (Keyword Blue)
+        // Booleans (Aura Coral Red)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFF569CD6),
+            color: Color(0xFFFF6767),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(5) != null) {
-        // Keywords (VS Code Blue)
+        // Keywords (Aura Purple)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFF569CD6),
+            color: Color(0xFFA277FF),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(6) != null) {
-        // Types / Classes (Mint / Emerald Teal)
+        // Types / Classes (Aura Cyan)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFF4EC9B0),
+            color: Color(0xFF82E2FF),
             fontWeight: FontWeight.bold,
           ),
         ));
       } else if (match.group(7) != null) {
-        // Numbers & Hex (Soft Sage Green)
+        // Numbers & Hex (Aura Orange / Peach)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFFB5CEA8),
+            color: Color(0xFFFFCA85),
           ),
         ));
       } else if (match.group(8) != null) {
-        // Parameter Keys (Light Sky Blue)
+        // Parameter Keys (Aura Peach)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFF9CDCFE),
+            color: Color(0xFFFFCA85),
             fontWeight: FontWeight.w500,
           ),
         ));
       } else if (match.group(9) != null) {
-        // Identifiers / Properties / Enums (Soft Yellow / Cyan)
+        // Identifiers / Properties / Enums (Aura Pink / Magenta)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFFDCDCAA),
+            color: Color(0xFFF694FF),
           ),
         ));
       } else if (match.group(10) != null) {
-        // Punctuation & Operators
+        // Punctuation & Operators (Aura Off-White)
         spans.add(TextSpan(
           text: token,
           style: const TextStyle(
-            color: Color(0xFF808080),
+            color: Color(0xFFEDECEE),
           ),
         ));
       }
@@ -2180,7 +2180,7 @@ class _DartSyntaxHighlighter {
     if (lastMatchEnd < code.length) {
       spans.add(TextSpan(
         text: code.substring(lastMatchEnd),
-        style: const TextStyle(color: Color(0xFFD4D4D4)),
+        style: const TextStyle(color: Color(0xFFEDECEE)),
       ));
     }
 
@@ -2221,7 +2221,7 @@ class _CodeViewWithLineNumbers extends StatelessWidget {
           decoration: const BoxDecoration(
             border: Border(
               right: BorderSide(
-                color: Color(0xFF282C3A),
+                color: Color(0xFF292639),
                 width: 1,
               ),
             ),
@@ -2235,7 +2235,7 @@ class _CodeViewWithLineNumbers extends StatelessWidget {
                   fontFamily: 'monospace',
                   fontSize: fontSize,
                   height: 1.45,
-                  color: const Color(0xFF5C6370),
+                  color: const Color(0xFF6D6D6D),
                   fontWeight: FontWeight.w500,
                 ),
               );
