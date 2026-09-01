@@ -808,10 +808,10 @@ class _DashboardPageState extends State<DashboardPage>
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF030712),
+            color: const Color(0xFF14161E),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: Colors.cyanAccent.withValues(alpha: 0.3),
+              color: const Color(0xFF282C3A),
               width: 1,
             ),
           ),
@@ -824,12 +824,12 @@ class _DashboardPageState extends State<DashboardPage>
                   const Row(
                     children: [
                       Icon(Icons.terminal_rounded,
-                          size: 14, color: Colors.cyanAccent),
+                          size: 14, color: Color(0xFF4EC9B0)),
                       SizedBox(width: 6),
                       Text(
                         'BlobFlutter Widget',
                         style: TextStyle(
-                          color: Colors.cyanAccent,
+                          color: Color(0xFF4EC9B0),
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -838,7 +838,7 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy_rounded,
-                        color: Colors.cyanAccent, size: 16),
+                        color: Color(0xFF9CDCFE), size: 16),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: 'Copy Code',
@@ -850,12 +850,12 @@ class _DashboardPageState extends State<DashboardPage>
                           content: const Row(
                             children: [
                               Icon(Icons.check_circle_rounded,
-                                  color: Colors.cyanAccent, size: 18),
+                                  color: Color(0xFF4EC9B0), size: 18),
                               SizedBox(width: 8),
                               Text('Simple widget code copied!'),
                             ],
                           ),
-                          backgroundColor: const Color(0xFF0B132B),
+                          backgroundColor: const Color(0xFF1E222D),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
@@ -866,7 +866,7 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                 ],
               ),
-              const Divider(color: Colors.white10, height: 12),
+              const Divider(color: Color(0xFF282C3A), height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SelectableText.rich(
