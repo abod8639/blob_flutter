@@ -808,10 +808,10 @@ class _DashboardPageState extends State<DashboardPage>
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF14161E),
+            color: const Color(0xFF15141B),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: const Color(0xFF282C3A),
+              color: const Color(0xFF292639),
               width: 1,
             ),
           ),
@@ -824,12 +824,12 @@ class _DashboardPageState extends State<DashboardPage>
                   const Row(
                     children: [
                       Icon(Icons.terminal_rounded,
-                          size: 14, color: Color(0xFF4EC9B0)),
+                          size: 14, color: Color(0xFFA277FF)),
                       SizedBox(width: 6),
                       Text(
                         'BlobFlutter Widget',
                         style: TextStyle(
-                          color: Color(0xFF4EC9B0),
+                          color: Color(0xFFA277FF),
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -838,7 +838,7 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy_rounded,
-                        color: Color(0xFF9CDCFE), size: 16),
+                        color: Color(0xFF82E2FF), size: 16),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: 'Copy Code',
@@ -850,12 +850,12 @@ class _DashboardPageState extends State<DashboardPage>
                           content: const Row(
                             children: [
                               Icon(Icons.check_circle_rounded,
-                                  color: Color(0xFF4EC9B0), size: 18),
+                                  color: Color(0xFF61FFCA), size: 18),
                               SizedBox(width: 8),
                               Text('Simple widget code copied!'),
                             ],
                           ),
-                          backgroundColor: const Color(0xFF1E222D),
+                          backgroundColor: const Color(0xFF1F1D2B),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
@@ -866,7 +866,7 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                 ],
               ),
-              const Divider(color: Color(0xFF282C3A), height: 12),
+              const Divider(color: Color(0xFF292639), height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SelectableText.rich(
@@ -1842,10 +1842,10 @@ class _CodeExportModalState extends State<_CodeExportModal> {
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF14161E),
+                      color: const Color(0xFF15141B),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF282C3A),
+                        color: const Color(0xFF292639),
                         width: 1,
                       ),
                     ),
