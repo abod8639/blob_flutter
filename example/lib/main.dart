@@ -296,12 +296,18 @@ class _DashboardPageState extends State<DashboardPage>
   String _generateSimpleWidgetCode() {
     final buffer = StringBuffer();
     buffer.writeln('BlobFlutter(');
+    buffer.writeln('  particleCount: $_particleCount,');
     buffer.writeln('  radius: ${_formatDouble(_radius)},');
     buffer.writeln('  pointSize: ${_formatDouble(_pointSize)},');
-    buffer.writeln('  particleCount: $_particleCount,');
     buffer.writeln('  noiseType: BlobNoiseType.${_noiseType.name},');
     if (_speed != 1.0) {
       buffer.writeln('  speed: ${_formatDouble(_speed)},');
+    }
+    if (_tapScaleFactor != 0.40) {
+      buffer.writeln('  tapScaleFactor: ${_formatDouble(_tapScaleFactor)},');
+    }
+    if (_touchRadiusFactor != 0.30) {
+      buffer.writeln('  touchRadiusFactor: ${_formatDouble(_touchRadiusFactor)},');
     }
     if (!_isColorAnimated) {
       buffer.writeln('  isColorAnimated: false,');
@@ -314,6 +320,12 @@ class _DashboardPageState extends State<DashboardPage>
     }
     if (_enableHover) {
       buffer.writeln('  enableHover: true,');
+    }
+    if (_enableDragRotation) {
+      buffer.writeln('  enableDragRotation: true,');
+    }
+    if (_enableHoverRotation) {
+      buffer.writeln('  enableHoverRotation: true,');
     }
     buffer.writeln('  gradient: ${_generateGradientCode()},');
     buffer.write(')');
@@ -329,9 +341,12 @@ class _DashboardPageState extends State<DashboardPage>
     buffer.writeln('void initState() {');
     buffer.writeln('  super.initState();');
     buffer.writeln('  _controller = BlobController(');
+    buffer.writeln('    particleCount: $_particleCount,');
     buffer.writeln('    radius: ${_formatDouble(_radius)},');
     buffer.writeln('    pointSize: ${_formatDouble(_pointSize)},');
-    buffer.writeln('    particleCount: $_particleCount,');
+    if (_speed != 1.0) {
+      buffer.writeln('    speed: ${_formatDouble(_speed)},');
+    }
     if (_scale != 1.0) {
       buffer.writeln('    scale: ${_formatDouble(_scale)},');
     }
@@ -343,6 +358,21 @@ class _DashboardPageState extends State<DashboardPage>
     }
     if (_touchRadiusFactor != 1.0) {
       buffer.writeln('    touchRadiusFactor: ${_formatDouble(_touchRadiusFactor)},');
+    }
+    if (_blobiness != 1.0) {
+      buffer.writeln('    blobiness: ${_formatDouble(_blobiness)},');
+    }
+    if (_dispersion != 0.0) {
+      buffer.writeln('    dispersion: ${_formatDouble(_dispersion)},');
+    }
+    if (_autoRotationSpeed != 0.5) {
+      buffer.writeln('    autoRotationSpeed: ${_formatDouble(_autoRotationSpeed)},');
+    }
+    if (_noiseFrequency != 1.0) {
+      buffer.writeln('    noiseFrequency: ${_formatDouble(_noiseFrequency)},');
+    }
+    if (_viewDistance != 2.0) {
+      buffer.writeln('    viewDistance: ${_formatDouble(_viewDistance)},');
     }
     if (!_isColorAnimated) {
       buffer.writeln('    isColorAnimated: false,');
@@ -356,6 +386,12 @@ class _DashboardPageState extends State<DashboardPage>
     if (_enableHover) {
       buffer.writeln('    enableHover: true,');
     }
+    if (_enableDragRotation) {
+      buffer.writeln('    enableDragRotation: true,');
+    }
+    if (_enableHoverRotation) {
+      buffer.writeln('    enableHoverRotation: true,');
+    }
     if (!_enablePinchToScale) {
       buffer.writeln('    enablePinchToScale: false,');
     }
@@ -365,15 +401,6 @@ class _DashboardPageState extends State<DashboardPage>
     buffer.writeln('    noiseType: BlobNoiseType.${_noiseType.name},');
     buffer.writeln('    gradient: ${_generateGradientCode()},');
     buffer.writeln('  );');
-    if (_autoRotationSpeed != 0.5) {
-      buffer.writeln('  _controller.setAutoRotationSpeed(${_formatDouble(_autoRotationSpeed)});');
-    }
-    if (_noiseFrequency != 1.0) {
-      buffer.writeln('  _controller.setNoiseFrequency(${_formatDouble(_noiseFrequency)});');
-    }
-    if (_viewDistance != 2.0) {
-      buffer.writeln('  _controller.setViewDistance(${_formatDouble(_viewDistance)});');
-    }
     buffer.writeln('}');
     buffer.writeln();
     buffer.writeln('@override');
@@ -413,13 +440,17 @@ class _DashboardPageState extends State<DashboardPage>
               radius: _radius,
               pointSize: _pointSize,
               particleCount: _particleCount,
+              speed: _speed,
+              tapScaleFactor: _tapScaleFactor,
+              touchRadiusFactor: _touchRadiusFactor,
               noiseType: _noiseType,
               gradient: _computeGradient(),
               isColorAnimated: _isColorAnimated,
               colorAnimationSpeed: _colorAnimationSpeed,
               waveIntensity: _waveIntensity,
               enableHover: _enableHover,
-              
+              enableDragRotation: _enableDragRotation,
+              enableHoverRotation: _enableHoverRotation,
             ),
           ),
 
