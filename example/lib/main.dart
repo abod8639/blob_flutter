@@ -1234,6 +1234,26 @@ class _DashboardPageState extends State<DashboardPage>
             });
           },
         ),
+        _buildToggle(
+          title: 'Drag / Swipe 3D Rotation',
+          value: _enableDragRotation,
+          onChanged: (val) {
+            setState(() {
+              _enableDragRotation = val;
+              _controller.setEnableDragRotation(val);
+            });
+          },
+        ),
+        _buildToggle(
+          title: 'Mouse Hover 3D Rotation',
+          value: _enableHoverRotation,
+          onChanged: (val) {
+            setState(() {
+              _enableHoverRotation = val;
+              _controller.setEnableHoverRotation(val);
+            });
+          },
+        ),
       ],
     );
   }
