@@ -60,8 +60,8 @@ class _DashboardPageState extends State<DashboardPage>
 
   // Physics & Touch State
   double _dampingFactor = 0.95;
-  double _tapScaleFactor = 1.0;
-  double _touchRadiusFactor = 1.0;
+  double _tapScaleFactor = 0.3;
+  double _touchRadiusFactor = 0.3;
   double _dispersion = 0.0;
   bool _enableHover = true;
 
