@@ -201,7 +201,6 @@ class _DashboardPageState extends State<DashboardPage>
   void _applyPreset({
     required BlobNoiseType noiseType,
     required double blobiness,
-    required double speed,
     required double autoRot,
     required Color color1,
     required Color color2,
@@ -210,7 +209,7 @@ class _DashboardPageState extends State<DashboardPage>
     setState(() {
       _noiseType = noiseType;
       _blobiness = blobiness;
-      _speed = speed;
+      _speed = 1.0;
       _autoRotationSpeed = autoRot;
       _color1 = color1;
       _color2 = color2;
@@ -218,7 +217,6 @@ class _DashboardPageState extends State<DashboardPage>
 
       _controller.setNoiseType(noiseType);
       _controller.setBlobiness(blobiness);
-      _controller.setSpeed(speed);
       _controller.setAutoRotationSpeed(autoRot);
       _controller.setIsRainbowMode(rainbow);
       _applyGradient();
@@ -1423,8 +1421,7 @@ class _DashboardPageState extends State<DashboardPage>
               color: Colors.pinkAccent,
               onTap: () => _applyPreset(
                 noiseType: BlobNoiseType.spiky,
-                blobiness: 1.8,
-                speed: 1.6,
+                blobiness: 0.8,
                 autoRot: 1.0,
                 color1: Colors.cyanAccent,
                 color2: Colors.pinkAccent,
@@ -1435,11 +1432,10 @@ class _DashboardPageState extends State<DashboardPage>
               color: Colors.greenAccent,
               onTap: () => _applyPreset(
                 noiseType: BlobNoiseType.simplex,
-                blobiness: 1.2,
-                speed: 1.2,
+                blobiness: 0.8,
                 autoRot: 0.8,
-                color1: Colors.greenAccent,
-                color2: Colors.tealAccent,
+                color1: Colors.green,
+                color2: Colors.blueAccent,
               ),
             ),
             _buildPresetChip(
@@ -1448,9 +1444,8 @@ class _DashboardPageState extends State<DashboardPage>
               onTap: () => _applyPreset(
                 noiseType: BlobNoiseType.fractal,
                 blobiness: 2.2,
-                speed: 2.0,
                 autoRot: -1.2,
-                color1: Colors.orangeAccent,
+                color1: Colors.yellowAccent,
                 color2: Colors.deepOrangeAccent,
               ),
             ),
@@ -1459,8 +1454,7 @@ class _DashboardPageState extends State<DashboardPage>
               color: Colors.purpleAccent,
               onTap: () => _applyPreset(
                 noiseType: BlobNoiseType.vortex,
-                blobiness: 1.6,
-                speed: 1.5,
+                blobiness: 1.4,
                 autoRot: 1.5,
                 color1: Colors.purpleAccent,
                 color2: Colors.blueAccent,
@@ -1471,10 +1465,9 @@ class _DashboardPageState extends State<DashboardPage>
               color: Colors.cyanAccent,
               onTap: () => _applyPreset(
                 noiseType: BlobNoiseType.sphericalHarmonics,
-                blobiness: 1.5,
-                speed: 1.0,
+                blobiness: 1.3,
                 autoRot: 0.5,
-                color1: Colors.cyanAccent,
+                color1: Colors.cyan,
                 color2: Colors.indigoAccent,
               ),
             ),
@@ -1483,8 +1476,7 @@ class _DashboardPageState extends State<DashboardPage>
               color: Colors.amberAccent,
               onTap: () => _applyPreset(
                 noiseType: BlobNoiseType.harmonic,
-                blobiness: 1.0,
-                speed: 1.2,
+                blobiness: 1.4,
                 autoRot: 0.7,
                 color1: Colors.amberAccent,
                 color2: Colors.purpleAccent,
