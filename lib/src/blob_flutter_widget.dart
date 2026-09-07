@@ -50,11 +50,11 @@ class BlobFlutter extends StatefulWidget {
   final BlobController? controller;
 
   /// Scale multiplier applied to particle dispersion on touch/tap.
-  /// Range: [0.0, 5.0]. Default: 1.0.
+  /// Range: [0.0, 5.0]. Default: 0.40.
   final double tapScaleFactor;
 
   /// Multiplier applied to the touch interaction radius size.
-  /// Range: [0.1, 5.0]. Default: 1.0.
+  /// Range: [0.1, 5.0]. Default: 0.30.
   final double touchRadiusFactor;
 
   /// The gradient used to color the particles.
