@@ -64,6 +64,8 @@ class _DashboardPageState extends State<DashboardPage>
   double _touchRadiusFactor = 0.3;
   double _dispersion = 0.0;
   bool _enableHover = true;
+  bool _enableDragRotation = true;
+  bool _enableHoverRotation = false;
 
   // Color & Shader State
   bool _isRainbowMode = false;
@@ -99,15 +101,23 @@ class _DashboardPageState extends State<DashboardPage>
       radius: _radius,
       pointSize: _pointSize,
       particleCount: _particleCount,
+      speed: _speed,
       scale: _scale,
       dampingFactor: _dampingFactor,
       tapScaleFactor: _tapScaleFactor,
       touchRadiusFactor: _touchRadiusFactor,
+      blobiness: _blobiness,
+      dispersion: _dispersion,
+      autoRotationSpeed: _autoRotationSpeed,
+      noiseFrequency: _noiseFrequency,
+      viewDistance: _viewDistance,
       isColorAnimated: _isColorAnimated,
       colorAnimationSpeed: _colorAnimationSpeed,
       waveIntensity: _waveIntensity,
       enableHover: _enableHover,
       enablePinchToScale: _enablePinchToScale,
+      enableDragRotation: _enableDragRotation,
+      enableHoverRotation: _enableHoverRotation,
       noiseType: _noiseType,
       gradient: _computeGradient(),
     );
@@ -409,6 +419,7 @@ class _DashboardPageState extends State<DashboardPage>
               colorAnimationSpeed: _colorAnimationSpeed,
               waveIntensity: _waveIntensity,
               enableHover: _enableHover,
+              
             ),
           ),
 
