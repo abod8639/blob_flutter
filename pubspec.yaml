@@ -18,3 +18,7 @@ dev_dependencies:
 flutter:
   shaders:
     - shaders/blob.frag
+
+screenshots:
+  - description: "A high-performance interactive 3D particle blob effect."
+    path: assets/Picsart.png
