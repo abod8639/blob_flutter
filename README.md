@@ -2,7 +2,7 @@
 
 # Blob Flutter (3D Particle Blob)
 
-![Cyberpunk Blob Banner](assets/image.png)
+![Cyberpunk Blob Banner](https://github.com/abod8639/media/blob/main/blob_flutter/Picsart_2.png?raw=true)
 <!-- ![Cyberpunk Blob Banner](assets/banner.jpg) -->
 
 **A high-performance, interactive 3D particle blob for Flutter.**<br>
@@ -10,7 +10,8 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-[![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=for-the-badge&color=orange)](https://pub.dev/packages/blob_flutter)
+
+<!-- [![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=for-the-badge&color=orange)](https://pub.dev/packages/blob_flutter) -->
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Algorithms](#-procedural-noise-algorithms) • [Controller](#-controller-usage) • [Architecture](#-architecture--performance)
 
@@ -173,5 +174,5 @@ Manipulate the blob dynamically at runtime using the controller methods.
 ---
 
 <div align="center">
-  <i>Built with ❤️ for fluid, interactive Flutter interfaces.</i>
+  <i>Built with ❤️ by dexter for fluid,interactive Flutter interfaces.</i>
 </div>
