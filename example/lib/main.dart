@@ -51,8 +51,10 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
     super.initState();
     _controller = BlobController(
       particleCount: _particleCount,
-      radius: 135.0,
-      pointSize: 2.2,
+      radius: 150.0,
+      pointSize: 1.5,
+      tapScaleFactor: 0.5,
+      touchRadiusFactor: 0.6,
       speed: _speed,
       blobiness: _blobiness,
       noiseType: _selectedNoise,
@@ -121,10 +123,15 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
         children: [
           // ── 3D Particle Blob Canvas ─────────────────────────────────────────
           Positioned.fill(
-            child: BlobFlutter(
-              controller: _controller,
-              enableDragRotation: true,
-              enableHover: true,
+            child: Column(
+              children: [
+               const SizedBox(height: 200),
+                BlobFlutter(
+                  controller: _controller,
+                  enableDragRotation: true,
+                  enableHover: true,
+                ),
+              ],
             ),
           ),
 
