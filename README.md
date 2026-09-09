@@ -33,6 +33,7 @@
 - **7 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, and more.
 - **Fluid Touch Interaction**: Natural multi-touch drag rotation, hover tracking, and tap dispersion.
 - **Zero-Allocation Pipeline**: Pre-allocated buffers ensure zero heap object allocations during the render loop.
+- **Resource-Conscious Engineering**: Crafted with rigorous mathematical precision to respect developers and end-user devices—maximizing performance while preventing battery drain and memory thrashing.
 
 ---
 
@@ -151,6 +152,8 @@ Configure the initial state of your blob directly in the widget.
 > - **1,000 – 3,000:** Ideal for low-end devices, battery-sensitive apps, or subtle background elements.
 > - **3,000 – 6,000 (Default: `5000`):** Sweet spot for smooth 60/120 FPS on most modern mobile devices.
 > - **8,000 – 20,000+:** Recommended for modern flagship phones, desktop, or web applications with capable GPUs.
+>
+> *(Note: These figures are approximations and may vary depending on target device hardware and workload).*
 
 ### Controller Properties (`BlobController`)
 Manipulate the blob dynamically at runtime using the controller methods.
@@ -172,12 +175,13 @@ Manipulate the blob dynamically at runtime using the controller methods.
 
 ## Architecture & Performance
 
-`BlobFlutter` is engineered to deliver sustained **60 / 120 FPS** on native platforms:
+`BlobFlutter` is built with deep respect for both developers and end-user hardware. Every mathematical model, buffer allocation, and render pass is calculated with exacting precision to deliver sustained **60 / 120 FPS** while safeguarding device resources, thermals, and battery life:
 
 1. **Persistent Worker Isolate**: 3D math, trigonometric deformations, and matrix rotations execute in a dedicated background worker (`BlobWorker`). The UI receives data via zero-copy `TransferableTypedData`.
 2. **Single GPU Draw Call**: Particle coordinates are flattened and drawn directly to graphics hardware using `Canvas.drawRawPoints`.
 3. **Zero Heap Allocation**: Coordinate caches and calculation buffers are pre-allocated during initialization, avoiding Garbage Collector (GC) stutters.
 4. **Hardware Shaders**: Complex color interpolation and organic shimmer waves run entirely on the GPU via custom GLSL shaders (`ui.FragmentProgram`).
+5. **Resource-Conscious Loop**: Calculations and render cycles are strictly optimized so device CPU/GPU cycles are never wasted on redundant processing.
 
 > [!NOTE]
 > **Performance Scaling:** Although computation is offloaded to a background `Isolate` to keep the UI thread jank-free, mathematical transformations and GPU vertex throughput scale linearly with `particleCount`. Very high counts on budget or older hardware may impact frame rates or cause battery drain.
