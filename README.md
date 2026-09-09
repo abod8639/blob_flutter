@@ -138,18 +138,26 @@ Configure the initial state of your blob directly in the widget.
 
 | Property | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `particleCount` | `int` | `5000` | Total number of particles on the sphere. |
+| `particleCount` | `int` | `5000` | Total number of particles on the sphere (higher counts increase density but may affect performance). |
 | `radius` | `double` | `150.0` | Base radius in logical pixels. |
 | `pointSize` | `double` | `2.0` | Diameter of each rendered particle. |
 | `noiseType` | `Enum` | `harmonic` | Procedural 3D noise algorithm used. |
 | `controller` | `BlobController?` | `null` | External controller for runtime manipulation. |
 | `gradient` | `Gradient` | `Linear` | Color gradient (Linear, Radial, or Sweep). |
 
+> [!TIP]
+> **Performance & Particle Count (`particleCount`):**
+> Increasing the particle count enhances visual fullness and detail, but directly increases computation time in the isolate and vertex drawing load on the GPU:
+> - **1,000 – 3,000:** Ideal for low-end devices, battery-sensitive apps, or subtle background elements.
+> - **3,000 – 6,000 (Default: `5000`):** Sweet spot for smooth 60/120 FPS on most modern mobile devices.
+> - **8,000 – 20,000+:** Recommended for modern flagship phones, desktop, or web applications with capable GPUs.
+
 ### Controller Properties (`BlobController`)
 Manipulate the blob dynamically at runtime using the controller methods.
 
 | Setter Method | Valid Range | Description |
 | :--- | :--- | :--- |
+| `setParticleCount(val)`| `10` - `100000`| Dynamically sets particle count (reallocates buffers). |
 | `setBlobiness(val)` | `0.0` - `5.0` | Amplitude of noise displacement. |
 | `setSpeed(val)` | `0.0` - `10.0` | Playback speed of the animation. |
 | `setDispersion(val)` | `0.0` - `3.0` | Outward radial displacement. |
@@ -170,6 +178,9 @@ Manipulate the blob dynamically at runtime using the controller methods.
 2. **Single GPU Draw Call**: Particle coordinates are flattened and drawn directly to graphics hardware using `Canvas.drawRawPoints`.
 3. **Zero Heap Allocation**: Coordinate caches and calculation buffers are pre-allocated during initialization, avoiding Garbage Collector (GC) stutters.
 4. **Hardware Shaders**: Complex color interpolation and organic shimmer waves run entirely on the GPU via custom GLSL shaders (`ui.FragmentProgram`).
+
+> [!NOTE]
+> **Performance Scaling:** Although computation is offloaded to a background `Isolate` to keep the UI thread jank-free, mathematical transformations and GPU vertex throughput scale linearly with `particleCount`. Very high counts on budget or older hardware may impact frame rates or cause battery drain.
 
 ---
 
