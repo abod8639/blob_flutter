@@ -235,5 +235,70 @@ void main() {
       expect(touches.isEmpty, true);
       await gesture.removePointer();
     });
+
+    testWidgets('pinch-to-scale gesture scales the blob when enablePinchToScale is true', (tester) async {
+      final controller = BlobController(enablePinchToScale: true);
+      controller.setScale(1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                onTouchesChanged: (_) {},
+                child: Container(width: 300, height: 300, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final touch1 = await tester.startGesture(const Offset(100, 100));
+      final touch2 = await tester.startGesture(const Offset(200, 100));
+      await tester.pump();
+
+      await touch2.moveTo(const Offset(280, 100));
+      await tester.pump();
+
+      expect(controller.scale, greaterThan(1.0));
+
+      await touch1.up();
+      await touch2.up();
+      await tester.pump();
+    });
+
+    testWidgets('multi-touch falls back to drag rotation when enablePinchToScale is false', (tester) async {
+      final controller = BlobController(enablePinchToScale: false, enableDragRotation: true);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                onTouchesChanged: (_) {},
+                child: Container(width: 300, height: 300, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final touch1 = await tester.startGesture(const Offset(100, 100));
+      final touch2 = await tester.startGesture(const Offset(200, 100));
+      await tester.pump();
+
+      await touch2.moveTo(const Offset(250, 130));
+      await tester.pump();
+
+      expect(controller.rotationX != 0.0 || controller.rotationY != 0.0, true);
+
+      await touch1.up();
+      await touch2.up();
+      await tester.pump();
+    });
   });
 }
