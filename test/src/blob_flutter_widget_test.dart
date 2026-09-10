@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_controller.dart';
+import 'package:blob_flutter/src/blob_exception.dart';
 import 'package:blob_flutter/src/blob_flutter_widget.dart';
 import 'package:blob_flutter/src/blob_input_listener.dart';
 import 'package:blob_flutter/src/blob_noise_type.dart';
@@ -687,6 +688,62 @@ void main() {
       );
 
       expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('fires onError callback when shader loading fails in test environment', (tester) async {
+      BlobFlutterException? capturedError;
+      StackTrace? capturedStackTrace;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                silentErrorLogging: true,
+                onError: (error, stackTrace) {
+                  capturedError = error;
+                  capturedStackTrace = stackTrace;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(capturedError, isNotNull);
+      expect(capturedError, isA<BlobShaderException>());
+      expect(capturedError!.message, contains('Failed to load fragment shader asset'));
+      expect(capturedError!.solutionHint, contains('pubspec.yaml'));
+    });
+
+    testWidgets('renders custom error widget when errorBuilder is provided and shader fails', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                silentErrorLogging: true,
+                errorBuilder: (context, error) {
+                  return Text('Custom Error: ${error.message}', key: const Key('custom_error_key'));
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(find.byKey(const Key('custom_error_key')), findsOneWidget);
+      expect(find.textContaining('Custom Error: Failed to load fragment shader asset'), findsOneWidget);
     });
   });
 }
