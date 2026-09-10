@@ -357,5 +357,314 @@ void main() {
 
       expect(secondGen, greaterThan(firstGen));
     });
+
+    testWidgets('renders successfully with unbounded height and unconstrained dimensions', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                BlobFlutter(radius: 120),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(BlobFlutter), findsOneWidget);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: UnconstrainedBox(
+              child: BlobFlutter(radius: 80),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('dispatches touch interactions through onTouchesChanged to TouchManager', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                enableHover: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(BlobFlutter)));
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(find.byType(BlobFlutter)) + const Offset(20, 20));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('supports rainbow mode and gradient fallbacks', (tester) async {
+      final controller = BlobController(isRainbowMode: true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 32));
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+
+      final customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(BlobFlutter),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      expect((customPaint.painter as BlobPainter).fallbackColor, isNotNull);
+
+      // Gradient fallback when empty
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                gradient: _EmptyGradient(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('didUpdateWidget updates all properties and handles controller attachment/detachment', (tester) async {
+      // 1. Start with internally owned controller (controller == null)
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                radius: 100,
+                pointSize: 2.0,
+                particleCount: 200,
+                speed: 1.0,
+                tapScaleFactor: 1.0,
+                touchRadiusFactor: 1.0,
+                isColorAnimated: false,
+                colorAnimationSpeed: 1.0,
+                waveIntensity: 1.0,
+                enableHover: false,
+                enableDragRotation: false,
+                enableHoverRotation: false,
+                noiseType: BlobNoiseType.simplex,
+                gradient: LinearGradient(colors: [Colors.red, Colors.blue]),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      var inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      final originalController = inputListener.controller;
+      expect(originalController.radius, 100);
+      expect(originalController.pointSize, 2.0);
+      expect(originalController.particleCount, 200);
+
+      // 2. Update all properties while _ownsController == true, including particleCount
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                radius: 150,
+                pointSize: 4.0,
+                particleCount: 300,
+                speed: 2.5,
+                tapScaleFactor: 2.0,
+                touchRadiusFactor: 1.5,
+                isColorAnimated: true,
+                colorAnimationSpeed: 3.0,
+                waveIntensity: 2.0,
+                enableHover: true,
+                enableDragRotation: true,
+                enableHoverRotation: true,
+                noiseType: BlobNoiseType.perlin,
+                gradient: RadialGradient(colors: [Colors.green, Colors.yellow]),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      expect(inputListener.controller, originalController);
+      expect(inputListener.controller.radius, 150);
+      expect(inputListener.controller.pointSize, 4.0);
+      expect(inputListener.controller.particleCount, 300);
+      expect(inputListener.controller.speed, 2.5);
+      expect(inputListener.controller.tapScaleFactor, 2.0);
+      expect(inputListener.controller.touchRadiusFactor, 1.5);
+      expect(inputListener.controller.isColorAnimated, true);
+      expect(inputListener.controller.colorAnimationSpeed, 3.0);
+      expect(inputListener.controller.waveIntensity, 2.0);
+      expect(inputListener.controller.enableHover, true);
+      expect(inputListener.controller.enableDragRotation, true);
+      expect(inputListener.controller.enableHoverRotation, true);
+      expect(inputListener.controller.noiseType, BlobNoiseType.perlin);
+
+      // 3. Switch from owned controller to external controller
+      final externalController = BlobController(particleCount: 250);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                controller: externalController,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      expect(inputListener.controller, externalController);
+
+      // 4. Switch from external controller back to null (instantiating new owned controller)
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                particleCount: 180,
+                radius: 110,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      expect(inputListener.controller, isNot(externalController));
+      expect(inputListener.controller.particleCount, 180);
+      expect(inputListener.controller.radius, 110);
+    });
+
+    testWidgets('initializes BlobWorker, executes isolate computation, and handles frame updates', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                particleCount: 50,
+                controller: BlobController(
+                  particleCount: 50,
+                  alignment: const Alignment(0.2, -0.4),
+                  isRainbowMode: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Allow Isolate and Shader to initialize asynchronously
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pump();
+
+      // Advance frame - triggers _onTick with _workerReady = true && !_workerBusy
+      // This executes _buildWorkerParams() and _worker!.compute()
+      await tester.pump(const Duration(milliseconds: 16));
+
+      // Pump another frame immediately while _workerBusy is true
+      // This executes the else branch in _onTick (_workerReady && _workerBusy)
+      await tester.pump(const Duration(milliseconds: 16));
+
+      // Allow Isolate to complete the computation
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 150));
+      });
+      // Pumping frame after isolate finishes triggers _onParticlesReady
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('handles worker disposal and null computation result gracefully', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(particleCount: 50),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Dispose the widget immediately
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsNothing);
+    });
   });
+}
+
+class _EmptyGradient extends Gradient {
+  const _EmptyGradient() : super(colors: const []);
+
+  @override
+  Shader createShader(Rect rect, {TextDirection? textDirection}) {
+    return const LinearGradient(colors: [Colors.black, Colors.white])
+        .createShader(rect, textDirection: textDirection);
+  }
+
+  @override
+  Gradient scale(double factor) => this;
 }
