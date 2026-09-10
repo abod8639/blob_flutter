@@ -702,6 +702,7 @@ void main() {
               height: 300,
               child: BlobFlutter(
                 silentErrorLogging: true,
+                testShaderAssetPath: 'shaders/missing.frag',
                 onError: (error, stackTrace) {
                   capturedError = error;
                   capturedStackTrace = stackTrace;
@@ -730,6 +731,7 @@ void main() {
               height: 300,
               child: BlobFlutter(
                 silentErrorLogging: true,
+                testShaderAssetPath: 'shaders/missing.frag',
                 errorBuilder: (context, error) {
                   return Text('Custom Error: ${error.message}', key: const Key('custom_error_key'));
                 },
