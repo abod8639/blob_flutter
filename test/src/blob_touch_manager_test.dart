@@ -91,12 +91,17 @@ void main() {
         ),
       );
 
-      // Before pump or when unattached
+      // Unmount the widget tree so savedContext has an unattached RenderBox
+      await tester.pumpWidget(const SizedBox());
+
       manager.updateActiveTouches([const Offset(45, 90)]);
       manager.updateLocalTouches(savedContext);
 
       expect(manager.localTouches.length, 1);
+      expect(manager.localTouches[0], const Offset(45, 90));
       expect(manager.encodedTouches.length, 2);
+      expect(manager.encodedTouches[0], 45.0);
+      expect(manager.encodedTouches[1], 90.0);
     });
   });
 }
