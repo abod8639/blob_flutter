@@ -398,6 +398,8 @@ class _ParticleBlobState extends State<BlobFlutter>
     super.dispose();
   }
 
+  BlobFlutterException? _lastError;
+
   // ── Initialization ─────────────────────────────────────────────────────────
 
   void _generateBuffers(int count) {
@@ -406,7 +408,16 @@ class _ParticleBlobState extends State<BlobFlutter>
   }
 
   Future<void> _loadShader() async {
-    final program = await BlobShaderHelper.loadProgram();
+    final program = await BlobShaderHelper.loadProgram(
+      silent: widget.silentErrorLogging,
+      onError: (exception) {
+        if (!mounted) return;
+        setState(() {
+          _lastError = exception;
+        });
+        widget.onError?.call(exception, exception.stackTrace);
+      },
+    );
     if (program != null && mounted) {
       setState(() {
         _shader = program.fragmentShader();
@@ -417,13 +428,31 @@ class _ParticleBlobState extends State<BlobFlutter>
   }
 
   void _startWorker() {
-    final w = BlobWorker();
-    _worker = w;
-    w.init(_baseSphere, _controller.particleCount).then((_) {
-      if (mounted && _worker == w) {
-        _workerReady = true;
-      }
-    });
+    try {
+      final w = BlobWorker();
+      _worker = w;
+      w.init(_baseSphere, _controller.particleCount).then((_) {
+        if (mounted && _worker == w) {
+          _workerReady = true;
+        }
+      }).catchError((Object err, StackTrace st) {
+        final exception =
+            BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
+        if (mounted) {
+          setState(() {
+            _lastError = exception;
+            _workerReady = false;
+          });
+        }
+        widget.onError?.call(exception, st);
+      });
+    } catch (err, st) {
+      final exception =
+          BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
+      _lastError = exception;
+      _workerReady = false;
+      widget.onError?.call(exception, st);
+    }
   }
 
   void _restartWorker() {
@@ -575,6 +604,11 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   @override
   Widget build(BuildContext context) {
+    final error = _lastError;
+    if (error != null && widget.errorBuilder != null) {
+      return widget.errorBuilder!(context, error);
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.hasBoundedWidth
