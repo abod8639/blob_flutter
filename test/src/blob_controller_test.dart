@@ -233,10 +233,25 @@ void main() {
       expect(controller.rotationY, 0.0);
 
       controller.setScale(1.8);
+      controller.setCenterOffset(const Offset(40, -25));
+      controller.addRotationImpulse(const Offset(15, 20));
       controller.setDispersion(1.5);
       controller.resetAll();
       expect(controller.scale, 1.0);
+      expect(controller.centerOffset, Offset.zero);
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
       expect(controller.dispersion, 0.0);
+
+      // Test resetAll when only rotationY is non-zero
+      controller.addRotationImpulse(const Offset(10, 0));
+      controller.resetAll();
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
+
+      // Call resetAll again when already at default values (tests false branches)
+      controller.resetAll();
+      expect(controller.scale, 1.0);
     });
 
     test('notifies listeners when properties are updated and avoids notifying on duplicate values', () {
