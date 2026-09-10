@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/blob_flutter.dart';
 import 'package:blob_flutter/src/blob_shader_helper.dart';
