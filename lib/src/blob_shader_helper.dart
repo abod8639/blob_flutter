@@ -1,5 +1,4 @@
 import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'blob_exception.dart';
@@ -22,7 +21,7 @@ class BlobShaderHelper {
   static Future<ui.FragmentProgram?> loadProgram({
     void Function(BlobShaderException exception)? onError,
     bool silent = false,
-    @visibleForTesting String? overrideAssetPath,
+    String? overrideAssetPath,
   }) async {
     final attemptedPaths = overrideAssetPath != null
         ? <String>[overrideAssetPath]
