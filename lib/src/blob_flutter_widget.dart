@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'blob_compute_params.dart';
 import 'blob_controller.dart';
+import 'blob_exception.dart';
 import 'blob_input_listener.dart';
 import 'blob_math.dart';
 import 'blob_noise_type.dart';
@@ -93,6 +94,18 @@ class BlobFlutter extends StatefulWidget {
   /// Default: [BlobNoiseType.harmonic].
   final BlobNoiseType noiseType;
 
+  /// Optional callback invoked when an error or warning occurs (e.g. shader load failure or worker isolate error).
+  final void Function(BlobFlutterException error, StackTrace? stackTrace)? onError;
+
+  /// Optional builder to customize what widget to render when an error occurs.
+  /// If null (default), the widget gracefully continues rendering using high-performance
+  /// CPU point rendering and fallback colors without crashing.
+  final Widget Function(BuildContext context, BlobFlutterException error)? errorBuilder;
+
+  /// Whether to suppress automatic FlutterError reporting to the console.
+  /// Defaults to `false`. Set to `true` if you prefer handling errors exclusively via [onError].
+  final bool silentErrorLogging;
+
   const BlobFlutter({
     super.key,
     this.particleCount = 5000,
@@ -113,21 +126,55 @@ class BlobFlutter extends StatefulWidget {
     this.enableDragRotation = false,
     this.enableHoverRotation = false,
     this.noiseType = BlobNoiseType.harmonic,
+    this.onError,
+    this.errorBuilder,
+    this.silentErrorLogging = false,
   })  : speed = animationSpeed ?? speed,
-        assert(particleCount > 0, 'particleCount must be greater than 0'),
-        assert(radius > 0.0, 'radius must be greater than 0.0'),
-        assert(pointSize > 0.0, 'pointSize must be greater than 0.0'),
-        assert(speed >= 0.0, 'speed must be greater than or equal to 0.0'),
-        assert(animationSpeed == null || animationSpeed >= 0.0,
-            'animationSpeed must be greater than or equal to 0.0'),
-        assert(tapScaleFactor >= 0.0,
-            'tapScaleFactor must be greater than or equal to 0.0'),
-        assert(touchRadiusFactor >= 0.0,
-            'touchRadiusFactor must be greater than or equal to 0.0'),
-        assert(colorAnimationSpeed >= 0.0,
-            'colorAnimationSpeed must be greater than or equal to 0.0'),
-        assert(waveIntensity >= 0.0,
-            'waveIntensity must be greater than or equal to 0.0');
+        assert(
+          particleCount > 0,
+          "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
+          'Example fix: BlobFlutter(particleCount: 5000).',
+        ),
+        assert(
+          radius > 0.0,
+          "BlobFlutter: 'radius' must be greater than 0.0 (received $radius). "
+          'Example fix: BlobFlutter(radius: 150.0).',
+        ),
+        assert(
+          pointSize > 0.0,
+          "BlobFlutter: 'pointSize' must be greater than 0.0 (received $pointSize). "
+          'Example fix: BlobFlutter(pointSize: 2.0).',
+        ),
+        assert(
+          speed >= 0.0,
+          "BlobFlutter: 'speed' must be non-negative (received $speed). "
+          'Example fix: BlobFlutter(speed: 1.0).',
+        ),
+        assert(
+          animationSpeed == null || animationSpeed >= 0.0,
+          "BlobFlutter: 'animationSpeed' must be non-negative (received $animationSpeed). "
+          'Example fix: BlobFlutter(animationSpeed: 1.0).',
+        ),
+        assert(
+          tapScaleFactor >= 0.0,
+          "BlobFlutter: 'tapScaleFactor' must be non-negative (received $tapScaleFactor). "
+          'Example fix: BlobFlutter(tapScaleFactor: 0.40).',
+        ),
+        assert(
+          touchRadiusFactor >= 0.0,
+          "BlobFlutter: 'touchRadiusFactor' must be non-negative (received $touchRadiusFactor). "
+          'Example fix: BlobFlutter(touchRadiusFactor: 0.30).',
+        ),
+        assert(
+          colorAnimationSpeed >= 0.0,
+          "BlobFlutter: 'colorAnimationSpeed' must be non-negative (received $colorAnimationSpeed). "
+          'Example fix: BlobFlutter(colorAnimationSpeed: 1.0).',
+        ),
+        assert(
+          waveIntensity >= 0.0,
+          "BlobFlutter: 'waveIntensity' must be non-negative (received $waveIntensity). "
+          'Example fix: BlobFlutter(waveIntensity: 1.0).',
+        );
 
   @override
   State<BlobFlutter> createState() => _ParticleBlobState();
