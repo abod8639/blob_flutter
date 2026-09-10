@@ -415,6 +415,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   Future<void> _loadShader() async {
     final program = await BlobShaderHelper.loadProgram(
       silent: widget.silentErrorLogging,
+      overrideAssetPath: widget.testShaderAssetPath,
       onError: (exception) {
         if (!mounted) return;
         setState(() {
