@@ -692,7 +692,6 @@ void main() {
 
     testWidgets('fires onError callback when shader loading fails in test environment', (tester) async {
       BlobFlutterException? capturedError;
-      StackTrace? capturedStackTrace;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -705,7 +704,6 @@ void main() {
                 testShaderAssetPath: 'shaders/missing.frag',
                 onError: (error, stackTrace) {
                   capturedError = error;
-                  capturedStackTrace = stackTrace;
                 },
               ),
             ),
