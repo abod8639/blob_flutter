@@ -118,28 +118,81 @@ class BlobController extends ChangeNotifier {
         _enableHoverRotation = enableHoverRotation,
         _noiseType = noiseType,
         _gradient = gradient,
-        assert(radius > 0.0, 'radius must be greater than 0.0'),
-        assert(pointSize > 0.0, 'pointSize must be greater than 0.0'),
-        assert(particleCount > 0, 'particleCount must be greater than 0'),
-        assert(speed >= 0.0, 'speed must be greater than or equal to 0.0'),
-        assert(scale > 0.0, 'scale must be greater than 0.0'),
-        assert(minScale > 0.0 && minScale <= maxScale,
-            'minScale must be > 0.0 and <= maxScale'),
-        assert(dampingFactor >= 0.0 && dampingFactor <= 1.0,
-            'dampingFactor must be between 0.0 and 1.0'),
-        assert(tapScaleFactor >= 0.0,
-            'tapScaleFactor must be greater than or equal to 0.0'),
-        assert(touchRadiusFactor >= 0.0,
-            'touchRadiusFactor must be greater than or equal to 0.0'),
-        assert(blobiness >= 0.0, 'blobiness must be greater than or equal to 0.0'),
-        assert(dispersion >= 0.0, 'dispersion must be greater than or equal to 0.0'),
-        assert(noiseFrequency >= 0.0,
-            'noiseFrequency must be greater than or equal to 0.0'),
-        assert(viewDistance > 0.0, 'viewDistance must be greater than 0.0'),
-        assert(colorAnimationSpeed >= 0.0,
-            'colorAnimationSpeed must be greater than or equal to 0.0'),
-        assert(waveIntensity >= 0.0,
-            'waveIntensity must be greater than or equal to 0.0');
+        assert(
+          radius > 0.0,
+          "BlobController: 'radius' must be greater than 0.0 (received $radius). "
+          'Example fix: BlobController(radius: 150.0).',
+        ),
+        assert(
+          pointSize > 0.0,
+          "BlobController: 'pointSize' must be greater than 0.0 (received $pointSize). "
+          'Example fix: BlobController(pointSize: 2.0).',
+        ),
+        assert(
+          particleCount > 0,
+          "BlobController: 'particleCount' must be greater than 0 (received $particleCount). "
+          'Example fix: BlobController(particleCount: 5000).',
+        ),
+        assert(
+          speed >= 0.0,
+          "BlobController: 'speed' must be non-negative (received $speed). "
+          'Example fix: BlobController(speed: 1.0).',
+        ),
+        assert(
+          scale > 0.0,
+          "BlobController: 'scale' must be greater than 0.0 (received $scale). "
+          'Example fix: BlobController(scale: 1.0).',
+        ),
+        assert(
+          minScale > 0.0 && minScale <= maxScale,
+          "BlobController: 'minScale' ($minScale) must be greater than 0.0 and less than or equal to 'maxScale' ($maxScale). "
+          'Example fix: BlobController(minScale: 0.1, maxScale: 10.0).',
+        ),
+        assert(
+          dampingFactor >= 0.0 && dampingFactor <= 1.0,
+          "BlobController: 'dampingFactor' must be between 0.0 and 1.0 (received $dampingFactor). "
+          'Example fix: BlobController(dampingFactor: 0.92).',
+        ),
+        assert(
+          tapScaleFactor >= 0.0,
+          "BlobController: 'tapScaleFactor' must be non-negative (received $tapScaleFactor). "
+          'Example fix: BlobController(tapScaleFactor: 1.0).',
+        ),
+        assert(
+          touchRadiusFactor >= 0.0,
+          "BlobController: 'touchRadiusFactor' must be non-negative (received $touchRadiusFactor). "
+          'Example fix: BlobController(touchRadiusFactor: 1.0).',
+        ),
+        assert(
+          blobiness >= 0.0,
+          "BlobController: 'blobiness' must be non-negative (received $blobiness). "
+          'Example fix: BlobController(blobiness: 1.0).',
+        ),
+        assert(
+          dispersion >= 0.0,
+          "BlobController: 'dispersion' must be non-negative (received $dispersion). "
+          'Example fix: BlobController(dispersion: 0.0).',
+        ),
+        assert(
+          noiseFrequency >= 0.0,
+          "BlobController: 'noiseFrequency' must be non-negative (received $noiseFrequency). "
+          'Example fix: BlobController(noiseFrequency: 1.0).',
+        ),
+        assert(
+          viewDistance > 0.0,
+          "BlobController: 'viewDistance' must be greater than 0.0 (received $viewDistance). "
+          'Example fix: BlobController(viewDistance: 2.0).',
+        ),
+        assert(
+          colorAnimationSpeed >= 0.0,
+          "BlobController: 'colorAnimationSpeed' must be non-negative (received $colorAnimationSpeed). "
+          'Example fix: BlobController(colorAnimationSpeed: 1.0).',
+        ),
+        assert(
+          waveIntensity >= 0.0,
+          "BlobController: 'waveIntensity' must be non-negative (received $waveIntensity). "
+          'Example fix: BlobController(waveIntensity: 1.0).',
+        );
 
   // ── Geometry Getters ──────────────────────────────────────────────────────
 
