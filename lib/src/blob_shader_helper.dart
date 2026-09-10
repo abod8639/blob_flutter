@@ -22,21 +22,20 @@ class BlobShaderHelper {
   static Future<ui.FragmentProgram?> loadProgram({
     void Function(BlobShaderException exception)? onError,
     bool silent = false,
+    @visibleForTesting String? overrideAssetPath,
   }) async {
-    final attemptedPaths = <String>[packageAssetPath, localAssetPath];
+    final attemptedPaths = overrideAssetPath != null
+        ? <String>[overrideAssetPath]
+        : <String>[packageAssetPath, localAssetPath];
     Object? lastError;
     StackTrace? lastStackTrace;
 
-    try {
-      return await ui.FragmentProgram.fromAsset(packageAssetPath);
-    } catch (e1, st1) {
-      lastError = e1;
-      lastStackTrace = st1;
+    for (final path in attemptedPaths) {
       try {
-        return await ui.FragmentProgram.fromAsset(localAssetPath);
-      } catch (e2, st2) {
-        lastError = e2;
-        lastStackTrace = st2;
+        return await ui.FragmentProgram.fromAsset(path);
+      } catch (e, st) {
+        lastError = e;
+        lastStackTrace = st;
       }
     }
 
