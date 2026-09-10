@@ -34,7 +34,12 @@ class BlobTouchManager {
     if (_offsetListEquals(_activeTouches, _lastGlobalTouches)) return;
     _lastGlobalTouches = List<Offset>.of(_activeTouches);
 
-    final ro = context.findRenderObject();
+    RenderObject? ro;
+    try {
+      ro = context.findRenderObject();
+    } catch (_) {
+      ro = null;
+    }
     if (ro is RenderBox && ro.attached) {
       _localTouches = _activeTouches
           .map((p) => ro.globalToLocal(p))
