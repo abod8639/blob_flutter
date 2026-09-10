@@ -110,6 +110,10 @@ class BlobFlutter extends StatefulWidget {
   @visibleForTesting
   final String? testShaderAssetPath;
 
+  /// Internal testing override for injecting or mocking a [BlobWorker].
+  @visibleForTesting
+  final BlobWorker Function()? workerFactory;
+
   const BlobFlutter({
     super.key,
     this.particleCount = 5000,
@@ -134,6 +138,7 @@ class BlobFlutter extends StatefulWidget {
     this.errorBuilder,
     this.silentErrorLogging = false,
     this.testShaderAssetPath,
+    this.workerFactory,
   })  : speed = animationSpeed ?? speed,
         assert(
           particleCount > 0,
@@ -435,7 +440,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _startWorker() {
     try {
-      final w = BlobWorker();
+      final w = widget.workerFactory?.call() ?? BlobWorker();
       _worker = w;
       w.init(_baseSphere, _controller.particleCount).then((_) {
         if (mounted && _worker == w) {
