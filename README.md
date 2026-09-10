@@ -16,7 +16,7 @@
 [![Pub Points](https://img.shields.io/pub/points/blob_flutter?style=&logo=dart&color=2E8B57)](https://pub.dev/packages/blob_flutter/score)
 [![Pub Likes](https://img.shields.io/pub/likes/blob_flutter?style=&logo=flutter&color=blueviolet)](https://pub.dev/packages/blob_flutter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=&)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/abod8639/particle_blob_3d?style=&logo=github&color=gold)](https://github.com/abod8639/particle_blob_3d/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/abod8639/blob_flutter?style=&logo=github&color=gold)](https://github.com/abod8639/blob_flutter)
 
 [![Codecov](https://img.shields.io/codecov/c/github/abod8639/blob_flutter?style=&logo=codecov&logoColor=white)](https://codecov.io/gh/abod8639/blob_flutter)
 [![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
