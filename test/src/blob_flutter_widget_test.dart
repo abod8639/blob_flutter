@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_controller.dart';
 import 'package:blob_flutter/src/blob_flutter_widget.dart';
@@ -653,6 +655,40 @@ void main() {
       await tester.pump();
 
       expect(find.byType(BlobFlutter), findsNothing);
+    });
+
+    testWidgets('ticker skips onTick when cached size is zero', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 0,
+              height: 0,
+              child: BlobFlutter(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('ticks on initial frame before fragment shader completes loading', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(),
+            ),
+          ),
+        ),
+        const Duration(milliseconds: 16),
+      );
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
     });
   });
 }
