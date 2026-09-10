@@ -68,6 +68,17 @@ void main() {
       expect(exception.solutionHint, contains('BlobFlutter(particleCount: 5000)'));
     });
 
+    test('BlobParameterException.outOfRange formats solutionHint without exampleFix', () {
+      final exception = BlobParameterException.outOfRange(
+        parameterName: 'radius',
+        invalidValue: -10,
+        validRange: 'radius > 0.0',
+        exampleFix: null,
+      );
+
+      expect(exception.solutionHint, contains('Provide a valid value matching the criteria: radius > 0.0.'));
+    });
+
     test('BlobShaderHelper.loadProgram calls onError with BlobShaderException when assets missing', () async {
       BlobShaderException? capturedException;
 
@@ -83,6 +94,30 @@ void main() {
       expect(capturedException, isNotNull);
       expect(capturedException!.attemptedPaths, contains('shaders/missing_blob.frag'));
       expect(capturedException!.solutionHint, contains('pubspec.yaml'));
+    });
+
+    test('BlobShaderHelper.loadProgram reports error via FlutterError.reportError when silent is false', () async {
+      FlutterErrorDetails? reportedDetails;
+      final oldHandler = FlutterError.onError;
+      FlutterError.onError = (details) {
+        reportedDetails = details;
+      };
+
+      try {
+        final program = await BlobShaderHelper.loadProgram(
+          silent: false,
+          overrideAssetPath: 'shaders/missing_shader.frag',
+        );
+
+        expect(program, isNull);
+        expect(reportedDetails, isNotNull);
+        expect(reportedDetails!.exception, isA<BlobShaderException>());
+        expect(reportedDetails!.informationCollector, isNotNull);
+        final diagnostics = reportedDetails!.informationCollector!().toList();
+        expect(diagnostics.length, 3);
+      } finally {
+        FlutterError.onError = oldHandler;
+      }
     });
   });
 }
