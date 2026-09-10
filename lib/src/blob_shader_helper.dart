@@ -1,22 +1,82 @@
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'blob_exception.dart';
 
 /// Helper class for loading the fragment shader asset and pushing static and
 /// dynamic uniforms onto [ui.FragmentShader].
 class BlobShaderHelper {
+  /// Primary package asset path for fragment shader.
+  static const String packageAssetPath =
+      'packages/blob_flutter/shaders/blob.frag';
+
+  /// Fallback local asset path for fragment shader (when developing inside package).
+  static const String localAssetPath = 'shaders/blob.frag';
+
   /// Loads the [ui.FragmentProgram] from package assets or local assets.
-  static Future<ui.FragmentProgram?> loadProgram() async {
+  ///
+  /// If loading fails, constructs a [BlobShaderException] with actionable troubleshooting
+  /// advice, reports it via [FlutterError.reportError], invokes [onError] if provided,
+  /// and returns `null`.
+  static Future<ui.FragmentProgram?> loadProgram({
+    void Function(BlobShaderException exception)? onError,
+    bool silent = false,
+  }) async {
+    final attemptedPaths = <String>[packageAssetPath, localAssetPath];
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
     try {
+      return await ui.FragmentProgram.fromAsset(packageAssetPath);
+    } catch (e1, st1) {
+      lastError = e1;
+      lastStackTrace = st1;
       try {
-        return await ui.FragmentProgram.fromAsset(
-            'packages/blob_flutter/shaders/blob.frag');
-      } catch (_) {
-        return await ui.FragmentProgram.fromAsset('shaders/blob.frag');
+        return await ui.FragmentProgram.fromAsset(localAssetPath);
+      } catch (e2, st2) {
+        lastError = e2;
+        lastStackTrace = st2;
       }
-    } catch (e) {
-      debugPrint('[BlobFlutter] Shader load failed: $e');
-      return null;
     }
+
+    final exception = BlobShaderException.assetLoadFailed(
+      attemptedPaths: attemptedPaths,
+      cause: lastError,
+      stackTrace: lastStackTrace,
+    );
+
+    if (!silent) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: exception,
+          stack: lastStackTrace,
+          library: 'blob_flutter',
+          context: ErrorDescription('while loading fragment shader for BlobFlutter'),
+          informationCollector: () => [
+            ErrorSummary('Fragment shader could not be loaded.'),
+            ErrorDescription(
+              'BlobFlutter attempted to load the shader from:\n'
+              '  - $packageAssetPath\n'
+              '  - $localAssetPath',
+            ),
+            ErrorHint(
+              'To fix this issue:\n'
+              '1. In your application pubspec.yaml, verify that shaders are declared:\n'
+              '   flutter:\n'
+              '     shaders:\n'
+              '       - packages/blob_flutter/shaders/blob.frag\n'
+              '2. Run `flutter pub get` and execute a FULL restart of the app (Hot Reload does not recompile shaders).\n'
+              '3. If running in widget tests, shaders cannot be compiled without custom asset bundles. '
+              'BlobFlutter will automatically fallback to high-performance CPU point rendering.',
+            ),
+          ],
+        ),
+      );
+    }
+
+    onError?.call(exception);
+    return null;
   }
 
   /// Pushes static uniforms (resolution, gradient geometry, animation speed,
