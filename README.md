@@ -18,7 +18,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/abod8639/blob_flutter?style=for-the-badge&logo=codecov&logoColor=white)](https://codecov.io/gh/abod8639/blob_flutter)
 [![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20All%20Platforms-02569B?style=for-the-badge&logo=flutter)](https://pub.dev/packages/blob_flutter)
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Algorithms](#-procedural-noise-algorithms) • [Controller](#-controller-usage) • [Architecture](#-architecture--performance)
+[Features](#-features) • [Quick Start](#-quick-start) • [Algorithms](#-procedural-noise-algorithms) • [Controller](#-controller-usage) • [Error Handling](#error-handling) • [Architecture](#-architecture--performance)
 
 </div>
 
@@ -190,6 +190,13 @@ Manipulate the blob dynamically at runtime using the controller methods.
 
 > [!NOTE]
 > **Performance Scaling:** Although computation is offloaded to a background `Isolate` to keep the UI thread jank-free, mathematical transformations and GPU vertex throughput scale linearly with `particleCount`. Very high counts on budget or older hardware may impact frame rates or cause battery drain.
+
+---
+
+## Error Handling
+
+`BlobFlutter` provides actionable console diagnostics with automatic CPU fallback if shaders are unavailable.
+Catch issues programmatically or render custom fallback interfaces via `onError` and `errorBuilder`.
 
 ---
 
