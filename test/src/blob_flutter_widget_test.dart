@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_controller.dart';
@@ -6,6 +7,7 @@ import 'package:blob_flutter/src/blob_flutter_widget.dart';
 import 'package:blob_flutter/src/blob_input_listener.dart';
 import 'package:blob_flutter/src/blob_noise_type.dart';
 import 'package:blob_flutter/src/blob_painter.dart';
+import 'package:blob_flutter/src/blob_worker.dart';
 
 void main() {
   group('BlobFlutter Widget Tests', () {
@@ -748,7 +750,78 @@ void main() {
       expect(find.byKey(const Key('custom_error_key')), findsOneWidget);
       expect(find.textContaining('Custom Error: Failed to load fragment shader asset'), findsOneWidget);
     });
+
+    testWidgets('handles synchronous failure in worker isolate spawning gracefully', (tester) async {
+      BlobFlutterException? capturedError;
+      StackTrace? capturedStackTrace;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                silentErrorLogging: true,
+                workerFactory: () => throw Exception('Worker constructor failed'),
+                onError: (error, st) {
+                  capturedError = error;
+                  capturedStackTrace = st;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(capturedError, isNotNull);
+      expect(capturedError, isA<BlobWorkerException>());
+      expect(capturedError!.message, contains('background particle computation isolate'));
+      expect(capturedStackTrace, isNotNull);
+    });
+
+    testWidgets('handles asynchronous error in worker init via catchError gracefully', (tester) async {
+      BlobFlutterException? capturedError;
+      StackTrace? capturedStackTrace;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                silentErrorLogging: true,
+                workerFactory: () => _FailingInitBlobWorker(),
+                onError: (error, st) {
+                  capturedError = error;
+                  capturedStackTrace = st;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(capturedError, isNotNull);
+      expect(capturedError, isA<BlobWorkerException>());
+      expect(capturedError!.message, contains('background particle computation isolate'));
+      expect(capturedStackTrace, isNotNull);
+    });
   });
+}
+
+class _FailingInitBlobWorker extends BlobWorker {
+  @override
+  Future<void> init(Float32List baseSphere, int count) {
+    return Future.error(Exception('Simulated worker init failure'));
+  }
 }
 
 class _EmptyGradient extends Gradient {
