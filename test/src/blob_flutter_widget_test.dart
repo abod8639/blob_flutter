@@ -692,6 +692,7 @@ void main() {
 
     testWidgets('fires onError callback when shader loading fails in test environment', (tester) async {
       BlobFlutterException? capturedError;
+      StackTrace? capturedStackTrace;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -704,6 +705,7 @@ void main() {
                 testShaderAssetPath: 'shaders/missing.frag',
                 onError: (error, stackTrace) {
                   capturedError = error;
+                  capturedStackTrace = stackTrace;
                 },
               ),
             ),
@@ -718,6 +720,7 @@ void main() {
       expect(capturedError, isA<BlobShaderException>());
       expect(capturedError!.message, contains('Failed to load fragment shader asset'));
       expect(capturedError!.solutionHint, contains('pubspec.yaml'));
+      expect(capturedStackTrace, isNotNull);
     });
 
     testWidgets('renders custom error widget when errorBuilder is provided and shader fails', (tester) async {
