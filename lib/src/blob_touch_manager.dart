@@ -41,8 +41,9 @@ class BlobTouchManager {
       ro = null;
     }
     if (ro is RenderBox && ro.attached) {
+      final box = ro;
       _localTouches = _activeTouches
-          .map((p) => ro.globalToLocal(p))
+          .map((p) => box.globalToLocal(p))
           .toList(growable: false);
     } else {
       _localTouches = List<Offset>.of(_activeTouches);
