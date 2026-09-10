@@ -10,6 +10,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=&logo=Flutter&logoColor=white)]()
 [![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=&logo=dart&logoColor=white)]()
+
 [![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20All%20Platforms-02569B?style=&logo=flutter)](https://pub.dev/packages/blob_flutter)
 
 
