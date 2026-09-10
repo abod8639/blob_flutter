@@ -106,6 +106,10 @@ class BlobFlutter extends StatefulWidget {
   /// Defaults to `false`. Set to `true` if you prefer handling errors exclusively via [onError].
   final bool silentErrorLogging;
 
+  /// Internal testing override for verifying missing shader asset handling.
+  @visibleForTesting
+  final String? testShaderAssetPath;
+
   const BlobFlutter({
     super.key,
     this.particleCount = 5000,
@@ -129,6 +133,7 @@ class BlobFlutter extends StatefulWidget {
     this.onError,
     this.errorBuilder,
     this.silentErrorLogging = false,
+    this.testShaderAssetPath,
   })  : speed = animationSpeed ?? speed,
         assert(
           particleCount > 0,
