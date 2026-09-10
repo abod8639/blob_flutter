@@ -10,8 +10,12 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-
-<!-- [![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=for-the-badge&color=orange)](https://pub.dev/packages/blob_flutter) -->
+[![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=for-the-badge&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
+[![Pub Points](https://img.shields.io/pub/points/blob_flutter?style=for-the-badge&logo=dart&color=2E8B57)](https://pub.dev/packages/blob_flutter/score)
+[![Pub Likes](https://img.shields.io/pub/likes/blob_flutter?style=for-the-badge&logo=flutter&color=blueviolet)](https://pub.dev/packages/blob_flutter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/abod8639/particle_blob_3d?style=for-the-badge&logo=github&color=gold)](https://github.com/abod8639/particle_blob_3d/stargazers)
+[![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20All%20Platforms-02569B?style=for-the-badge&logo=flutter)](https://pub.dev/packages/blob_flutter)
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Algorithms](#-procedural-noise-algorithms) • [Controller](#-controller-usage) • [Architecture](#-architecture--performance)
 
