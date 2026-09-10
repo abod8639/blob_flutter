@@ -413,7 +413,7 @@ void main() {
     });
 
     testWidgets('supports rainbow mode and gradient fallbacks', (tester) async {
-      final controller = BlobController(isRainbowMode: true);
+      final controller = BlobController()..setIsRainbowMode(true);
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -514,7 +514,7 @@ void main() {
                 enableHover: true,
                 enableDragRotation: true,
                 enableHoverRotation: true,
-                noiseType: BlobNoiseType.perlin,
+                noiseType: BlobNoiseType.harmonic,
                 gradient: RadialGradient(colors: [Colors.green, Colors.yellow]),
               ),
             ),
@@ -537,7 +537,7 @@ void main() {
       expect(inputListener.controller.enableHover, true);
       expect(inputListener.controller.enableDragRotation, true);
       expect(inputListener.controller.enableHoverRotation, true);
-      expect(inputListener.controller.noiseType, BlobNoiseType.perlin);
+      expect(inputListener.controller.noiseType, BlobNoiseType.harmonic);
 
       // 3. Switch from owned controller to external controller
       final externalController = BlobController(particleCount: 250);
@@ -583,6 +583,11 @@ void main() {
     });
 
     testWidgets('initializes BlobWorker, executes isolate computation, and handles frame updates', (tester) async {
+      final workerController = BlobController(
+        particleCount: 50,
+        alignment: const Alignment(0.2, -0.4),
+      )..setIsRainbowMode(true);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -591,11 +596,7 @@ void main() {
               height: 300,
               child: BlobFlutter(
                 particleCount: 50,
-                controller: BlobController(
-                  particleCount: 50,
-                  alignment: const Alignment(0.2, -0.4),
-                  isRainbowMode: true,
-                ),
+                controller: workerController,
               ),
             ),
           ),
@@ -667,4 +668,7 @@ class _EmptyGradient extends Gradient {
 
   @override
   Gradient scale(double factor) => this;
+
+  @override
+  Gradient withOpacity(double opacity) => this;
 }
