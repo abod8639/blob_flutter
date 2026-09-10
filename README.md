@@ -43,6 +43,8 @@
 - **Fluid Touch Interaction**: Natural multi-touch drag rotation, hover tracking, and tap dispersion.
 - **Zero-Allocation Pipeline**: Pre-allocated buffers ensure zero heap object allocations during the render loop.
 - **Resource-Conscious Engineering**: Crafted with rigorous mathematical precision to respect developers and end-user devices—maximizing performance while preventing battery drain and memory thrashing.
+- **Error Handling**: Robust error handling to prevent crashes and provide meaningful error messages.
+- **Performance**: Optimized for performance with a focus on reducing memory usage and improving rendering speed.
 
 ---
 
