@@ -8,15 +8,18 @@
 **A high-performance, interactive 3D particle blob for Flutter.**<br>
 *Powered by procedural noise algorithms, multi-threaded Isolate computation, and GPU Fragment Shaders.*
 
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-[![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=for-the-badge&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
-[![Pub Points](https://img.shields.io/pub/points/blob_flutter?style=for-the-badge&logo=dart&color=2E8B57)](https://pub.dev/packages/blob_flutter/score)
-[![Pub Likes](https://img.shields.io/pub/likes/blob_flutter?style=for-the-badge&logo=flutter&color=blueviolet)](https://pub.dev/packages/blob_flutter)
-[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/abod8639/particle_blob_3d?style=for-the-badge&logo=github&color=gold)](https://github.com/abod8639/particle_blob_3d/stargazers)
-[![Codecov](https://img.shields.io/codecov/c/github/abod8639/blob_flutter?style=for-the-badge&logo=codecov&logoColor=white)](https://codecov.io/gh/abod8639/blob_flutter)
-[![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20All%20Platforms-02569B?style=for-the-badge&logo=flutter)](https://pub.dev/packages/blob_flutter)
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=&logo=Flutter&logoColor=white)]()
+[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=&logo=dart&logoColor=white)](https://dart.dev)
+[![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20All%20Platforms-02569B?style=&logo=flutter)](https://pub.dev/packages/blob_flutter)
+
+
+[![Pub Points](https://img.shields.io/pub/points/blob_flutter?style=&logo=dart&color=2E8B57)](https://pub.dev/packages/blob_flutter/score)
+[![Pub Likes](https://img.shields.io/pub/likes/blob_flutter?style=&logo=flutter&color=blueviolet)](https://pub.dev/packages/blob_flutter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=&)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/abod8639/particle_blob_3d?style=&logo=github&color=gold)](https://github.com/abod8639/particle_blob_3d/stargazers)
+
+[![Codecov](https://img.shields.io/codecov/c/github/abod8639/blob_flutter?style=&logo=codecov&logoColor=white)](https://codecov.io/gh/abod8639/blob_flutter)
+[![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Algorithms](#-procedural-noise-algorithms) • [Controller](#-controller-usage) • [Error Handling](#error-handling) • [Architecture](#-architecture--performance)
 
