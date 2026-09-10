@@ -55,8 +55,12 @@ class BlobFlutterException implements Exception {
 
 /// Thrown or reported when the GPU fragment shader cannot be loaded or compiled.
 class BlobShaderException extends BlobFlutterException {
+  /// The asset paths that were attempted when loading the shader.
+  final List<String> attemptedPaths;
+
   const BlobShaderException({
     required super.message,
+    this.attemptedPaths = const [],
     super.details,
     super.solutionHint,
     super.cause,
@@ -72,6 +76,7 @@ class BlobShaderException extends BlobFlutterException {
   }) {
     return BlobShaderException(
       message: 'Failed to load fragment shader asset for GPU color grading.',
+      attemptedPaths: attemptedPaths,
       details: 'Attempted to load shader from paths:\n'
           '${attemptedPaths.map((p) => '  • $p').join('\n')}',
       solutionHint:
