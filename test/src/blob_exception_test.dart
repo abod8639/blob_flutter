@@ -73,6 +73,7 @@ void main() {
 
       final program = await BlobShaderHelper.loadProgram(
         silent: true,
+        overrideAssetPath: 'shaders/missing_blob.frag',
         onError: (e) {
           capturedException = e;
         },
@@ -80,9 +81,8 @@ void main() {
 
       expect(program, isNull);
       expect(capturedException, isNotNull);
-      expect(capturedException!.attemptedPaths, isNotEmpty);
-      expect(capturedException!.attemptedPaths, contains(BlobShaderHelper.packageAssetPath));
-      expect(capturedException!.attemptedPaths, contains(BlobShaderHelper.localAssetPath));
+      expect(capturedException!.attemptedPaths, contains('shaders/missing_blob.frag'));
+      expect(capturedException!.solutionHint, contains('pubspec.yaml'));
     });
   });
 }
