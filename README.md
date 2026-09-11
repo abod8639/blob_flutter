@@ -2,7 +2,7 @@
 
 # Blob Flutter (3D Particle Blob)
 
-![Cyberpunk Blob Banner](https://github.com/abod8639/media/blob/main/blob_flutter/Picsart_2.png?raw=true)
+[![Cyberpunk Blob Banner](https://github.com/abod8639/media/blob/main/blob_flutter/Picsart_2.png?raw=true)](https://blob-flutter-3d.web.app/)
 <!-- ![Cyberpunk Blob Banner](assets/banner.jpg) -->
 
 **A high-performance, interactive 3D particle blob for Flutter.**<br>
@@ -21,8 +21,9 @@
 
 [![Codecov](https://img.shields.io/codecov/c/github/abod8639/blob_flutter?style=&logo=codecov&logoColor=white)](https://codecov.io/gh/abod8639/blob_flutter)
 [![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Try%20Online-purple?style=&logo=googlechrome&logoColor=white)](https://blob-flutter-3d.web.app/)
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Algorithms](#-procedural-noise-algorithms) • [Controller](#-controller-usage) • [Error Handling](#error-handling) • [Architecture](#-architecture--performance)
+[Live Demo](https://blob-flutter-3d.web.app/) • [Features](#features) • [Quick Start](#quick-start) • [Algorithms](#procedural-noise-algorithms) • [Controller](#controller-usage) • [Error Handling](#error-handling) • [Architecture](#architecture--performance)
 
 </div>
 
@@ -33,6 +34,12 @@
   <img src="https://github.com/abod8639/media/blob/main/blob_flutter/Screenshot_3.png?raw=true" width="24%" alt="Screenshot 3" />
   <img src="https://github.com/abod8639/media/blob/main/blob_flutter/Screenshot_5.png?raw=true" width="24%" alt="Screenshot 5" />
   <img src="https://github.com/abod8639/media/blob/main/blob_flutter/Screenshot_4.png?raw=true" width="24%" alt="Screenshot 4" />
+</p>
+
+<p align="center">
+  <a href="https://blob-flutter-3d.web.app/">
+    <img src="https://img.shields.io/badge/%20Live%20Demo-Experience%20Blob%20Online-purple?style=for-the-badge&logo=googlechrome&logoColor=pink" alt="Live Demo" />
+  </a>
 </p>
 
 ## Features
