@@ -33,9 +33,9 @@ import 'blob_worker.dart';
 /// - **Mouse Hover** (desktop/web): Tracks cursor and applies subtle rotation/dispersion.
 ///
 /// ## Full Runtime Control via [BlobController]
-/// All geometric properties ([radius], [pointSize], [particleCount], [scale], [centerOffset], [alignment]),
-/// physics ([speed], [blobiness], [dispersion], [dampingFactor]), noise modes ([noiseType]),
-/// and shaders ([gradient], [isRainbowMode]) can be controlled dynamically at runtime
+/// All geometric properties (`radius`, `pointSize`, `particleCount`, `scale`, `centerOffset`, `alignment`),
+/// physics (`speed`, `blobiness`, `dispersion`, `dampingFactor`), noise modes ([BlobNoiseType]),
+/// and shaders ([gradient], `isRainbowMode`) can be controlled dynamically at runtime
 /// without rebuilding the widget tree.
 class BlobFlutter extends StatefulWidget {
   /// Total number of particles. Default: 5000.
@@ -51,11 +51,11 @@ class BlobFlutter extends StatefulWidget {
   final BlobController? controller;
 
   /// Scale multiplier applied to particle dispersion on touch/tap.
-  /// Range: [0.0, 5.0]. Default: 0.40.
+  /// Range: `[0.0, 5.0]`. Default: 0.40.
   final double tapScaleFactor;
 
   /// Multiplier applied to the touch interaction radius size.
-  /// Range: [0.1, 5.0]. Default: 0.30.
+  /// Range: `[0.1, 5.0]`. Default: 0.30.
   final double touchRadiusFactor;
 
   /// The gradient used to color the particles.
@@ -63,7 +63,7 @@ class BlobFlutter extends StatefulWidget {
   final Gradient gradient;
 
   /// Animation speed multiplier for procedural noise deformation.
-  /// Range: [0.0, 10.0]. Default: `1.0`. Set to `0.0` to pause deformation.
+  /// Range: `[0.0, 10.0]`. Default: `1.0`. Set to `0.0` to pause deformation.
   final double speed;
 
   /// Whether the color gradient is dynamically animated across the blob
@@ -95,12 +95,14 @@ class BlobFlutter extends StatefulWidget {
   final BlobNoiseType noiseType;
 
   /// Optional callback invoked when an error or warning occurs (e.g. shader load failure or worker isolate error).
-  final void Function(BlobFlutterException error, StackTrace? stackTrace)? onError;
+  final void Function(BlobFlutterException error, StackTrace? stackTrace)?
+      onError;
 
   /// Optional builder to customize what widget to render when an error occurs.
   /// If null (default), the widget gracefully continues rendering using high-performance
   /// CPU point rendering and fallback colors without crashing.
-  final Widget Function(BuildContext context, BlobFlutterException error)? errorBuilder;
+  final Widget Function(BuildContext context, BlobFlutterException error)?
+      errorBuilder;
 
   /// Whether to suppress automatic FlutterError reporting to the console.
   /// Defaults to `false`. Set to `true` if you prefer handling errors exclusively via [onError].
@@ -114,6 +116,7 @@ class BlobFlutter extends StatefulWidget {
   @visibleForTesting
   final BlobWorker Function()? workerFactory;
 
+  /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
     super.key,
     this.particleCount = 5000,
@@ -248,8 +251,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   List<Color> get _effectiveColors {
     if (_controller.isRainbowMode) {
       final double h = (_time * 40.0) % 360.0;
-      _rainbowColors[0] =
-          HSVColor.fromAHSV(1.0, h, 0.85, 1.0).toColor();
+      _rainbowColors[0] = HSVColor.fromAHSV(1.0, h, 0.85, 1.0).toColor();
       _rainbowColors[1] =
           HSVColor.fromAHSV(1.0, (h + 60) % 360, 0.85, 1.0).toColor();
       _rainbowColors[2] =

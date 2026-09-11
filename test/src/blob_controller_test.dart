@@ -71,16 +71,19 @@ void main() {
       expect(() => BlobController(particleCount: 0), throwsAssertionError);
       expect(() => BlobController(speed: -0.1), throwsAssertionError);
       expect(() => BlobController(scale: 0.0), throwsAssertionError);
-      expect(() => BlobController(minScale: 5.0, maxScale: 2.0), throwsAssertionError);
+      expect(() => BlobController(minScale: 5.0, maxScale: 2.0),
+          throwsAssertionError);
       expect(() => BlobController(dampingFactor: -0.1), throwsAssertionError);
       expect(() => BlobController(dampingFactor: 1.1), throwsAssertionError);
       expect(() => BlobController(tapScaleFactor: -0.5), throwsAssertionError);
-      expect(() => BlobController(touchRadiusFactor: -0.5), throwsAssertionError);
+      expect(
+          () => BlobController(touchRadiusFactor: -0.5), throwsAssertionError);
       expect(() => BlobController(blobiness: -0.1), throwsAssertionError);
       expect(() => BlobController(dispersion: -0.1), throwsAssertionError);
       expect(() => BlobController(noiseFrequency: -0.1), throwsAssertionError);
       expect(() => BlobController(viewDistance: 0.0), throwsAssertionError);
-      expect(() => BlobController(colorAnimationSpeed: -0.1), throwsAssertionError);
+      expect(() => BlobController(colorAnimationSpeed: -0.1),
+          throwsAssertionError);
       expect(() => BlobController(waveIntensity: -0.1), throwsAssertionError);
     });
 
@@ -196,7 +199,9 @@ void main() {
       expect(controller.noiseType, BlobNoiseType.cellular);
     });
 
-    test('geometry helper methods zoomIn, zoomOut, applyScaleFactor, and resets', () {
+    test(
+        'geometry helper methods zoomIn, zoomOut, applyScaleFactor, and resets',
+        () {
       final controller = BlobController(radius: 150.0, scale: 1.0);
 
       controller.zoomIn(0.2);
@@ -254,7 +259,9 @@ void main() {
       expect(controller.scale, 1.0);
     });
 
-    test('notifies listeners when properties are updated and avoids notifying on duplicate values', () {
+    test(
+        'notifies listeners when properties are updated and avoids notifying on duplicate values',
+        () {
       final controller = BlobController();
       int notifyCount = 0;
       controller.addListener(() => notifyCount++);

@@ -5,18 +5,21 @@ import 'package:blob_flutter/blob_flutter.dart';
 void main() {
   group('BlobFlutter Library Export Tests', () {
     test('exports BlobNoiseType enum with all procedural noise types', () {
-      expect(BlobNoiseType.values, containsAll([
-        BlobNoiseType.harmonic,
-        BlobNoiseType.spiky,
-        BlobNoiseType.fractal,
-        BlobNoiseType.cellular,
-        BlobNoiseType.vortex,
-        BlobNoiseType.sphericalHarmonics,
-        BlobNoiseType.simplex,
-      ]));
+      expect(
+          BlobNoiseType.values,
+          containsAll([
+            BlobNoiseType.harmonic,
+            BlobNoiseType.spiky,
+            BlobNoiseType.fractal,
+            BlobNoiseType.cellular,
+            BlobNoiseType.vortex,
+            BlobNoiseType.sphericalHarmonics,
+            BlobNoiseType.simplex,
+          ]));
     });
 
-    test('exports BlobController with standard constructor and control methods', () {
+    test('exports BlobController with standard constructor and control methods',
+        () {
       final controller = BlobController(
         radius: 120.0,
         pointSize: 2.5,
@@ -34,7 +37,8 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('exports BlobFlutter widget which renders correctly', (tester) async {
+    testWidgets('exports BlobFlutter widget which renders correctly',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

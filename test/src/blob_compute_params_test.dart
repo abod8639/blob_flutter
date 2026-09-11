@@ -45,7 +45,9 @@ void main() {
       expect(params.touchRadiusFactor, 1.0);
     });
 
-    test('serializes and deserializes all 18 fields faithfully via toMessage and fromMessage', () {
+    test(
+        'serializes and deserializes all 18 fields faithfully via toMessage and fromMessage',
+        () {
       final touches = Float32List.fromList([10.5, 20.5, 30.5, 40.5]);
       final params = ProjectParamsFlat(
         count: 500,

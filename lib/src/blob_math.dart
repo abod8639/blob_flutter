@@ -31,10 +31,54 @@ class BlobMath {
 
   // Simplex 3D gradients and static permutation table
   static final Float32List _grad3 = Float32List.fromList([
-    1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0,
-    1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1,
-    0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1,
-    1, 1, 0, 0, -1, 1, -1, 1, 0, 0, -1, -1,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    0,
+    1,
+    0,
+    1,
+    -1,
+    0,
+    1,
+    1,
+    0,
+    -1,
+    -1,
+    0,
+    -1,
+    0,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    1,
+    1,
+    0,
+    0,
+    -1,
+    1,
+    -1,
+    1,
+    0,
+    0,
+    -1,
+    -1,
   ]);
 
   static final Uint8List _perm = _initPerm();
@@ -72,19 +116,49 @@ class BlobMath {
 
     if (x0 >= y0) {
       if (y0 >= z0) {
-        i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+        i1 = 1;
+        j1 = 0;
+        k1 = 0;
+        i2 = 1;
+        j2 = 1;
+        k2 = 0;
       } else if (x0 >= z0) {
-        i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1;
+        i1 = 1;
+        j1 = 0;
+        k1 = 0;
+        i2 = 1;
+        j2 = 0;
+        k2 = 1;
       } else {
-        i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1;
+        i1 = 0;
+        j1 = 0;
+        k1 = 1;
+        i2 = 1;
+        j2 = 0;
+        k2 = 1;
       }
     } else {
       if (y0 < z0) {
-        i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1;
+        i1 = 0;
+        j1 = 0;
+        k1 = 1;
+        i2 = 0;
+        j2 = 1;
+        k2 = 1;
       } else if (x0 < z0) {
-        i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1;
+        i1 = 0;
+        j1 = 1;
+        k1 = 0;
+        i2 = 0;
+        j2 = 1;
+        k2 = 1;
       } else {
-        i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+        i1 = 0;
+        j1 = 1;
+        k1 = 0;
+        i2 = 1;
+        j2 = 1;
+        k2 = 0;
       }
     }
 
@@ -108,28 +182,38 @@ class BlobMath {
     if (t0 > 0) {
       t0 *= t0;
       final int gi0 = (_perm[ii + _perm[jj + _perm[kk]]] % 12) * 3;
-      n0 = t0 * t0 * (_grad3[gi0] * x0 + _grad3[gi0 + 1] * y0 + _grad3[gi0 + 2] * z0);
+      n0 = t0 *
+          t0 *
+          (_grad3[gi0] * x0 + _grad3[gi0 + 1] * y0 + _grad3[gi0 + 2] * z0);
     }
 
     double t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
     if (t1 > 0) {
       t1 *= t1;
-      final int gi1 = (_perm[ii + i1 + _perm[jj + j1 + _perm[kk + k1]]] % 12) * 3;
-      n1 = t1 * t1 * (_grad3[gi1] * x1 + _grad3[gi1 + 1] * y1 + _grad3[gi1 + 2] * z1);
+      final int gi1 =
+          (_perm[ii + i1 + _perm[jj + j1 + _perm[kk + k1]]] % 12) * 3;
+      n1 = t1 *
+          t1 *
+          (_grad3[gi1] * x1 + _grad3[gi1 + 1] * y1 + _grad3[gi1 + 2] * z1);
     }
 
     double t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
     if (t2 > 0) {
       t2 *= t2;
-      final int gi2 = (_perm[ii + i2 + _perm[jj + j2 + _perm[kk + k2]]] % 12) * 3;
-      n2 = t2 * t2 * (_grad3[gi2] * x2 + _grad3[gi2 + 1] * y2 + _grad3[gi2 + 2] * z2);
+      final int gi2 =
+          (_perm[ii + i2 + _perm[jj + j2 + _perm[kk + k2]]] % 12) * 3;
+      n2 = t2 *
+          t2 *
+          (_grad3[gi2] * x2 + _grad3[gi2 + 1] * y2 + _grad3[gi2 + 2] * z2);
     }
 
     double t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
     if (t3 > 0) {
       t3 *= t3;
       final int gi3 = (_perm[ii + 1 + _perm[jj + 1 + _perm[kk + 1]]] % 12) * 3;
-      n3 = t3 * t3 * (_grad3[gi3] * x3 + _grad3[gi3 + 1] * y3 + _grad3[gi3 + 2] * z3);
+      n3 = t3 *
+          t3 *
+          (_grad3[gi3] * x3 + _grad3[gi3 + 1] * y3 + _grad3[gi3 + 2] * z3);
     }
 
     return 32.0 * (n0 + n1 + n2 + n3);
@@ -141,36 +225,38 @@ class BlobMath {
   // selected once per frame by [_selectNoise], eliminating the O(particleCount)
   // switch that previously ran inside the particle loop.
 
-  static double _harmonicNoise(double px, double py, double pz,
-      double f, double time, double time15, double blobiness) {
+  static double _harmonicNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
     final double n = sin(px * 3.0 * f + time) *
-                     cos(py * 2.0 * f - time) *
-                     sin(pz * 4.0 * f + time15);
+        cos(py * 2.0 * f - time) *
+        sin(pz * 4.0 * f + time15);
     return 1.0 + n * 0.3 * blobiness;
   }
 
-  static double _spikyNoise(double px, double py, double pz,
-      double f, double time, double time15, double blobiness) {
+  static double _spikyNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
     final double raw = (sin(px * 4.0 * f + time) +
-                        cos(py * 4.0 * f - time) +
-                        sin(pz * 4.0 * f + time15)) / 3.0;
+            cos(py * 4.0 * f - time) +
+            sin(pz * 4.0 * f + time15)) /
+        3.0;
     final double spike = 1.0 - raw.abs();
     final double n = spike * spike * spike;
     return 1.0 + (n * 0.6 - 0.1) * blobiness;
   }
 
-  static double _fractalNoise(double px, double py, double pz,
-      double f, double time, double time15, double blobiness) {
+  static double _fractalNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
     double n = sin(px * 2.0 * f + time) *
-               cos(py * 2.0 * f - time) *
-               sin(pz * 2.0 * f + time);
-    n += 0.5  * (sin(px * 4.0 * f - time15) * cos(py * 4.0 * f + time15));
-    n += 0.25 * (sin(px * 8.0 * f + time * 2.0) * sin(pz * 8.0 * f - time * 2.0));
+        cos(py * 2.0 * f - time) *
+        sin(pz * 2.0 * f + time);
+    n += 0.5 * (sin(px * 4.0 * f - time15) * cos(py * 4.0 * f + time15));
+    n += 0.25 *
+        (sin(px * 8.0 * f + time * 2.0) * sin(pz * 8.0 * f - time * 2.0));
     return 1.0 + n * 0.22 * blobiness;
   }
 
-  static double _cellularNoise(double px, double py, double pz,
-      double f, double time, double time15, double blobiness) {
+  static double _cellularNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
     final double c1 = cos(px * 3.0 * f + time);
     final double c2 = cos(py * 3.0 * f - time);
     final double c3 = cos(pz * 3.0 * f + time15);
@@ -178,27 +264,28 @@ class BlobMath {
     return 1.0 + (cell - 0.58) * 0.5 * blobiness;
   }
 
-  static double _vortexNoise(double px, double py, double pz,
-      double f, double time, double time15, double blobiness) {
+  static double _vortexNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
     final double angle = py * 3.0 + time;
-    final double cosA  = cos(angle);
-    final double sinA  = sin(angle);
+    final double cosA = cos(angle);
+    final double sinA = sin(angle);
     final double tx = px * cosA - pz * sinA;
     final double tz = px * sinA + pz * cosA;
-    final double n = sin(tx * 3.0 * f) * cos(tz * 3.0 * f + time) * cos(py * 2.0 * f);
+    final double n =
+        sin(tx * 3.0 * f) * cos(tz * 3.0 * f + time) * cos(py * 2.0 * f);
     return 1.0 + n * 0.35 * blobiness;
   }
 
   static double _sphericalHarmonicsNoise(double px, double py, double pz,
       double f, double time, double time15, double blobiness) {
-    final double phi   = atan2(pz, px);
+    final double phi = atan2(pz, px);
     final double theta = asin(py.clamp(-1.0, 1.0));
     final double n = sin(4.0 * phi * f + time) * cos(3.0 * theta * f + time15);
     return 1.0 + n * 0.35 * blobiness;
   }
 
-  static double _simplexNoise(double px, double py, double pz,
-      double f, double time, double time15, double blobiness) {
+  static double _simplexNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
     final double n = fastSimplex3D(
       px * f * 1.5 + sin(time * 0.5) * 0.2,
       py * f * 1.5 + cos(time * 0.5) * 0.2,
@@ -213,13 +300,20 @@ class BlobMath {
   /// loop body contains only a direct function call with no branching.
   static _NoiseFunc _selectNoise(BlobNoiseType type) {
     switch (type) {
-      case BlobNoiseType.harmonic:           return _harmonicNoise;
-      case BlobNoiseType.spiky:              return _spikyNoise;
-      case BlobNoiseType.fractal:            return _fractalNoise;
-      case BlobNoiseType.cellular:           return _cellularNoise;
-      case BlobNoiseType.vortex:             return _vortexNoise;
-      case BlobNoiseType.sphericalHarmonics: return _sphericalHarmonicsNoise;
-      case BlobNoiseType.simplex:            return _simplexNoise;
+      case BlobNoiseType.harmonic:
+        return _harmonicNoise;
+      case BlobNoiseType.spiky:
+        return _spikyNoise;
+      case BlobNoiseType.fractal:
+        return _fractalNoise;
+      case BlobNoiseType.cellular:
+        return _cellularNoise;
+      case BlobNoiseType.vortex:
+        return _vortexNoise;
+      case BlobNoiseType.sphericalHarmonics:
+        return _sphericalHarmonicsNoise;
+      case BlobNoiseType.simplex:
+        return _simplexNoise;
     }
   }
 
@@ -239,14 +333,13 @@ class BlobMath {
 
       for (int i = 0; i < samples; i++) {
         // BUG-01: safe division — when samples == 1, y = 0.0
-        final double y =
-            samples > 1 ? 1.0 - (i / (samples - 1)) * 2.0 : 0.0;
+        final double y = samples > 1 ? 1.0 - (i / (samples - 1)) * 2.0 : 0.0;
 
         final double radiusAtY = sqrt((1.0 - y * y).clamp(0.0, 1.0));
         final double theta = _goldenAngle * i;
 
-        buffer[i * 3]     = cos(theta) * radiusAtY; // x
-        buffer[i * 3 + 1] = y;                       // y
+        buffer[i * 3] = cos(theta) * radiusAtY; // x
+        buffer[i * 3 + 1] = y; // y
         buffer[i * 3 + 2] = sin(theta) * radiusAtY; // z
       }
       return buffer;
@@ -322,8 +415,7 @@ class BlobMath {
       double pz = baseSphere[base + 2];
 
       // Apply procedural noise displacement via the pre-selected function
-      final double displacement =
-          noise(px, py, pz, f, time, time15, blobiness);
+      final double displacement = noise(px, py, pz, f, time, time15, blobiness);
       px *= displacement;
       py *= displacement;
       pz *= displacement;

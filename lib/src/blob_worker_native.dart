@@ -97,9 +97,9 @@ class BlobWorker {
   /// messages in a tight `for` loop, returning results via
   /// [TransferableTypedData] (zero-copy).
   static void _workerEntry(List<Object?> args) async {
-    final mainPort  = args[0] as SendPort;
-    final sphere    = args[1] as Float32List;
-    final count     = args[2] as int;
+    final mainPort = args[0] as SendPort;
+    final sphere = args[1] as Float32List;
+    final count = args[2] as int;
 
     // Send our port back to the main isolate (handshake).
     final rx = ReceivePort();
@@ -113,25 +113,25 @@ class BlobWorker {
       // Compute projected positions into a fresh buffer.
       final output = Float32List(count * 2);
       BlobMath.projectParticles(
-        count:             p.count,
-        radius:            p.radius,
-        scale:             p.scale,
-        centerOffsetX:     p.centerOffsetX,
-        centerOffsetY:     p.centerOffsetY,
-        blobiness:         p.blobiness,
-        dispersion:        p.dispersion,
-        rotationX:         p.rotationX,
-        rotationY:         p.rotationY,
-        time:              p.time,
-        viewportWidth:     p.viewportWidth,
-        viewportHeight:    p.viewportHeight,
-        activeTouches:     p.encodedTouches,
-        baseSphere:        sphere,
-        projectedPoints:   output,
+        count: p.count,
+        radius: p.radius,
+        scale: p.scale,
+        centerOffsetX: p.centerOffsetX,
+        centerOffsetY: p.centerOffsetY,
+        blobiness: p.blobiness,
+        dispersion: p.dispersion,
+        rotationX: p.rotationX,
+        rotationY: p.rotationY,
+        time: p.time,
+        viewportWidth: p.viewportWidth,
+        viewportHeight: p.viewportHeight,
+        activeTouches: p.encodedTouches,
+        baseSphere: sphere,
+        projectedPoints: output,
         autoRotationSpeed: p.autoRotationSpeed,
-        noiseFrequency:    p.noiseFrequency,
-        viewDistance:      p.viewDistance,
-        noiseType:         BlobNoiseType.values[p.noiseTypeIndex],
+        noiseFrequency: p.noiseFrequency,
+        viewDistance: p.viewDistance,
+        noiseType: BlobNoiseType.values[p.noiseTypeIndex],
         touchRadiusFactor: p.touchRadiusFactor,
       );
 

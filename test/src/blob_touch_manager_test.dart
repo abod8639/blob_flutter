@@ -20,7 +20,9 @@ void main() {
       expect(manager.activeTouches, touches);
     });
 
-    testWidgets('updateLocalTouches transforms coordinates and encodes Float32List with RenderBox', (tester) async {
+    testWidgets(
+        'updateLocalTouches transforms coordinates and encodes Float32List with RenderBox',
+        (tester) async {
       final manager = BlobTouchManager();
       late BuildContext savedContext;
 
@@ -76,7 +78,9 @@ void main() {
       expect(manager.encodedTouches, isEmpty);
     });
 
-    testWidgets('updateLocalTouches falls back to global touches when RenderBox is unattached', (tester) async {
+    testWidgets(
+        'updateLocalTouches falls back to global touches when RenderBox is unattached',
+        (tester) async {
       final manager = BlobTouchManager();
       late BuildContext savedContext;
 

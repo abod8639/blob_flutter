@@ -125,7 +125,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
           Positioned.fill(
             child: Column(
               children: [
-               const SizedBox(height: 200),
+                const SizedBox(height: 200),
                 BlobFlutter(
                   controller: _controller,
                   enableDragRotation: true,
@@ -140,7 +140,8 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -226,7 +227,8 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
                   selectedColor: const Color(0xFF00F5D4),
                   labelStyle: TextStyle(
                     fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? Colors.black : Colors.white70,
                   ),
                   backgroundColor: const Color(0xFF1F2633),
@@ -282,10 +284,13 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
                 onTap: _toggleRainbowMode,
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: _isRainbow ? Colors.purpleAccent : const Color(0xFF1F2633),
+                    color: _isRainbow
+                        ? Colors.purpleAccent
+                        : const Color(0xFF1F2633),
                     border: Border.all(
                       color: _isRainbow ? Colors.white : Colors.white24,
                     ),

@@ -16,5 +16,7 @@
 ///
 /// Consumers import only this file; the platform split is transparent.
 library;
+
 export 'blob_worker_native.dart'
-    if (dart.library.js_interop) 'blob_worker_web.dart';
+    if (dart.library.js_interop) 'blob_worker_web.dart'
+    if (dart.library.html) 'blob_worker_web.dart';

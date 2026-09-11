@@ -65,6 +65,7 @@ class BlobController extends ChangeNotifier {
   double _rotationX = 0.0;
   double _rotationY = 0.0;
 
+  /// Creates a [BlobController] to dynamically manipulate blob parameters at runtime.
   BlobController({
     double radius = 150.0,
     double pointSize = 2.0,
@@ -239,15 +240,15 @@ class BlobController extends ChangeNotifier {
   double get dispersion => _dispersion;
 
   /// Scale multiplier applied to particle dispersion on touch/tap.
-  /// Range: [0.0, 5.0]. Default: 1.0.
+  /// Range: `[0.0, 5.0]`. Default: 1.0.
   double get tapScaleFactor => _tapScaleFactor;
 
   /// Multiplier for the touch interaction radius.
-  /// Range: [0.1, 5.0]. Default: 1.0.
+  /// Range: `[0.1, 5.0]`. Default: 1.0.
   double get touchRadiusFactor => _touchRadiusFactor;
 
   /// Damping factor applied each frame: 1.0 = no decay, 0.0 = instant stop.
-  /// Range: [0.0, 1.0].
+  /// Range: `[0.0, 1.0]`.
   double get dampingFactor => _dampingFactor;
 
   /// Constant background auto-rotation speed (Y-axis spin).
@@ -300,7 +301,7 @@ class BlobController extends ChangeNotifier {
 
   // ── Geometry Setters ──────────────────────────────────────────────────────
 
-  /// Dynamically sets the sphere radius. Clamped to [1.0, 5000.0].
+  /// Dynamically sets the sphere radius. Clamped to `[1.0, 5000.0]`.
   void setRadius(double value) {
     final clamped = value.clamp(1.0, 5000.0);
     if (_radius != clamped) {
@@ -309,7 +310,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Dynamically sets the point size of rendered particles. Clamped to [0.1, 100.0].
+  /// Dynamically sets the point size of rendered particles. Clamped to `[0.1, 100.0]`.
   void setPointSize(double value) {
     final clamped = value.clamp(0.1, 100.0);
     if (_pointSize != clamped) {
@@ -318,7 +319,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Dynamically sets the particle count. Clamped to [10, 100000].
+  /// Dynamically sets the particle count. Clamped to `[10, 100000]`.
   /// This will trigger buffer reallocation and worker restart in the widget.
   void setParticleCount(int value) {
     final clamped = value.clamp(10, 100000);
@@ -392,7 +393,7 @@ class BlobController extends ChangeNotifier {
 
   // ── Dynamics & Physics Setters ────────────────────────────────────────────
 
-  /// Sets the noise amplitude. Clamped to [0.0, 5.0].
+  /// Sets the noise amplitude. Clamped to `[0.0, 5.0]`.
   void setBlobiness(double value) {
     final clamped = value.clamp(0.0, 5.0);
     if (_blobiness != clamped) {
@@ -401,7 +402,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the animation speed multiplier. Clamped to [0.0, 10.0].
+  /// Sets the animation speed multiplier. Clamped to `[0.0, 10.0]`.
   void setSpeed(double value) {
     final clamped = value.clamp(0.0, 10.0);
     if (_speed != clamped) {
@@ -413,7 +414,7 @@ class BlobController extends ChangeNotifier {
   /// Alias for [setSpeed].
   void setAnimationSpeed(double value) => setSpeed(value);
 
-  /// Sets the dispersion level. Clamped to [0.0, 3.0].
+  /// Sets the dispersion level. Clamped to `[0.0, 3.0]`.
   void setDispersion(double value) {
     final clamped = value.clamp(0.0, 3.0);
     if (_dispersion != clamped) {
@@ -431,7 +432,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the touch interaction radius multiplier. Clamped to [0.1, 10.0].
+  /// Sets the touch interaction radius multiplier. Clamped to `[0.1, 10.0]`.
   void setTouchRadiusFactor(double value) {
     final clamped = value.clamp(0.1, 10.0);
     if (_touchRadiusFactor != clamped) {
@@ -440,7 +441,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the damping factor dynamically. Clamped to [0.0, 1.0].
+  /// Sets the damping factor dynamically. Clamped to `[0.0, 1.0]`.
   void setDampingFactor(double value) {
     final clamped = value.clamp(0.0, 1.0);
     if (_dampingFactor != clamped) {
@@ -449,7 +450,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the background auto-rotation speed. Clamped to [-3.0, 3.0].
+  /// Sets the background auto-rotation speed. Clamped to `[-3.0, 3.0]`.
   void setAutoRotationSpeed(double value) {
     final clamped = value.clamp(-3.0, 3.0);
     if (_autoRotationSpeed != clamped) {
@@ -458,7 +459,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the noise frequency multiplier. Clamped to [0.1, 5.0].
+  /// Sets the noise frequency multiplier. Clamped to `[0.1, 5.0]`.
   void setNoiseFrequency(double value) {
     final clamped = value.clamp(0.1, 5.0);
     if (_noiseFrequency != clamped) {
@@ -475,7 +476,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the perspective camera distance. Clamped to [0.8, 5.0].
+  /// Sets the perspective camera distance. Clamped to `[0.8, 5.0]`.
   void setViewDistance(double value) {
     final clamped = value.clamp(0.8, 5.0);
     if (_viewDistance != clamped) {
@@ -500,7 +501,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the color animation speed. Clamped to [0.0, 10.0].
+  /// Sets the color animation speed. Clamped to `[0.0, 10.0]`.
   void setColorAnimationSpeed(double value) {
     final clamped = value.clamp(0.0, 10.0);
     if (_colorAnimationSpeed != clamped) {
@@ -509,7 +510,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Sets the wave distortion intensity. Clamped to [0.0, 5.0].
+  /// Sets the wave distortion intensity. Clamped to `[0.0, 5.0]`.
   void setWaveIntensity(double value) {
     final clamped = value.clamp(0.0, 5.0);
     if (_waveIntensity != clamped) {

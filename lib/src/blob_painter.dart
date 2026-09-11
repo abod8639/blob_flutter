@@ -27,7 +27,7 @@ class BlobPainter extends CustomPainter {
   /// sharing a single mutable [Paint] is safe and eliminates one heap
   /// allocation per frame at 60 Hz.
   static final Paint _sharedPaint = Paint()
-    ..strokeCap   = StrokeCap.round
+    ..strokeCap = StrokeCap.round
     ..isAntiAlias = true;
 
   BlobPainter({
@@ -46,8 +46,8 @@ class BlobPainter extends CustomPainter {
     if (shader != null) {
       _sharedPaint.shader = shader;
     } else {
-      _sharedPaint.shader = null;   // clear any previous shader reference
-      _sharedPaint.color  = fallbackColor;
+      _sharedPaint.shader = null; // clear any previous shader reference
+      _sharedPaint.color = fallbackColor;
     }
 
     canvas.drawRawPoints(ui.PointMode.points, positions, _sharedPaint);
@@ -57,9 +57,9 @@ class BlobPainter extends CustomPainter {
   /// preventing unnecessary repaints on parent-driven rebuilds (ARCH-05 fix).
   @override
   bool shouldRepaint(covariant BlobPainter oldDelegate) {
-    return _generation   != oldDelegate._generation  ||
-           shader        != oldDelegate.shader       ||
-           pointSize     != oldDelegate.pointSize    ||
-           fallbackColor != oldDelegate.fallbackColor;
+    return _generation != oldDelegate._generation ||
+        shader != oldDelegate.shader ||
+        pointSize != oldDelegate.pointSize ||
+        fallbackColor != oldDelegate.fallbackColor;
   }
 }

@@ -7,7 +7,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('BlobShaderHelper Tests', () {
-    test('loadProgram loads FragmentProgram from assets or handles missing gracefully', () async {
+    test(
+        'loadProgram loads FragmentProgram from assets or handles missing gracefully',
+        () async {
       final program = await BlobShaderHelper.loadProgram();
       expect(program, anyOf(isNull, isA<ui.FragmentProgram>()));
 

@@ -52,7 +52,9 @@ void main() {
       expect(canvas.drawRawPointsCallCount, 0);
     });
 
-    test('paint method draws points on canvas with fallback color when shader is null', () {
+    test(
+        'paint method draws points on canvas with fallback color when shader is null',
+        () {
       final canvas = _MockCanvas();
       final positions = Float32List.fromList([10.0, 20.0, 30.0, 40.0]);
       final painter = BlobPainter(
@@ -69,11 +71,14 @@ void main() {
       expect(canvas.paint?.strokeWidth, 3.0);
       expect(canvas.paint?.strokeCap, StrokeCap.round);
       expect(canvas.paint?.isAntiAlias, true);
-      expect(canvas.paint?.color.toARGB32(), const Color(0xFF4CAF50).toARGB32());
+      expect(
+          canvas.paint?.color.toARGB32(), const Color(0xFF4CAF50).toARGB32());
       expect(canvas.paint?.shader, isNull);
     });
 
-    test('shouldRepaint detects changes in generation, pointSize, and fallbackColor', () {
+    test(
+        'shouldRepaint detects changes in generation, pointSize, and fallbackColor',
+        () {
       final positions1 = Float32List(10);
       final positions2 = Float32List(10);
 
@@ -118,7 +123,8 @@ void main() {
       expect(painterBase.shouldRepaint(painterDiffColor), true);
     });
 
-    test('paint and shouldRepaint with real FragmentShader if available', () async {
+    test('paint and shouldRepaint with real FragmentShader if available',
+        () async {
       final program = await BlobShaderHelper.loadProgram();
       if (program != null) {
         final shader1 = program.fragmentShader();

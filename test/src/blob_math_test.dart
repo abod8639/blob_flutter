@@ -6,7 +6,9 @@ import 'package:blob_flutter/src/blob_noise_type.dart';
 
 void main() {
   group('BlobMath Tests', () {
-    test('generateFibonacciSphere generates unit sphere points and asserts invalid inputs', () {
+    test(
+        'generateFibonacciSphere generates unit sphere points and asserts invalid inputs',
+        () {
       expect(
         () => BlobMath.generateFibonacciSphere(0),
         throwsAssertionError,
@@ -38,7 +40,8 @@ void main() {
       expect(sphere[2], 0.0);
     });
 
-    test('wrapTime keeps time wrapped within limits and handles large values', () {
+    test('wrapTime keeps time wrapped within limits and handles large values',
+        () {
       expect(BlobMath.wrapTime(5.0), 5.0);
 
       // Multiple of the limit should wrap to 0.0
@@ -49,7 +52,8 @@ void main() {
       expect(BlobMath.wrapTime(hugeTime), closeTo(3.5, 0.0001));
     });
 
-    test('fastSimplex3D returns deterministic values bounded in [-2.0, 2.0]', () {
+    test('fastSimplex3D returns deterministic values bounded in [-2.0, 2.0]',
+        () {
       final val1 = BlobMath.fastSimplex3D(0.5, 0.5, 0.5);
       final val2 = BlobMath.fastSimplex3D(0.5, 0.5, 0.5);
       expect(val1, val2);
@@ -62,7 +66,9 @@ void main() {
       expect(valNeg, inInclusiveRange(-2.0, 2.0));
     });
 
-    test('projectParticles projects points correctly with scale, offset, and dispersion', () {
+    test(
+        'projectParticles projects points correctly with scale, offset, and dispersion',
+        () {
       final count = 10;
       final baseSphere = BlobMath.generateFibonacciSphere(count);
       final projectedBase = Float32List(count * 2);
@@ -150,7 +156,9 @@ void main() {
       }
     });
 
-    test('projectParticles handles active multi-touch interactions and touchRadiusFactor', () {
+    test(
+        'projectParticles handles active multi-touch interactions and touchRadiusFactor',
+        () {
       final count = 20;
       final baseSphere = BlobMath.generateFibonacciSphere(count);
       final projectedTouches = Float32List(count * 2);
@@ -180,7 +188,9 @@ void main() {
       }
     });
 
-    test('projectParticles executes accurately for every BlobNoiseType algorithm', () {
+    test(
+        'projectParticles executes accurately for every BlobNoiseType algorithm',
+        () {
       final sphere = BlobMath.generateFibonacciSphere(100);
       final projected = Float32List(100 * 2);
 
@@ -205,8 +215,10 @@ void main() {
         );
 
         for (int i = 0; i < projected.length; i++) {
-          expect(projected[i].isNaN, false, reason: 'NaN found in $noiseType at index $i');
-          expect(projected[i].isInfinite, false, reason: 'Infinity found in $noiseType at index $i');
+          expect(projected[i].isNaN, false,
+              reason: 'NaN found in $noiseType at index $i');
+          expect(projected[i].isInfinite, false,
+              reason: 'Infinity found in $noiseType at index $i');
         }
       }
     });

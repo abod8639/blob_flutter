@@ -6,7 +6,9 @@ import 'package:blob_flutter/src/blob_input_listener.dart';
 
 void main() {
   group('BlobInputListener Widget Tests', () {
-    testWidgets('does not rotate on drag by default unless enableDragRotation is true', (tester) async {
+    testWidgets(
+        'does not rotate on drag by default unless enableDragRotation is true',
+        (tester) async {
       final controller = BlobController();
       List<Offset> touches = [];
 
@@ -51,7 +53,9 @@ void main() {
       await gesture2.up();
     });
 
-    testWidgets('applies tapScaleFactor and multi-touch counts to dispersion output', (tester) async {
+    testWidgets(
+        'applies tapScaleFactor and multi-touch counts to dispersion output',
+        (tester) async {
       final controller = BlobController(tapScaleFactor: 0.5);
 
       await tester.pumpWidget(
@@ -81,7 +85,9 @@ void main() {
       expect(controller.dispersion, 0.0);
     });
 
-    testWidgets('mouse hover triggers rotation impulse only when enableHoverRotation is true', (tester) async {
+    testWidgets(
+        'mouse hover triggers rotation impulse only when enableHoverRotation is true',
+        (tester) async {
       final controller = BlobController(enableHoverRotation: true);
 
       await tester.pumpWidget(
@@ -99,7 +105,8 @@ void main() {
         ),
       );
 
-      final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      final TestGesture gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
       await gesture.moveTo(const Offset(80, 80));
       await tester.pump();
@@ -110,7 +117,9 @@ void main() {
       await gesture.removePointer();
     });
 
-    testWidgets('mouse hover triggers dispersion and touches callback when enableHover is true', (tester) async {
+    testWidgets(
+        'mouse hover triggers dispersion and touches callback when enableHover is true',
+        (tester) async {
       final controller = BlobController();
       List<Offset> touches = [];
 
@@ -132,7 +141,8 @@ void main() {
         ),
       );
 
-      final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      final TestGesture gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
       await gesture.moveTo(const Offset(60, 60));
       await tester.pump();
@@ -150,7 +160,8 @@ void main() {
       await gesture.removePointer();
     });
 
-    testWidgets('pointer cancel removes touch points and resets dispersion', (tester) async {
+    testWidgets('pointer cancel removes touch points and resets dispersion',
+        (tester) async {
       final controller = BlobController();
       List<Offset> touches = [];
 
@@ -184,7 +195,9 @@ void main() {
       expect(controller.dispersion, 0.0);
     });
 
-    testWidgets('didUpdateWidget clears hover position if hover becomes disabled', (tester) async {
+    testWidgets(
+        'didUpdateWidget clears hover position if hover becomes disabled',
+        (tester) async {
       final controller = BlobController();
       List<Offset> touches = [];
 
@@ -206,7 +219,8 @@ void main() {
         ),
       );
 
-      final TestGesture gesture = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      final TestGesture gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
       await gesture.moveTo(const Offset(60, 60));
       await tester.pump();
@@ -236,7 +250,9 @@ void main() {
       await gesture.removePointer();
     });
 
-    testWidgets('pinch-to-scale gesture scales the blob when enablePinchToScale is true', (tester) async {
+    testWidgets(
+        'pinch-to-scale gesture scales the blob when enablePinchToScale is true',
+        (tester) async {
       final controller = BlobController(enablePinchToScale: true);
       controller.setScale(1.0);
 
@@ -269,8 +285,11 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('multi-touch falls back to drag rotation when enablePinchToScale is false', (tester) async {
-      final controller = BlobController(enablePinchToScale: false, enableDragRotation: true);
+    testWidgets(
+        'multi-touch falls back to drag rotation when enablePinchToScale is false',
+        (tester) async {
+      final controller =
+          BlobController(enablePinchToScale: false, enableDragRotation: true);
 
       await tester.pumpWidget(
         MaterialApp(

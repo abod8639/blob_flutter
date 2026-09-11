@@ -50,7 +50,8 @@ class BlobShaderHelper {
           exception: exception,
           stack: lastStackTrace,
           library: 'blob_flutter',
-          context: ErrorDescription('while loading fragment shader for BlobFlutter'),
+          context:
+              ErrorDescription('while loading fragment shader for BlobFlutter'),
           informationCollector: () => [
             ErrorSummary('Fragment shader could not be loaded.'),
             ErrorDescription(

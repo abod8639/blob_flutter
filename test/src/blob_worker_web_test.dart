@@ -7,7 +7,8 @@ import 'package:blob_flutter/src/blob_worker_web.dart';
 
 void main() {
   group('BlobWorker Web Stub Tests', () {
-    test('executes synchronous math and returns valid Float32List buffer', () async {
+    test('executes synchronous math and returns valid Float32List buffer',
+        () async {
       final worker = BlobWorker();
       const count = 40;
       final sphere = BlobMath.generateFibonacciSphere(count);

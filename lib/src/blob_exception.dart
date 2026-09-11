@@ -22,6 +22,7 @@ class BlobFlutterException implements Exception {
   /// The stack trace associated with [cause] (if any).
   final StackTrace? stackTrace;
 
+  /// Creates a [BlobFlutterException].
   const BlobFlutterException({
     required this.message,
     this.details,
@@ -34,7 +35,8 @@ class BlobFlutterException implements Exception {
   String toString() {
     final buffer = StringBuffer();
     buffer.writeln();
-    buffer.writeln('┌─ [BlobFlutter Exception] ──────────────────────────────────────────────');
+    buffer.writeln(
+        '┌─ [BlobFlutter Exception] ──────────────────────────────────────────────');
     buffer.writeln('│ Message: $message');
     if (details != null && details!.isNotEmpty) {
       buffer.writeln('│ Details: $details');
@@ -48,7 +50,8 @@ class BlobFlutterException implements Exception {
         buffer.writeln('│ $line');
       }
     }
-    buffer.write('└────────────────────────────────────────────────────────────────────────');
+    buffer.write(
+        '└────────────────────────────────────────────────────────────────────────');
     return buffer.toString();
   }
 }
@@ -109,8 +112,10 @@ class BlobWorkerException extends BlobFlutterException {
     StackTrace? stackTrace,
   }) {
     return BlobWorkerException(
-      message: 'Failed to spawn or communicate with the background particle computation isolate.',
-      details: 'The native worker isolate could not complete its initialization.',
+      message:
+          'Failed to spawn or communicate with the background particle computation isolate.',
+      details:
+          'The native worker isolate could not complete its initialization.',
       solutionHint:
           '1. BlobFlutter automatically falls back to main-thread particle math to prevent crashes.\n'
           '2. Check if your platform restricts background isolate spawning (e.g. memory constraints or custom embedders).\n'
@@ -129,6 +134,7 @@ class BlobParameterException extends BlobFlutterException {
   /// The invalid value that was provided.
   final dynamic invalidValue;
 
+  /// Creates a [BlobParameterException].
   const BlobParameterException({
     required this.parameterName,
     required this.invalidValue,

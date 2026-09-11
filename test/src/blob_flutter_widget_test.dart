@@ -11,7 +11,9 @@ import 'package:blob_flutter/src/blob_worker.dart';
 
 void main() {
   group('BlobFlutter Widget Tests', () {
-    testWidgets('renders CustomPaint with default settings and asserts on invalid parameters', (tester) async {
+    testWidgets(
+        'renders CustomPaint with default settings and asserts on invalid parameters',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -73,7 +75,9 @@ void main() {
       );
     });
 
-    testWidgets('renders successfully with static gradient and various gradient types', (tester) async {
+    testWidgets(
+        'renders successfully with static gradient and various gradient types',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -137,7 +141,9 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('renders successfully with unbounded width constraints (e.g. inside Row)', (tester) async {
+    testWidgets(
+        'renders successfully with unbounded width constraints (e.g. inside Row)',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -153,7 +159,8 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('rebuilds and updates properties when parent widget updates', (tester) async {
+    testWidgets('rebuilds and updates properties when parent widget updates',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -171,7 +178,8 @@ void main() {
 
       await tester.pump();
 
-      var inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      var inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller.tapScaleFactor, 1.0);
 
       // Rebuild with a different tapScaleFactor
@@ -191,7 +199,8 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller.tapScaleFactor, 2.0);
 
       // Rebuild with speed
@@ -211,7 +220,8 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller.speed, 3.5);
 
       // Rebuild with animationSpeed alias
@@ -231,7 +241,8 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller.speed, 2.2);
 
       // Rebuild with noiseType
@@ -251,7 +262,8 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller.noiseType, BlobNoiseType.vortex);
     });
 
@@ -275,7 +287,8 @@ void main() {
       );
       await tester.pump();
 
-      var inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      var inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller, controller1);
       expect(inputListener.controller.tapScaleFactor, 1.5);
 
@@ -295,12 +308,15 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller, controller2);
       expect(inputListener.controller.tapScaleFactor, 3.0);
     });
 
-    testWidgets('dynamic particleCount changes in controller reinitializes buffers cleanly', (tester) async {
+    testWidgets(
+        'dynamic particleCount changes in controller reinitializes buffers cleanly',
+        (tester) async {
       final controller = BlobController(particleCount: 200);
 
       await tester.pumpWidget(
@@ -323,7 +339,8 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('ticker increments frame generation index on frame pumps', (tester) async {
+    testWidgets('ticker increments frame generation index on frame pumps',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -361,7 +378,9 @@ void main() {
       expect(secondGen, greaterThan(firstGen));
     });
 
-    testWidgets('renders successfully with unbounded height and unconstrained dimensions', (tester) async {
+    testWidgets(
+        'renders successfully with unbounded height and unconstrained dimensions',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -389,7 +408,9 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('dispatches touch interactions through onTouchesChanged to TouchManager', (tester) async {
+    testWidgets(
+        'dispatches touch interactions through onTouchesChanged to TouchManager',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -405,9 +426,11 @@ void main() {
       );
       await tester.pump();
 
-      final gesture = await tester.startGesture(tester.getCenter(find.byType(BlobFlutter)));
+      final gesture =
+          await tester.startGesture(tester.getCenter(find.byType(BlobFlutter)));
       await tester.pump();
-      await gesture.moveTo(tester.getCenter(find.byType(BlobFlutter)) + const Offset(20, 20));
+      await gesture.moveTo(
+          tester.getCenter(find.byType(BlobFlutter)) + const Offset(20, 20));
       await tester.pump();
       await gesture.up();
       await tester.pump();
@@ -461,7 +484,9 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('didUpdateWidget updates all properties and handles controller attachment/detachment', (tester) async {
+    testWidgets(
+        'didUpdateWidget updates all properties and handles controller attachment/detachment',
+        (tester) async {
       // 1. Start with internally owned controller (controller == null)
       await tester.pumpWidget(
         const MaterialApp(
@@ -491,7 +516,8 @@ void main() {
       );
       await tester.pump();
 
-      var inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      var inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       final originalController = inputListener.controller;
       expect(originalController.radius, 100);
       expect(originalController.pointSize, 2.0);
@@ -526,7 +552,8 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller, originalController);
       expect(inputListener.controller.radius, 150);
       expect(inputListener.controller.pointSize, 4.0);
@@ -559,7 +586,8 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller, externalController);
 
       // 4. Switch from external controller back to null (instantiating new owned controller)
@@ -579,13 +607,16 @@ void main() {
       );
       await tester.pump();
 
-      inputListener = tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
       expect(inputListener.controller, isNot(externalController));
       expect(inputListener.controller.particleCount, 180);
       expect(inputListener.controller.radius, 110);
     });
 
-    testWidgets('initializes BlobWorker, executes isolate computation, and handles frame updates', (tester) async {
+    testWidgets(
+        'initializes BlobWorker, executes isolate computation, and handles frame updates',
+        (tester) async {
       final workerController = BlobController(
         particleCount: 50,
         alignment: const Alignment(0.2, -0.4),
@@ -631,7 +662,9 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('handles worker disposal and null computation result gracefully', (tester) async {
+    testWidgets(
+        'handles worker disposal and null computation result gracefully',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -675,7 +708,9 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('ticks on initial frame before fragment shader completes loading', (tester) async {
+    testWidgets(
+        'ticks on initial frame before fragment shader completes loading',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -692,7 +727,9 @@ void main() {
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
-    testWidgets('fires onError callback when shader loading fails in test environment', (tester) async {
+    testWidgets(
+        'fires onError callback when shader loading fails in test environment',
+        (tester) async {
       BlobFlutterException? capturedError;
       StackTrace? capturedStackTrace;
 
@@ -720,12 +757,15 @@ void main() {
 
       expect(capturedError, isNotNull);
       expect(capturedError, isA<BlobShaderException>());
-      expect(capturedError!.message, contains('Failed to load fragment shader asset'));
+      expect(capturedError!.message,
+          contains('Failed to load fragment shader asset'));
       expect(capturedError!.solutionHint, contains('pubspec.yaml'));
       expect(capturedStackTrace, isNotNull);
     });
 
-    testWidgets('renders custom error widget when errorBuilder is provided and shader fails', (tester) async {
+    testWidgets(
+        'renders custom error widget when errorBuilder is provided and shader fails',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -736,7 +776,8 @@ void main() {
                 silentErrorLogging: true,
                 testShaderAssetPath: 'shaders/missing.frag',
                 errorBuilder: (context, error) {
-                  return Text('Custom Error: ${error.message}', key: const Key('custom_error_key'));
+                  return Text('Custom Error: ${error.message}',
+                      key: const Key('custom_error_key'));
                 },
               ),
             ),
@@ -748,10 +789,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 16));
 
       expect(find.byKey(const Key('custom_error_key')), findsOneWidget);
-      expect(find.textContaining('Custom Error: Failed to load fragment shader asset'), findsOneWidget);
+      expect(
+          find.textContaining(
+              'Custom Error: Failed to load fragment shader asset'),
+          findsOneWidget);
     });
 
-    testWidgets('handles synchronous failure in worker isolate spawning gracefully', (tester) async {
+    testWidgets(
+        'handles synchronous failure in worker isolate spawning gracefully',
+        (tester) async {
       BlobFlutterException? capturedError;
       StackTrace? capturedStackTrace;
 
@@ -763,7 +809,8 @@ void main() {
               height: 300,
               child: BlobFlutter(
                 silentErrorLogging: true,
-                workerFactory: () => throw Exception('Worker constructor failed'),
+                workerFactory: () =>
+                    throw Exception('Worker constructor failed'),
                 onError: (error, st) {
                   capturedError = error;
                   capturedStackTrace = st;
@@ -779,11 +826,14 @@ void main() {
 
       expect(capturedError, isNotNull);
       expect(capturedError, isA<BlobWorkerException>());
-      expect(capturedError!.message, contains('background particle computation isolate'));
+      expect(capturedError!.message,
+          contains('background particle computation isolate'));
       expect(capturedStackTrace, isNotNull);
     });
 
-    testWidgets('handles asynchronous error in worker init via catchError gracefully', (tester) async {
+    testWidgets(
+        'handles asynchronous error in worker init via catchError gracefully',
+        (tester) async {
       BlobFlutterException? capturedError;
       StackTrace? capturedStackTrace;
 
@@ -811,7 +861,8 @@ void main() {
 
       expect(capturedError, isNotNull);
       expect(capturedError, isA<BlobWorkerException>());
-      expect(capturedError!.message, contains('background particle computation isolate'));
+      expect(capturedError!.message,
+          contains('background particle computation isolate'));
       expect(capturedStackTrace, isNotNull);
     });
   });

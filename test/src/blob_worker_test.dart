@@ -7,7 +7,8 @@ import 'package:blob_flutter/src/blob_worker.dart';
 
 void main() {
   group('BlobWorker Conditional Export Tests', () {
-    test('instantiates and computes projected particles via transparent export', () async {
+    test('instantiates and computes projected particles via transparent export',
+        () async {
       final worker = BlobWorker();
       const count = 30;
       final sphere = BlobMath.generateFibonacciSphere(count);
