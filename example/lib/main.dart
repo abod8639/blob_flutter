@@ -61,8 +61,6 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
       noiseType: _selectedNoise,
       enableDragRotation: true,
       enablePinchToScale: true,
-      // rotationY: .5,
-      // rotationX: 10,
       rotationX: _tiltAngle,
 
 
@@ -341,10 +339,10 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
           _buildSliderRow(
             label: 'Tilt',
             value: _tiltAngle,
-            min: -1.57,
-            max: 1.57,
-            divisions: 30,
-            displayValue: '${(_tiltAngle * 180 / 3.14159).round()}°',
+            min: -90.0,
+            max: 90.0,
+            divisions: 90,
+            displayValue: '${_tiltAngle.round()}°',
             onChanged: _onTiltAngleChanged,
           ),
           const SizedBox(height: 6),
