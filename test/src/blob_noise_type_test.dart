@@ -3,8 +3,8 @@ import 'package:blob_flutter/src/blob_noise_type.dart';
 
 void main() {
   group('BlobNoiseType Enum Tests', () {
-    test('contains exact 7 noise algorithm types', () {
-      expect(BlobNoiseType.values.length, 7);
+    test('contains exact 8 noise algorithm types', () {
+      expect(BlobNoiseType.values.length, 8);
       expect(BlobNoiseType.values, [
         BlobNoiseType.harmonic,
         BlobNoiseType.spiky,
@@ -13,6 +13,7 @@ void main() {
         BlobNoiseType.vortex,
         BlobNoiseType.sphericalHarmonics,
         BlobNoiseType.simplex,
+        BlobNoiseType.wave,
       ]);
     });
 
@@ -24,6 +25,7 @@ void main() {
       expect(BlobNoiseType.vortex.index, 4);
       expect(BlobNoiseType.sphericalHarmonics.index, 5);
       expect(BlobNoiseType.simplex.index, 6);
+      expect(BlobNoiseType.wave.index, 7);
     });
 
     test('recovers enum correctly from integer index', () {
@@ -40,6 +42,7 @@ void main() {
       expect(BlobNoiseType.vortex.name, 'vortex');
       expect(BlobNoiseType.sphericalHarmonics.name, 'sphericalHarmonics');
       expect(BlobNoiseType.simplex.name, 'simplex');
+      expect(BlobNoiseType.wave.name, 'wave');
     });
   });
 }
