@@ -61,9 +61,11 @@ class BlobController extends ChangeNotifier {
   double _waveIntensity = 1.0;
   Gradient? _gradient;
 
-  // ── Accumulated Drag Rotation ─────────────────────────────────────────────
-  double _rotationX = 0.0;
-  double _rotationY = 0.0;
+  // ── Orientation / Rotation Angles ──────────────────────────────────────────
+  double _baseRotationX = 0.0;
+  double _baseRotationY = 0.0;
+  double _dragRotationX = 0.0;
+  double _dragRotationY = 0.0;
 
   /// Creates a [BlobController] to dynamically manipulate blob parameters at runtime.
   BlobController({
@@ -84,6 +86,8 @@ class BlobController extends ChangeNotifier {
     double dispersion = 0.0,
     double noiseFrequency = 1.0,
     double viewDistance = 2.0,
+    double rotationX = 0.0,
+    double rotationY = 0.0,
     bool enableHover = false,
     bool isColorAnimated = true,
     double colorAnimationSpeed = 1.0,
@@ -110,6 +114,8 @@ class BlobController extends ChangeNotifier {
         _dispersion = dispersion,
         _noiseFrequency = noiseFrequency,
         _viewDistance = viewDistance,
+        _baseRotationX = rotationX,
+        _baseRotationY = rotationY,
         _enableHover = enableHover,
         _isColorAnimated = isColorAnimated,
         _colorAnimationSpeed = colorAnimationSpeed,
@@ -293,11 +299,49 @@ class BlobController extends ChangeNotifier {
   /// Optional runtime gradient override.
   Gradient? get gradient => _gradient;
 
-  /// Current accumulated X-axis rotation (from drag, with damping applied).
-  double get rotationX => _rotationX;
+  /// Current total X-axis rotation angle (pitch/tilt) in radians.
+  /// Combines persistent orientation ([baseRotationX]) with active drag inertia.
+  double get rotationX => _baseRotationX + _dragRotationX;
 
-  /// Current accumulated Y-axis rotation (from drag, with damping applied).
-  double get rotationY => _rotationY;
+  /// Current total Y-axis rotation angle (yaw/turn) in radians.
+  /// Combines persistent orientation ([baseRotationY]) with active drag inertia.
+  double get rotationY => _baseRotationY + _dragRotationY;
+
+  /// Base persistent X-axis rotation angle (pitch/tilt) in radians.
+  double get baseRotationX => _baseRotationX;
+
+  /// Base persistent Y-axis rotation angle (yaw/turn) in radians.
+  double get baseRotationY => _baseRotationY;
+
+  /// Dynamically sets the base orientation pitch angle (X-axis) in radians.
+  void setRotationX(double value) {
+    if (_baseRotationX != value) {
+      _baseRotationX = value;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically sets the base orientation yaw angle (Y-axis) in radians.
+  void setRotationY(double value) {
+    if (_baseRotationY != value) {
+      _baseRotationY = value;
+      notifyListeners();
+    }
+  }
+
+  /// Dynamically sets both orientation angles (pitch and yaw) in radians.
+  void setRotation({double? x, double? y}) {
+    bool changed = false;
+    if (x != null && _baseRotationX != x) {
+      _baseRotationX = x;
+      changed = true;
+    }
+    if (y != null && _baseRotationY != y) {
+      _baseRotationY = y;
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
 
   // ── Geometry Setters ──────────────────────────────────────────────────────
 
@@ -559,8 +603,8 @@ class BlobController extends ChangeNotifier {
   /// Adds an angular velocity impulse from a drag gesture.
   /// Delta is in screen pixels — sensitivity is applied internally.
   void addRotationImpulse(Offset delta) {
-    _rotationX += delta.dy * 0.005;
-    _rotationY += delta.dx * 0.005;
+    _dragRotationX += delta.dy * 0.005;
+    _dragRotationY += delta.dx * 0.005;
     notifyListeners();
   }
 
@@ -568,23 +612,28 @@ class BlobController extends ChangeNotifier {
   /// Applies exponential decay to the rotation so it naturally comes to rest.
   /// Returns true if the rotation is still non-negligible (needs repaint).
   bool applyDamping() {
-    _rotationX *= _dampingFactor;
-    _rotationY *= _dampingFactor;
+    _dragRotationX *= _dampingFactor;
+    _dragRotationY *= _dampingFactor;
 
     // Snap to zero below threshold to prevent infinite tiny values
-    if (_rotationX.abs() < 0.0001) _rotationX = 0.0;
-    if (_rotationY.abs() < 0.0001) _rotationY = 0.0;
+    if (_dragRotationX.abs() < 0.0001) _dragRotationX = 0.0;
+    if (_dragRotationY.abs() < 0.0001) _dragRotationY = 0.0;
 
-    return _rotationX != 0.0 || _rotationY != 0.0;
+    return _dragRotationX != 0.0 || _dragRotationY != 0.0;
   }
 
   // ── Resets ────────────────────────────────────────────────────────────────
 
   /// Resets accumulated rotation to zero immediately.
   void resetRotation() {
-    if (_rotationX != 0.0 || _rotationY != 0.0) {
-      _rotationX = 0.0;
-      _rotationY = 0.0;
+    if (_baseRotationX != 0.0 ||
+        _baseRotationY != 0.0 ||
+        _dragRotationX != 0.0 ||
+        _dragRotationY != 0.0) {
+      _baseRotationX = 0.0;
+      _baseRotationY = 0.0;
+      _dragRotationX = 0.0;
+      _dragRotationY = 0.0;
       notifyListeners();
     }
   }
@@ -606,9 +655,14 @@ class BlobController extends ChangeNotifier {
       _centerOffset = Offset.zero;
       changed = true;
     }
-    if (_rotationX != 0.0 || _rotationY != 0.0) {
-      _rotationX = 0.0;
-      _rotationY = 0.0;
+    if (_baseRotationX != 0.0 ||
+        _baseRotationY != 0.0 ||
+        _dragRotationX != 0.0 ||
+        _dragRotationY != 0.0) {
+      _baseRotationX = 0.0;
+      _baseRotationY = 0.0;
+      _dragRotationX = 0.0;
+      _dragRotationY = 0.0;
       changed = true;
     }
     if (changed) notifyListeners();
@@ -625,9 +679,14 @@ class BlobController extends ChangeNotifier {
       _centerOffset = Offset.zero;
       changed = true;
     }
-    if (_rotationX != 0.0 || _rotationY != 0.0) {
-      _rotationX = 0.0;
-      _rotationY = 0.0;
+    if (_baseRotationX != 0.0 ||
+        _baseRotationY != 0.0 ||
+        _dragRotationX != 0.0 ||
+        _dragRotationY != 0.0) {
+      _baseRotationX = 0.0;
+      _baseRotationY = 0.0;
+      _dragRotationX = 0.0;
+      _dragRotationY = 0.0;
       changed = true;
     }
     if (_dispersion != 0.0) {
