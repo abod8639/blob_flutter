@@ -41,82 +41,166 @@ class BlobFlutter extends StatefulWidget {
   /// Total number of particles. Default: 5000.
   final int particleCount;
 
-  /// Base radius of the blob sphere in logical pixels. Default: 150.0.
+  /// Base unscaled radius of the 3D particle sphere or planar surface in logical pixels.
+  ///
+  /// Determines the fundamental visual dimensions of the object on the canvas
+  /// prior to interactive scaling, perspective division, or dynamic noise displacement.
+  ///
+  /// Default: `150.0`. Must be greater than 0.0.
   final double radius;
 
-  /// Rendered size of each particle point. Default: 2.0.
+  /// Visual diameter of each rendered particle point in logical pixels.
+  ///
+  /// - **Smaller values (1.0 – 2.0):** Creates fine cosmic dust, starlight, or smooth
+  ///   flowing liquid droplet aesthetics.
+  /// - **Larger values (3.0 – 6.0+):** Creates bold, glowing orbs and vibrant nodes.
+  ///
+  /// Default: `2.0`. Must be greater than 0.0.
   final double pointSize;
 
-  /// Optional external controller. If null, an internal one is created.
+  /// Optional external [BlobController] to inspect and dynamically modify blob
+  /// properties (radius, rotation, speed, noise type, colors, dispersion) at runtime.
+  ///
+  /// When provided, the widget binds to this controller. When `null`, an internal
+  /// controller is automatically created and managed by the widget's lifecycle.
   final BlobController? controller;
 
-  /// Scale multiplier applied to particle dispersion on touch/tap.
-  /// Range: `[0.0, 5.0]`. Default: 0.40.
+  /// Impulse intensity multiplier applied to particle dispersion upon touch, tap, or click.
+  ///
+  /// - **Higher values (0.5 – 2.0+):** Creates a dramatic, explosive shockwave
+  ///   that forcefully scatters particles outward from the touch point.
+  /// - **`0.0`:** Completely disables touch dispersion impulses.
+  ///
+  /// Default: `0.40`. Range: `[0.0, 5.0]`.
   final double tapScaleFactor;
 
-  /// Multiplier applied to the touch interaction radius size.
-  /// Range: `[0.1, 5.0]`. Default: 0.30.
+  /// Area of influence multiplier for interactive pointer touches relative to [radius].
+  ///
+  /// - **Higher values (0.5 – 2.0+):** Broadens the interactive zone, repelling particles
+  ///   across a wide perimeter around the finger or cursor.
+  /// - **Lower values (0.1 – 0.3):** Restricts the interaction tightly beneath the pointer.
+  ///
+  /// Default: `0.30`. Range: `[0.1, 5.0]`.
   final double touchRadiusFactor;
 
-  /// The gradient used to color the particles.
-  /// Supports [LinearGradient], [RadialGradient], and [SweepGradient].
+  /// The color gradient applied to particles via the GPU fragment shader.
+  ///
+  /// Supports [LinearGradient], [RadialGradient], and [SweepGradient] with up to
+  /// 4 color stops. When [isColorAnimated] is `true`, colors smoothly shift and
+  /// undulate across the particle coordinates.
+  ///
+  /// Default: Linear gradient from [Colors.blueAccent] to [Colors.purpleAccent].
   final Gradient gradient;
 
-  /// Animation speed multiplier for procedural noise deformation.
-  /// Range: `[0.0, 10.0]`. Default: `1.0`. Set to `0.0` to pause deformation.
+  /// Playback speed multiplier for procedural noise deformations and wave undulations.
+  ///
+  /// - **Higher values (1.5 – 5.0+):** Produces energetic, rapid fluid ripples or turbulent motion.
+  /// - **Lower values (0.2 – 0.8):** Produces calm, meditative, slow-motion breathing motion.
+  /// - **`0.0`:** Pauses all procedural deformation, freezing the geometry in its current state.
+  ///
+  /// Default: `1.0`. Must be non-negative.
   final double speed;
 
-  /// Whether the color gradient is dynamically animated across the blob
-  /// or stays static in fixed position. Default: `true`.
+  /// Whether the shader gradient dynamically flows and shifts across particles over time.
+  ///
+  /// - **`true`:** Colors continuously drift and cycle through the particles, creating a
+  ///   mesmerizing chromatic liquid shimmer.
+  /// - **`false`:** Colors stay statically pinned to their UV coordinates.
+  ///
+  /// Default: `true`.
   final bool isColorAnimated;
 
-  /// Speed of color gradient flow / wave animation. Default: `1.0`.
-  /// Set to `0.0` for completely static colors.
+  /// Speed multiplier for the GPU color gradient flow animation.
+  ///
+  /// Controls how fast color bands migrate across the particles. Only active
+  /// when [isColorAnimated] is `true`.
+  ///
+  /// Default: `1.0`. Set to `0.0` for static colors.
   final double colorAnimationSpeed;
 
-  /// Intensity of wave distortion applied to the color flow.
-  /// `0.0` = clean geometric gradient, `1.0` = organic liquid shimmer. Default: `1.0`.
+  /// Intensity of wave distortion and refraction shimmer applied to the color shader.
+  ///
+  /// - **`0.0`:** Pure, clean geometric gradient transitions.
+  /// - **`1.0`:** Organic fluid shimmer with natural wave interference ripples.
+  /// - **`2.0+`:** Vivid liquid refraction and intense prismatic light distortion.
+  ///
+  /// Default: `1.0`. Range: `[0.0, 5.0]`.
   final double waveIntensity;
 
-  /// Whether particle dispersion and interaction triggers on mouse hover without clicking.
+  /// Whether particles disperse and react to mouse cursor hovering without clicking.
+  ///
+  /// Specially designed for desktop (macOS, Windows, Linux) and Web platforms to
+  /// make the blob feel alive and interactive under a moving mouse pointer.
+  ///
   /// Default: `false`.
   final bool enableHover;
 
-  /// Whether dragging/swiping rotates the blob in 3D.
+  /// Whether mouse/touch drag gestures rotate and spin the 3D object on the canvas.
+  ///
+  /// When enabled, dragging applies rotational velocity with realistic inertial damping,
+  /// smoothly gliding back to the base orientation angle when released.
+  ///
   /// Default: `false`.
   final bool enableDragRotation;
 
-  /// Whether moving the mouse cursor without clicking rotates the blob in 3D.
+  /// Whether moving the mouse cursor without clicking applies subtle 3D tilt towards the cursor.
+  ///
+  /// Creates an engaging 3D parallax card tilt effect on Desktop and Web browsers.
+  ///
   /// Default: `false`.
   final bool enableHoverRotation;
 
-  /// Initial base X-axis orientation angle (pitch/tilt) in radians.
+  /// Initial persistent 3D orientation angle around the horizontal X-axis (pitch/tilt) in radians.
+  ///
+  /// - **Positive values (e.g. `0.5` to `1.57` rad):** Tilts the top of the object backward/upward,
+  ///   ideal for viewing planar surfaces like [BlobNoiseType.wave] from an elevated 3D angle.
+  /// - **Negative values:** Tilts the object forward/downward.
+  ///
+  /// Unlike dynamic drag momentum, this base angle is persistent and is not erased by damping.
+  ///
   /// Default: `0.0`.
   final double rotationX;
 
-  /// Initial base Y-axis orientation angle (yaw/turn) in radians.
+  /// Initial persistent 3D orientation angle around the vertical Y-axis (yaw/turn) in radians.
+  ///
+  /// Rotates the object horizontally around its vertical axis to showcase different faces.
+  ///
   /// Default: `0.0`.
   final double rotationY;
 
-  /// The procedural 3D noise deformation algorithm used to shape the blob.
+  /// The procedural mathematical deformation algorithm used to sculpt the particle mesh.
+  ///
+  /// Choose between 8 unique algorithms:
+  /// - [BlobNoiseType.harmonic]: Organic, calm fluid liquid blob motion.
+  /// - [BlobNoiseType.spiky]: Sharp crystalline ridges, peaks, and audio-reactive spikes.
+  /// - [BlobNoiseType.fractal]: Multi-octave fBm turbulence and cloud/terrain textures.
+  /// - [BlobNoiseType.cellular]: Segmented Voronoi clusters, biological cells, and bubbles.
+  /// - [BlobNoiseType.vortex]: Swirling galactic spiral vortex and tornado funnel.
+  /// - [BlobNoiseType.sphericalHarmonics]: Acoustic cymatics and quantum orbital standing waves.
+  /// - [BlobNoiseType.simplex]: Omni-directional, artifact-free smooth 3D flow.
+  /// - [BlobNoiseType.wave]: Flat full square carpet/net with undulating ocean ripples.
+  ///
   /// Default: [BlobNoiseType.harmonic].
   final BlobNoiseType noiseType;
 
-  /// Optional callback invoked when an error or warning occurs (e.g. shader load failure or worker isolate error).
+  /// Optional callback invoked when an error occurs during shader compilation,
+  /// asset loading, or background worker isolate execution.
   final void Function(BlobFlutterException error, StackTrace? stackTrace)?
       onError;
 
-  /// Optional builder to customize what widget to render when an error occurs.
-  /// If null (default), the widget gracefully continues rendering using high-performance
-  /// CPU point rendering and fallback colors without crashing.
+  /// Optional custom widget builder displayed if an unrecoverable failure occurs.
+  ///
+  /// If `null` (default), the widget automatically falls back to lightweight CPU
+  /// point rendering with default colors, ensuring your UI never crashes or breaks.
   final Widget Function(BuildContext context, BlobFlutterException error)?
       errorBuilder;
 
-  /// Whether to suppress automatic FlutterError reporting to the console.
+  /// Whether to suppress automatic FlutterError reporting to the debugging console.
+  ///
   /// Defaults to `false`. Set to `true` if you prefer handling errors exclusively via [onError].
   final bool silentErrorLogging;
 
-  /// Internal testing override for verifying missing shader asset handling.
+  /// Internal testing override for verifying missing shader asset fallback handling.
   @visibleForTesting
   final String? testShaderAssetPath;
 
