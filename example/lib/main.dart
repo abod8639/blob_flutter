@@ -61,7 +61,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
       noiseType: _selectedNoise,
       enableDragRotation: true,
       enablePinchToScale: true,
-      rotationY: .5,
+      // rotationY: .5,
       // rotationX: 10,
       rotationX: _tiltAngle,
 
