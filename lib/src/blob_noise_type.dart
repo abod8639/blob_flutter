@@ -27,4 +27,8 @@ enum BlobNoiseType {
   /// Ultra-smooth 3D simplex noise with uniform omni-directional deformation.
   /// Produces natural flowing liquid with zero directional axis artifacts.
   simplex,
+
+  /// Flat full square carpet/net with multi-directional undulating wave heights.
+  /// Produces a floating planar square water/grid mesh rippling like a wave carpet.
+  wave,
 }
