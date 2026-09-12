@@ -37,6 +37,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
   bool _isRainbow = false;
   double _speed = 1.0;
   double _blobiness = 1.0;
+  double _tiltAngle = 0.0;
   int _particleCount = 4500;
 
   static const List<List<Color>> _gradientPresets = [
@@ -60,6 +61,11 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
       noiseType: _selectedNoise,
       enableDragRotation: true,
       enablePinchToScale: true,
+      rotationY: .5,
+      // rotationX: 10,
+      rotationX: _tiltAngle,
+
+
       gradient: LinearGradient(
         colors: _gradientPresets.first,
         begin: Alignment.topLeft,
@@ -108,6 +114,11 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
   void _onNoiseIntensityChanged(double value) {
     setState(() => _blobiness = value);
     _controller.setBlobiness(value);
+  }
+
+  void _onTiltAngleChanged(double value) {
+    setState(() => _tiltAngle = value);
+    _controller.setRotationX(value);
   }
 
   void _onParticleCountChanged(double value) {
@@ -325,6 +336,16 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
             divisions: 30,
             displayValue: '${_blobiness.toStringAsFixed(1)}x',
             onChanged: _onNoiseIntensityChanged,
+          ),
+          const SizedBox(height: 6),
+          _buildSliderRow(
+            label: 'Tilt',
+            value: _tiltAngle,
+            min: -1.57,
+            max: 1.57,
+            divisions: 30,
+            displayValue: '${(_tiltAngle * 180 / 3.14159).round()}°',
+            onChanged: _onTiltAngleChanged,
           ),
           const SizedBox(height: 6),
           _buildSliderRow(
