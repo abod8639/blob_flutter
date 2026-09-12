@@ -15,6 +15,7 @@ void main() {
             BlobNoiseType.vortex,
             BlobNoiseType.sphericalHarmonics,
             BlobNoiseType.simplex,
+            BlobNoiseType.wave,
           ]));
     });
 
