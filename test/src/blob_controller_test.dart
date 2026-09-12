@@ -333,5 +333,40 @@ void main() {
       expect(controllerInstantDecay.rotationX, 0.0);
       expect(controllerInstantDecay.rotationY, 0.0);
     });
+
+    test(
+        'controls orientation angle with setRotationX, setRotationY, and setRotation',
+        () {
+      final controller = BlobController(rotationX: 0.5, rotationY: -0.3);
+      expect(controller.rotationX, 0.5);
+      expect(controller.rotationY, -0.3);
+      expect(controller.baseRotationX, 0.5);
+      expect(controller.baseRotationY, -0.3);
+
+      controller.setRotationX(0.8);
+      expect(controller.rotationX, 0.8);
+      expect(controller.baseRotationX, 0.8);
+
+      controller.setRotationY(-1.2);
+      expect(controller.rotationY, -1.2);
+      expect(controller.baseRotationY, -1.2);
+
+      controller.setRotation(x: 0.0, y: 0.0);
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
+
+      // Verify that applyDamping does not erase base orientation
+      controller.setRotationX(1.0);
+      controller.addRotationImpulse(const Offset(10.0, 20.0));
+      expect(controller.rotationX, 1.0 + 20.0 * 0.005);
+      controller.applyDamping();
+      expect(
+          controller.rotationX, closeTo(1.0 + (20.0 * 0.005) * 0.92, 0.0001));
+
+      // After reset, returns to zero
+      controller.resetRotation();
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
+    });
   });
 }
