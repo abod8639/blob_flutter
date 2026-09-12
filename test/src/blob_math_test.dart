@@ -222,5 +222,88 @@ void main() {
         }
       }
     });
+
+    test(
+        'BlobNoiseType.wave generates valid flat square carpet wave coordinates without NaN',
+        () {
+      final sphere = BlobMath.generateFibonacciSphere(300);
+      final projected = Float32List(300 * 2);
+
+      BlobMath.projectParticles(
+        count: 300,
+        radius: 100.0,
+        blobiness: 1.2,
+        dispersion: 0.0,
+        rotationX: 0.3,
+        rotationY: 0.4,
+        time: 2.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projected,
+        autoRotationSpeed: 0.2,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.wave,
+      );
+
+      for (int i = 0; i < projected.length; i++) {
+        expect(projected[i].isNaN, false);
+        expect(projected[i].isInfinite, false);
+      }
+    });
+
+    test(
+        'BlobNoiseType.wave disables auto-rotation so carpet remains stationary',
+        () {
+      final sphere = BlobMath.generateFibonacciSphere(100);
+      final projected1 = Float32List(100 * 2);
+      final projected2 = Float32List(100 * 2);
+
+      // Run at time = 0.0
+      BlobMath.projectParticles(
+        count: 100,
+        radius: 100.0,
+        blobiness: 0.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 0.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projected1,
+        autoRotationSpeed: 1.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.wave,
+      );
+
+      // Run at time = 10.0 with high autoRotationSpeed
+      BlobMath.projectParticles(
+        count: 100,
+        radius: 100.0,
+        blobiness: 0.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 10.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projected2,
+        autoRotationSpeed: 1.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.wave,
+      );
+
+      for (int i = 0; i < projected1.length; i++) {
+        expect(projected1[i], closeTo(projected2[i], 1e-5));
+      }
+    });
   });
 }
