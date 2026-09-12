@@ -90,6 +90,14 @@ class BlobFlutter extends StatefulWidget {
   /// Default: `false`.
   final bool enableHoverRotation;
 
+  /// Initial base X-axis orientation angle (pitch/tilt) in radians.
+  /// Default: `0.0`.
+  final double rotationX;
+
+  /// Initial base Y-axis orientation angle (yaw/turn) in radians.
+  /// Default: `0.0`.
+  final double rotationY;
+
   /// The procedural 3D noise deformation algorithm used to shape the blob.
   /// Default: [BlobNoiseType.harmonic].
   final BlobNoiseType noiseType;
@@ -136,6 +144,8 @@ class BlobFlutter extends StatefulWidget {
     this.enableHover = false,
     this.enableDragRotation = false,
     this.enableHoverRotation = false,
+    this.rotationX = 0.0,
+    this.rotationY = 0.0,
     this.noiseType = BlobNoiseType.harmonic,
     this.onError,
     this.errorBuilder,
@@ -286,6 +296,8 @@ class _ParticleBlobState extends State<BlobFlutter>
           speed: widget.speed,
           tapScaleFactor: widget.tapScaleFactor,
           touchRadiusFactor: widget.touchRadiusFactor,
+          rotationX: widget.rotationX,
+          rotationY: widget.rotationY,
           enableHover: widget.enableHover,
           enableDragRotation: widget.enableDragRotation,
           enableHoverRotation: widget.enableHoverRotation,
@@ -334,6 +346,8 @@ class _ParticleBlobState extends State<BlobFlutter>
             speed: widget.speed,
             tapScaleFactor: widget.tapScaleFactor,
             touchRadiusFactor: widget.touchRadiusFactor,
+            rotationX: widget.rotationX,
+            rotationY: widget.rotationY,
             enableHover: widget.enableHover,
             enableDragRotation: widget.enableDragRotation,
             enableHoverRotation: widget.enableHoverRotation,
@@ -386,6 +400,12 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.enableHoverRotation != widget.enableHoverRotation) {
         _controller.setEnableHoverRotation(widget.enableHoverRotation);
+      }
+      if (oldWidget.rotationX != widget.rotationX) {
+        _controller.setRotationX(widget.rotationX);
+      }
+      if (oldWidget.rotationY != widget.rotationY) {
+        _controller.setRotationY(widget.rotationY);
       }
       if (oldWidget.noiseType != widget.noiseType) {
         _controller.setNoiseType(widget.noiseType);
