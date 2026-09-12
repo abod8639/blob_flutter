@@ -136,7 +136,7 @@ class _MyBlobState extends State<MyBlob> {
 
 ## Procedural Noise Algorithms
 
-Choose from 7 distinct mathematical displacement models using the `BlobNoiseType` enum:
+Choose from 8 distinct mathematical displacement models using the `BlobNoiseType` enum:
 
 | Algorithm | Visual Characteristics | Best For |
 | :--- | :--- | :--- |
@@ -147,6 +147,7 @@ Choose from 7 distinct mathematical displacement models using the `BlobNoiseType
 | `vortex` | Swirling cyclone, spiral galaxy, tornado. | Loading spinners, portals |
 | `sphericalHarmonics`| Acoustic cymatics, nodal patterns, quantum fields. | High-tech, futuristic UI |
 | `simplex` | Omni-directional, artifact-free smooth flow. | Clean, continuous deformation |
+| `wave` | Flat full square carpet/net with undulating wave ripples. | Floating wave nets, square carpets, audio grids |
 
 ---
 
@@ -160,6 +161,7 @@ Configure the initial state of your blob directly in the widget.
 | `particleCount` | `int` | `5000` | Total number of particles on the sphere (higher counts increase density but may affect performance). |
 | `radius` | `double` | `150.0` | Base radius in logical pixels. |
 | `pointSize` | `double` | `2.0` | Diameter of each rendered particle. |
+| `rotationX` / `rotationY` | `double` | `0.0` | Initial base 3D orientation angles (pitch & yaw) in radians. |
 | `noiseType` | `Enum` | `harmonic` | Procedural 3D noise algorithm used. |
 | `controller` | `BlobController?` | `null` | External controller for runtime manipulation. |
 | `gradient` | `Gradient` | `Linear` | Color gradient (Linear, Radial, or Sweep). |
@@ -181,6 +183,8 @@ Manipulate the blob dynamically at runtime using the controller methods.
 | `setParticleCount(val)`| `10` - `100000`| Dynamically sets particle count (reallocates buffers). |
 | `setBlobiness(val)` | `0.0` - `5.0` | Amplitude of noise displacement. |
 | `setSpeed(val)` | `0.0` - `10.0` | Playback speed of the animation. |
+| `setRotationX(val)` / `setRotationY(val)` | `double` (radians) | Sets persistent 3D orientation pitch & yaw angles. |
+| `setRotation({x, y})` | `double?` (radians) | Sets both 3D orientation angles simultaneously. |
 | `setDispersion(val)` | `0.0` - `3.0` | Outward radial displacement. |
 | `setNoiseFrequency(val)`| `0.1` - `5.0` | Density of the noise ripples. |
 | `setNoiseType(type)` | `Enum` | Changes the deformation algorithm. |
