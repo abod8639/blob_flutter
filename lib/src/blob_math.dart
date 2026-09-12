@@ -294,6 +294,41 @@ class BlobMath {
     return 1.0 + n * 0.35 * blobiness;
   }
 
+  static double _waveNoise(double px, double py, double pz, double f,
+      double time, double time15, double blobiness) {
+    // 1. Semi-flat oblate spheroid profile (compresses Y-axis)
+    final double flatFactor = (blobiness * 0.7 + 0.3).clamp(0.2, 1.5);
+    final double flatR = 1.0 / sqrt(1.0 + 5.0 * py * py);
+    final double baseShape = 1.0 + (flatR - 1.0) * flatFactor;
+
+    // 2. Multi-directional traveling wave synthesis
+    // Primary swell along diagonal vector (0.85, 0.52)
+    final double d1 = px * 0.85 + pz * 0.52;
+    final double phase1 = d1 * 3.5 * f + time * 2.2;
+    // Stokes wave sharpening (crest sharpening via second harmonic)
+    final double w1 = sin(phase1) + 0.3 * cos(phase1 * 2.0);
+
+    // Crossing swell for realistic water surface interference
+    final double d2 = -px * 0.52 + pz * 0.85;
+    final double phase2 = d2 * 2.8 * f - time * 1.6;
+    final double w2 = cos(phase2) * 0.65;
+
+    // Radial concentric ripples expanding from center
+    final double dist = sqrt(px * px + pz * pz);
+    final double phase3 = dist * 5.0 * f - time15 * 1.8;
+    final double w3 = sin(phase3) * 0.45;
+
+    // Capillary surface shimmer
+    final double phase4 = (px + pz) * 6.0 * f + time * 3.0;
+    final double w4 = cos(phase4) * 0.2;
+
+    final double wave = (w1 + w2 + w3 + w4) * 0.38;
+
+    // Modulate semi-flat base with wave displacement and blobiness
+    final double displacement = baseShape * (1.0 + wave * 0.4 * blobiness);
+    return displacement.clamp(0.1, 4.0);
+  }
+
   /// Returns the noise function matching [type].
   ///
   /// Called **once per frame**, before the particle loop, so that the inner
@@ -314,6 +349,8 @@ class BlobMath {
         return _sphericalHarmonicsNoise;
       case BlobNoiseType.simplex:
         return _simplexNoise;
+      case BlobNoiseType.wave:
+        return _waveNoise;
     }
   }
 
@@ -384,8 +421,11 @@ class BlobMath {
     final double centerY = (viewportHeight / 2.0) + centerOffsetY;
     final double effectiveRadius = radius * scale;
 
-    // Auto-rotation angle derived from time and autoRotationSpeed
-    final double autoRotY = time * autoRotationSpeed;
+    // Auto-rotation angle derived from time and autoRotationSpeed.
+    // For [BlobNoiseType.wave], disable auto-rotation so the carpet stays stationary
+    // while 'speed' and 'time' exclusively drive wave noise propagation.
+    final double autoRotY =
+        noiseType == BlobNoiseType.wave ? 0.0 : time * autoRotationSpeed;
     final double totalRotY = autoRotY + rotationY;
     final double cosRotY = cos(totalRotY);
     final double sinRotY = sin(totalRotY);
@@ -406,19 +446,60 @@ class BlobMath {
 
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
     final _NoiseFunc noise = _selectNoise(noiseType);
+    final bool isWave = noiseType == BlobNoiseType.wave;
+
+    // Constants for flat square carpet tilt (approx. 50 deg for 3D perspective)
+    const double sinTilt = 0.7660444; // sin(50°)
+    const double cosTilt = 0.6427876; // cos(50°)
+    final int cols = count > 0 ? max(1, sqrt(count).round()) : 1;
+    final int rows = count > 0 ? max(1, (count / cols).ceil()) : 1;
+    final int lastRowPts = count - (rows - 1) * cols;
 
     for (int i = 0; i < count; i++) {
       final int base = i * 3;
 
-      double px = baseSphere[base];
-      double py = baseSphere[base + 1];
-      double pz = baseSphere[base + 2];
+      double px;
+      double py;
+      double pz;
 
-      // Apply procedural noise displacement via the pre-selected function
-      final double displacement = noise(px, py, pz, f, time, time15, blobiness);
-      px *= displacement;
-      py *= displacement;
-      pz *= displacement;
+      if (isWave) {
+        // ── Flat Square Carpet / Net (Full square grid with wave heights) ───
+        final int r = i ~/ cols;
+        final int c = i % cols;
+        final int ptsInRow = (r == rows - 1) ? lastRowPts : cols;
+
+        final double u = ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
+        final double v = rows > 1 ? (r / (rows - 1)) * 2.0 - 1.0 : 0.0;
+
+        // Multi-directional traveling wave undulations across the square plane
+        final double phase1 = (u + v) * 3.5 * f + time * 2.5;
+        final double w1 = sin(phase1) + 0.25 * cos(phase1 * 2.0); // Stokes crest
+        final double phase2 = (u - v) * 3.0 * f - time * 1.8;
+        final double w2 = cos(phase2) * 0.65;
+        final double rSq = sqrt(u * u + v * v);
+        final double phase3 = rSq * 5.5 * f - time15 * 1.6;
+        final double w3 = sin(phase3) * 0.45;
+        final double phase4 = (u * 2.0 - v * 3.0) * 3.0 * f + time * 3.0;
+        final double w4 = cos(phase4) * 0.2;
+
+        final double h = (w1 + w2 + w3 + w4) * 0.18 * blobiness;
+
+        // Orient in 3D space with tilted perspective
+        px = u;
+        py = v * sinTilt + h * cosTilt;
+        pz = v * cosTilt - h * sinTilt;
+      } else {
+        px = baseSphere[base];
+        py = baseSphere[base + 1];
+        pz = baseSphere[base + 2];
+
+        // Apply procedural noise displacement via the pre-selected function
+        final double displacement =
+            noise(px, py, pz, f, time, time15, blobiness);
+        px *= displacement;
+        py *= displacement;
+        pz *= displacement;
+      }
 
       // Apply rotations (Y-axis first, then X-axis)
       final double xAfterY = px * cosRotY + pz * sinRotY;
