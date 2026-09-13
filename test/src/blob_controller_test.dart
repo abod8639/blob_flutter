@@ -363,5 +363,40 @@ void main() {
       expect(controller.rotationX, 0.0);
       expect(controller.rotationY, 0.0);
     });
+
+    test('controls playback state with pause, resume, and setIsPaused', () {
+      final controller = BlobController();
+      expect(controller.isPaused, false);
+
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.pause();
+      expect(controller.isPaused, true);
+      expect(notifyCount, 1);
+
+      // Duplicate pause should not trigger listener
+      controller.pause();
+      expect(notifyCount, 1);
+
+      controller.resume();
+      expect(controller.isPaused, false);
+      expect(notifyCount, 2);
+
+      // Duplicate resume should not trigger listener
+      controller.resume();
+      expect(notifyCount, 2);
+
+      controller.setIsPaused(true);
+      expect(controller.isPaused, true);
+      expect(notifyCount, 3);
+
+      controller.setIsPaused(false);
+      expect(controller.isPaused, false);
+      expect(notifyCount, 4);
+
+      final pausedController = BlobController(isPaused: true);
+      expect(pausedController.isPaused, true);
+    });
   });
 }
