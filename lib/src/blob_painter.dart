@@ -11,8 +11,8 @@ class BlobPainter extends CustomPainter {
   final Float32List positions;
   final ui.FragmentShader? shader;
   final double pointSize;
+  final Gradient fallbackGradient;
   final Color fallbackColor;
-  final Gradient? fallbackGradient;
 
   /// Snapshot of the frame counter used for efficient [shouldRepaint]
   /// comparison — we repaint only when the generation changes,
@@ -36,8 +36,8 @@ class BlobPainter extends CustomPainter {
     required int generation,
     this.shader,
     required this.pointSize,
-    required this.fallbackColor,
-    this.fallbackGradient,
+    required this.fallbackGradient,
+    this.fallbackColor = const Color(0xFF448AFF),
   }) : _generation = generation;
 
   @override
@@ -47,14 +47,17 @@ class BlobPainter extends CustomPainter {
     _sharedPaint.strokeWidth = pointSize;
     if (shader != null) {
       _sharedPaint.shader = shader;
-    } else if (fallbackGradient != null) {
+    } else {
+      // Primary fallback: Render complete native GPU gradient via Canvas engine
       final rect = (size.isEmpty || !size.isFinite)
           ? Rect.fromLTWH(0, 0, pointSize, pointSize)
           : Offset.zero & size;
-      _sharedPaint.shader = fallbackGradient!.createShader(rect);
-    } else {
-      _sharedPaint.shader = null; // clear any previous shader reference
-      _sharedPaint.color = fallbackColor;
+      try {
+        _sharedPaint.shader = fallbackGradient.createShader(rect);
+      } catch (_) {
+        _sharedPaint.shader = null;
+        _sharedPaint.color = fallbackColor;
+      }
     }
 
     canvas.drawRawPoints(ui.PointMode.points, positions, _sharedPaint);
