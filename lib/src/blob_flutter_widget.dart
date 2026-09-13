@@ -214,8 +214,7 @@ class BlobFlutter extends StatefulWidget {
     this.particleCount = 5000,
     this.radius = 150.0,
     this.pointSize = 2.0,
-    double speed = 1.0,
-    double? animationSpeed,
+    this.speed = 1.0,
     this.tapScaleFactor = 0.40,
     this.touchRadiusFactor = 0.30,
     this.controller,
@@ -236,8 +235,7 @@ class BlobFlutter extends StatefulWidget {
     this.silentErrorLogging = false,
     this.testShaderAssetPath,
     this.workerFactory,
-  })  : speed = animationSpeed ?? speed,
-        assert(
+  }) : assert(
           particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
           'Example fix: BlobFlutter(particleCount: 5000).',
@@ -256,11 +254,6 @@ class BlobFlutter extends StatefulWidget {
           speed >= 0.0,
           "BlobFlutter: 'speed' must be non-negative (received $speed). "
           'Example fix: BlobFlutter(speed: 1.0).',
-        ),
-        assert(
-          animationSpeed == null || animationSpeed >= 0.0,
-          "BlobFlutter: 'animationSpeed' must be non-negative (received $animationSpeed). "
-          'Example fix: BlobFlutter(animationSpeed: 1.0).',
         ),
         assert(
           tapScaleFactor >= 0.0,
@@ -520,7 +513,19 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _generateBuffers(int count) {
     _baseSphere = BlobMath.generateFibonacciSphere(count);
-    _projectedPoints = Float32List(count * 2);
+    // Preserve old projected points to avoid a visual flash while the worker
+    // restarts and computes the first result for the new particle count.
+    // The worker will replace _projectedPoints on its first successful result.
+    final newLength = count * 2;
+    if (_projectedPoints.length != newLength) {
+      final oldPoints = _projectedPoints;
+      _projectedPoints = Float32List(newLength);
+      final copyLen =
+          oldPoints.length < newLength ? oldPoints.length : newLength;
+      if (copyLen > 0) {
+        _projectedPoints.setRange(0, copyLen, oldPoints);
+      }
+    }
   }
 
   Future<void> _loadShader() async {
@@ -726,52 +731,56 @@ class _ParticleBlobState extends State<BlobFlutter>
       return widget.errorBuilder!(context, error);
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.hasBoundedWidth
-            ? constraints.maxWidth
-            : _controller.radius * 2.0;
-        final double height = constraints.hasBoundedHeight
-            ? constraints.maxHeight
-            : _controller.radius * 2.0;
+    return Semantics(
+      label: 'Animated 3D particle blob',
+      excludeSemantics: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : _controller.radius * 2.0;
+          final double height = constraints.hasBoundedHeight
+              ? constraints.maxHeight
+              : _controller.radius * 2.0;
 
-        final newSize = Size(width, height);
-        if (newSize != _cachedSize) {
-          _cachedSize = newSize;
-          _shaderStaticDirty = true;
-        }
+          final newSize = Size(width, height);
+          if (newSize != _cachedSize) {
+            _cachedSize = newSize;
+            _shaderStaticDirty = true;
+          }
 
-        return SizedBox(
-          width: width,
-          height: height,
-          child: BlobInputListener(
-            controller: _controller,
-            enableHover: widget.enableHover,
-            onTouchesChanged: (touches) {
-              _touchManager.updateActiveTouches(touches);
-            },
-            child: ValueListenableBuilder<int>(
-              valueListenable: _frameNotifier,
-              builder: (_, frame, __) {
-                return RepaintBoundary(
-                  child: CustomPaint(
-                    painter: BlobPainter(
-                      positions: _projectedPoints,
-                      generation: frame,
-                      shader: _shader,
-                      pointSize: _controller.pointSize,
-                      fallbackColor: _color1,
-                    ),
-                    size: Size.infinite,
-                    isComplex: true,
-                    willChange: true,
-                  ),
-                );
+          return SizedBox(
+            width: width,
+            height: height,
+            child: BlobInputListener(
+              controller: _controller,
+              enableHover: widget.enableHover,
+              onTouchesChanged: (touches) {
+                _touchManager.updateActiveTouches(touches);
               },
+              child: ValueListenableBuilder<int>(
+                valueListenable: _frameNotifier,
+                builder: (_, frame, __) {
+                  return RepaintBoundary(
+                    child: CustomPaint(
+                      painter: BlobPainter(
+                        positions: _projectedPoints,
+                        generation: frame,
+                        shader: _shader,
+                        pointSize: _controller.pointSize,
+                        fallbackColor: _color1,
+                      ),
+                      size: Size.infinite,
+                      isComplex: true,
+                      willChange: true,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
