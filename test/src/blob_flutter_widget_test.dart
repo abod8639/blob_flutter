@@ -862,6 +862,60 @@ void main() {
           contains('background particle computation isolate'));
       expect(capturedStackTrace, isNotNull);
     });
+
+    testWidgets('supports autoPlay: false and completes pumpAndSettle',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // pumpAndSettle will immediately succeed because ticker is stopped!
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets('pause and resume dynamically control ticker and rendering',
+        (tester) async {
+      final controller = BlobController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      expect(controller.isPaused, false);
+
+      controller.pause();
+      expect(controller.isPaused, true);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      controller.resume();
+      expect(controller.isPaused, false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 32));
+      expect(find.byType(BlobFlutter), findsOneWidget);
+    });
   });
 }
 
