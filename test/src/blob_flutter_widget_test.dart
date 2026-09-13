@@ -135,6 +135,25 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(BlobFlutter), findsOneWidget);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                gradient: LinearGradient(
+                  colors: [Colors.red, Colors.green, Colors.blue],
+                  stops: [0.0, 0.2, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(BlobFlutter), findsOneWidget);
     });
 
     testWidgets(
