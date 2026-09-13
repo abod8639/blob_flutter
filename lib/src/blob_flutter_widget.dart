@@ -207,6 +207,8 @@ class BlobFlutter extends StatefulWidget {
 
   /// Internal testing override for injecting or mocking a [BlobWorker].
   @visibleForTesting
+  final BlobWorker Function()? workerFactory;
+
   /// Whether the animation loop starts playing automatically.
   ///
   /// Set to `false` to keep the blob in a paused state until [BlobController.resume] is called.
