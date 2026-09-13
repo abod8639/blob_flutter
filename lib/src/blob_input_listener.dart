@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'blob_controller.dart';
@@ -34,10 +35,34 @@ class _BlobInputListenerState extends State<BlobInputListener> {
       widget.enableHover || widget.controller.enableHover;
 
   void _updateTouchState(PointerEvent event, bool isDown) {
+    final bool isMouseOrTrackpad =
+        event.kind == PointerDeviceKind.mouse ||
+        event.kind == PointerDeviceKind.trackpad;
+
     if (isDown) {
       _touchPoints[event.pointer] = event.position;
+      if (isMouseOrTrackpad) {
+        _hoverPosition = event.position;
+      }
     } else {
       _touchPoints.remove(event.pointer);
+      if (isMouseOrTrackpad) {
+        final renderObject = context.findRenderObject();
+        if (renderObject is RenderBox &&
+            renderObject.attached &&
+            renderObject.hasSize) {
+          final local = renderObject.globalToLocal(event.position);
+          if (renderObject.size.contains(local)) {
+            _hoverPosition = event.position;
+          } else {
+            _hoverPosition = null;
+          }
+        } else {
+          _hoverPosition = event.position;
+        }
+      } else {
+        _hoverPosition = null;
+      }
     }
 
     _notifyTouches();
@@ -100,7 +125,11 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         onPointerDown: (event) => _updateTouchState(event, true),
         onPointerMove: (event) => _updateTouchState(event, true),
         onPointerUp: (event) => _updateTouchState(event, false),
-        onPointerCancel: (event) => _updateTouchState(event, false),
+        onPointerCancel: (event) {
+          _touchPoints.remove(event.pointer);
+          _hoverPosition = null;
+          _notifyTouches();
+        },
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onScaleStart: (details) {
