@@ -12,6 +12,7 @@ class BlobPainter extends CustomPainter {
   final ui.FragmentShader? shader;
   final double pointSize;
   final Color fallbackColor;
+  final Gradient? fallbackGradient;
 
   /// Snapshot of the frame counter used for efficient [shouldRepaint]
   /// comparison — we repaint only when the generation changes,
@@ -36,6 +37,7 @@ class BlobPainter extends CustomPainter {
     this.shader,
     required this.pointSize,
     required this.fallbackColor,
+    this.fallbackGradient,
   }) : _generation = generation;
 
   @override
@@ -45,6 +47,11 @@ class BlobPainter extends CustomPainter {
     _sharedPaint.strokeWidth = pointSize;
     if (shader != null) {
       _sharedPaint.shader = shader;
+    } else if (fallbackGradient != null) {
+      final rect = (size.isEmpty || !size.isFinite)
+          ? Rect.fromLTWH(0, 0, pointSize, pointSize)
+          : Offset.zero & size;
+      _sharedPaint.shader = fallbackGradient!.createShader(rect);
     } else {
       _sharedPaint.shader = null; // clear any previous shader reference
       _sharedPaint.color = fallbackColor;
@@ -60,6 +67,7 @@ class BlobPainter extends CustomPainter {
     return _generation != oldDelegate._generation ||
         shader != oldDelegate.shader ||
         pointSize != oldDelegate.pointSize ||
-        fallbackColor != oldDelegate.fallbackColor;
+        fallbackColor != oldDelegate.fallbackColor ||
+        fallbackGradient != oldDelegate.fallbackGradient;
   }
 }
