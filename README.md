@@ -170,6 +170,7 @@ Configure the initial state of your blob directly in the widget.
 | `noiseType` | `Enum` | `harmonic` | Procedural 3D noise algorithm used. |
 | `controller` | `BlobController?` | `null` | External controller for runtime manipulation. |
 | `gradient` | `Gradient` | `Linear` | Color gradient (Linear, Radial, or Sweep). |
+| `autoPlay` | `bool` | `true` | Whether the animation loop starts automatically. Set to `false` for battery savings on static views or widget tests. |
 
 > [!TIP]
 > **Performance & Particle Count (`particleCount`):**
@@ -185,6 +186,9 @@ Manipulate the blob dynamically at runtime using the controller methods.
 
 | Setter Method | Valid Range | Description |
 | :--- | :--- | :--- |
+| `pause()` | - | Stops the animation ticker completely (0% CPU/battery usage). |
+| `resume()` | - | Resumes the animation loop if paused. |
+| `isPaused` | `true`/`false` | Getter checking whether the animation loop is currently paused. |
 | `setParticleCount(val)`| `10` - `100000`| Dynamically sets particle count (reallocates buffers). |
 | `setBlobiness(val)` | `0.0` - `5.0` | Amplitude of noise displacement. |
 | `setSpeed(val)` | `0.0` - `10.0` | Playback speed of the animation. |
