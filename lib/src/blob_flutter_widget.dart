@@ -405,6 +405,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           waveIntensity: widget.waveIntensity,
           noiseType: widget.noiseType,
           gradient: widget.gradient,
+          isPaused: !widget.autoPlay,
         );
 
     _lastParticleCount = _controller.particleCount;
@@ -414,7 +415,10 @@ class _ParticleBlobState extends State<BlobFlutter>
     _loadShader();
     _startWorker();
 
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
+    if (!_controller.isPaused) {
+      _ticker.start();
+    }
   }
 
   void _onControllerChanged() {
@@ -423,6 +427,58 @@ class _ParticleBlobState extends State<BlobFlutter>
       _generateBuffers(_lastParticleCount);
       _restartWorker();
     }
+    _syncTickerState();
+    if (_controller.isPaused && mounted) {
+      _renderStaticFrame();
+    }
+  }
+
+  void _syncTickerState() {
+    if (_controller.isPaused) {
+      if (_ticker.isActive) {
+        _ticker.stop();
+      }
+    } else {
+      if (!_ticker.isActive && mounted) {
+        _lastElapsed = Duration.zero;
+        _ticker.start();
+      }
+    }
+  }
+
+  void _renderStaticFrame() {
+    if (_cachedSize == Size.zero || !mounted) return;
+    _updateDynamicUniforms();
+    _touchManager.updateLocalTouches(context);
+    final double alignOffsetX =
+        _controller.alignment.x * (_cachedSize.width / 2.0);
+    final double alignOffsetY =
+        _controller.alignment.y * (_cachedSize.height / 2.0);
+
+    BlobMath.projectParticles(
+      count: _controller.particleCount,
+      radius: _controller.radius,
+      scale: _controller.scale,
+      centerOffsetX: _controller.centerOffset.dx + alignOffsetX,
+      centerOffsetY: _controller.centerOffset.dy + alignOffsetY,
+      blobiness: _controller.blobiness,
+      dispersion: _controller.dispersion,
+      rotationX: _controller.rotationX,
+      rotationY: _controller.rotationY,
+      time: _time,
+      viewportWidth: _cachedSize.width,
+      viewportHeight: _cachedSize.height,
+      activeTouches: _touchManager.localTouchesFlat,
+      baseSphere: _baseSphere,
+      projectedPoints: _projectedPoints,
+      autoRotationSpeed: _controller.autoRotationSpeed,
+      noiseFrequency: _controller.noiseFrequency,
+      viewDistance: _controller.viewDistance,
+      noiseType: _controller.noiseType,
+      touchRadiusFactor: _controller.touchRadiusFactor,
+    );
+    _frameCount++;
+    _frameNotifier.value = _frameCount;
   }
 
   @override
@@ -455,6 +511,7 @@ class _ParticleBlobState extends State<BlobFlutter>
             waveIntensity: widget.waveIntensity,
             noiseType: widget.noiseType,
             gradient: widget.gradient,
+            isPaused: !widget.autoPlay,
           );
       _lastParticleCount = _controller.particleCount;
       _controller.addListener(_onControllerChanged);
@@ -462,8 +519,12 @@ class _ParticleBlobState extends State<BlobFlutter>
       _restartWorker();
       _shaderStaticDirty = true;
       _shaderColorsDirty = true;
+      _syncTickerState();
     } else if (_ownsController) {
       bool staticChanged = false;
+      if (oldWidget.autoPlay != widget.autoPlay) {
+        _controller.setIsPaused(!widget.autoPlay);
+      }
       if (oldWidget.radius != widget.radius) {
         _controller.setRadius(widget.radius);
       }
@@ -769,6 +830,13 @@ class _ParticleBlobState extends State<BlobFlutter>
           if (newSize != _cachedSize) {
             _cachedSize = newSize;
             _shaderStaticDirty = true;
+            if (_controller.isPaused) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _controller.isPaused) {
+                  _renderStaticFrame();
+                }
+              });
+            }
           }
 
           return SizedBox(
