@@ -77,8 +77,9 @@ import 'package:blob_flutter/blob_flutter.dart';
 
 ```yaml
 flutter:
-  shaders:
-    - packages/blob_flutter/shaders/blob.frag
+  uses-material-design: true
+  shaders:                                     # <-----
+    - packages/blob_flutter/shaders/blob.frag  # <-----
 ```
 
 After adding it, run `flutter pub get` and perform a **full app restart** — Hot Reload alone is insufficient to compile new shaders.
