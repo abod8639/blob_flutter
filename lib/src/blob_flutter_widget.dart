@@ -86,8 +86,9 @@ class BlobFlutter extends StatefulWidget {
   /// The color gradient applied to particles via the GPU fragment shader.
   ///
   /// Supports [LinearGradient], [RadialGradient], and [SweepGradient] with up to
-  /// 4 color stops. When [isColorAnimated] is `true`, colors smoothly shift and
-  /// undulate across the particle coordinates.
+  /// 8 color stops (or more, automatically downsampled). When [isColorAnimated] is `true`,
+  /// colors smoothly shift and undulate across the particle coordinates. If runtime shaders
+  /// are unavailable, automatically falls back to native canvas gradient rendering.
   ///
   /// Default: Linear gradient from [Colors.blueAccent] to [Colors.purpleAccent].
   final Gradient gradient;
@@ -327,7 +328,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   // ── Rainbow Color Cache ─────────────────────────────────────────────────────
 
   final List<Color> _rainbowColors = List<Color>.filled(
-    4,
+    8,
     const Color(0xFFFFFFFF),
   );
 
@@ -335,16 +336,26 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   Gradient get _effectiveGradient => _controller.gradient ?? widget.gradient;
 
+  Gradient? get _effectiveFallbackGradient {
+    if (_controller.isRainbowMode) {
+      return SweepGradient(colors: _effectiveColors);
+    }
+    final g = _effectiveGradient;
+    if (g.colors.length >= 2) {
+      return g;
+    } else if (g.colors.length == 1) {
+      return LinearGradient(colors: [g.colors.first, g.colors.first]);
+    }
+    return g;
+  }
+
   List<Color> get _effectiveColors {
     if (_controller.isRainbowMode) {
       final double h = (_time * 40.0) % 360.0;
-      _rainbowColors[0] = HSVColor.fromAHSV(1.0, h, 0.85, 1.0).toColor();
-      _rainbowColors[1] =
-          HSVColor.fromAHSV(1.0, (h + 60) % 360, 0.85, 1.0).toColor();
-      _rainbowColors[2] =
-          HSVColor.fromAHSV(1.0, (h + 120) % 360, 0.85, 1.0).toColor();
-      _rainbowColors[3] =
-          HSVColor.fromAHSV(1.0, (h + 180) % 360, 0.85, 1.0).toColor();
+      for (int i = 0; i < 8; i++) {
+        _rainbowColors[i] =
+            HSVColor.fromAHSV(1.0, (h + i * 45.0) % 360.0, 0.85, 1.0).toColor();
+      }
       return _rainbowColors;
     }
     final g = _effectiveGradient;
@@ -769,6 +780,7 @@ class _ParticleBlobState extends State<BlobFlutter>
                         shader: _shader,
                         pointSize: _controller.pointSize,
                         fallbackColor: _color1,
+                        fallbackGradient: _effectiveFallbackGradient,
                       ),
                       size: Size.infinite,
                       isComplex: true,
