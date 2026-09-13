@@ -92,54 +92,53 @@ class BlobShaderHelper {
     shader.setFloat(0, size.width);
     shader.setFloat(1, size.height);
 
-    // 19-22, 24: Gradient geometry
+    // 35-38, 40: Gradient geometry
     pushGradientParams(shader: shader, gradient: gradient);
 
-    // 23: uColorAnimationSpeed
-    shader.setFloat(23, isColorAnimated ? colorAnimationSpeed : 0.0);
+    // 39: uColorAnimationSpeed
+    shader.setFloat(39, isColorAnimated ? colorAnimationSpeed : 0.0);
 
-    // 25: uWaveIntensity
-    shader.setFloat(25, waveIntensity);
+    // 41: uWaveIntensity
+    shader.setFloat(41, waveIntensity);
   }
 
-  /// Pushes uColor1-4 and uColorCount (indices 3-18, 26).
+  /// Pushes uColor1-8 and uColorCount (indices 3-34, 42).
+  ///
+  /// Supports up to 8 colors. If [colors] has more than 8 colors, it samples
+  /// 8 colors smoothly across the gradient palette so no range is lost.
   static void pushColors({
     required ui.FragmentShader shader,
     required List<Color> colors,
     required bool isRainbowMode,
   }) {
-    final int count = colors.length.clamp(1, 4);
-    final c1 = colors[0];
-    final c2 = count > 1 ? colors[1] : c1;
-    final c3 = count > 2 ? colors[2] : c2;
-    final c4 = count > 3 ? colors[3] : c3;
+    if (colors.isEmpty) return;
 
-    // uColor1 (3-6)
-    shader.setFloat(3, c1.r);
-    shader.setFloat(4, c1.g);
-    shader.setFloat(5, c1.b);
-    shader.setFloat(6, c1.a);
+    List<Color> effectiveColors = colors;
+    if (colors.length > 8) {
+      effectiveColors = List<Color>.generate(8, (i) {
+        final double index = i * (colors.length - 1) / 7.0;
+        final int lower = index.floor();
+        final int upper = index.ceil();
+        if (lower == upper) return colors[lower];
+        return Color.lerp(colors[lower], colors[upper], index - lower) ??
+            colors[lower];
+      });
+    }
 
-    // uColor2 (7-10)
-    shader.setFloat(7, c2.r);
-    shader.setFloat(8, c2.g);
-    shader.setFloat(9, c2.b);
-    shader.setFloat(10, c2.a);
+    final int count = effectiveColors.length.clamp(1, 8);
+    final lastColor = effectiveColors[count - 1];
 
-    // uColor3 (11-14)
-    shader.setFloat(11, c3.r);
-    shader.setFloat(12, c3.g);
-    shader.setFloat(13, c3.b);
-    shader.setFloat(14, c3.a);
+    for (int i = 0; i < 8; i++) {
+      final c = i < count ? effectiveColors[i] : lastColor;
+      final int baseIdx = 3 + i * 4;
+      shader.setFloat(baseIdx, c.r);
+      shader.setFloat(baseIdx + 1, c.g);
+      shader.setFloat(baseIdx + 2, c.b);
+      shader.setFloat(baseIdx + 3, c.a);
+    }
 
-    // uColor4 (15-18)
-    shader.setFloat(15, c4.r);
-    shader.setFloat(16, c4.g);
-    shader.setFloat(17, c4.b);
-    shader.setFloat(18, c4.a);
-
-    // 26: uColorCount
-    shader.setFloat(26, isRainbowMode ? 4.0 : count.toDouble());
+    // 42: uColorCount
+    shader.setFloat(42, isRainbowMode ? 8.0 : count.toDouble());
   }
 
   /// Parses [gradient] and pushes gradient geometry + type uniforms.
@@ -175,13 +174,13 @@ class BlobShaderHelper {
       endY = 0.0;
     }
 
-    // 19-20: uGradientStart
-    shader.setFloat(19, startX);
-    shader.setFloat(20, startY);
-    // 21-22: uGradientEnd
-    shader.setFloat(21, endX);
-    shader.setFloat(22, endY);
-    // 24: uGradientType
-    shader.setFloat(24, gradType);
+    // 35-36: uGradientStart
+    shader.setFloat(35, startX);
+    shader.setFloat(36, startY);
+    // 37-38: uGradientEnd
+    shader.setFloat(37, endX);
+    shader.setFloat(38, endY);
+    // 40: uGradientType
+    shader.setFloat(40, gradType);
   }
 }
