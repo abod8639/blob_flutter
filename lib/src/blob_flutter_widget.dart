@@ -230,6 +230,23 @@ class BlobFlutter extends StatefulWidget {
   /// set to `true` or enabled via [BlobFlutter.enableAutoPlayInTests].
   final bool? autoPlay;
 
+  /// Whether to automatically pause the animation ticker and computation
+  /// when the widget scrolls offscreen or is outside the visible screen viewport.
+  ///
+  /// When `true` (default), detects when the widget leaves the visible screen
+  /// (with a 50 logical pixel pre-wake buffer) and halts the animation ticker
+  /// and worker isolate computation, saving CPU/GPU and battery. Resumes
+  /// immediately upon scrolling back into view.
+  final bool autoPauseOffscreen;
+
+  /// Whether to automatically pause the animation ticker and computation
+  /// when the application is in the background, minimized, or inactive.
+  ///
+  /// When `true` (default), uses [WidgetsBindingObserver] to pause the ticker on
+  /// [AppLifecycleState.paused], [AppLifecycleState.inactive], and [AppLifecycleState.hidden],
+  /// and automatically resumes when the app returns to [AppLifecycleState.resumed].
+  final bool autoPauseOnAppBackground;
+
   /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
     super.key,
@@ -258,6 +275,8 @@ class BlobFlutter extends StatefulWidget {
     this.testShaderAssetPath,
     this.workerFactory,
     this.autoPlay,
+    this.autoPauseOffscreen = true,
+    this.autoPauseOnAppBackground = true,
   })  : assert(
           particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
@@ -304,7 +323,7 @@ class BlobFlutter extends StatefulWidget {
 }
 
 class _ParticleBlobState extends State<BlobFlutter>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ── Animation ──────────────────────────────────────────────────────────────
 
   late Ticker _ticker;
@@ -316,6 +335,24 @@ class _ParticleBlobState extends State<BlobFlutter>
   /// Drives repaint only on CustomPaint, not the full widget tree.
   final ValueNotifier<int> _frameNotifier = ValueNotifier<int>(0);
   int _frameCount = 0;
+
+  // ── Lifecycle & Offscreen State ────────────────────────────────────────────
+
+  bool _isAppInBackground = false;
+  bool _isOffscreen = false;
+  ScrollPosition? _scrollPosition;
+
+  /// Whether the internal animation ticker is currently actively ticking.
+  @visibleForTesting
+  bool get isTickerActive => _ticker.isActive;
+
+  /// Whether the widget has detected that it is currently outside the screen viewport.
+  @visibleForTesting
+  bool get isOffscreen => _isOffscreen;
+
+  /// Whether the widget has detected that the application is in background/inactive state.
+  @visibleForTesting
+  bool get isAppInBackground => _isAppInBackground;
 
   // ── Controller ─────────────────────────────────────────────────────────────
 
@@ -407,6 +444,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _ownsController = widget.controller == null;
     _controller = widget.controller ??
@@ -438,8 +476,99 @@ class _ParticleBlobState extends State<BlobFlutter>
     _startWorker();
 
     _ticker = createTicker(_onTick);
-    if (!_controller.isPaused) {
+    if (_shouldTickerRun) {
       _ticker.start();
+    }
+  }
+
+  bool get _shouldTickerRun =>
+      !_controller.isPaused &&
+      !(widget.autoPauseOnAppBackground && _isAppInBackground) &&
+      !(widget.autoPauseOffscreen && _isOffscreen);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateScrollListener();
+    if (widget.autoPauseOffscreen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _checkVisibility();
+      });
+    }
+  }
+
+  void _updateScrollListener() {
+    final newPosition = Scrollable.maybeOf(context)?.position;
+    if (newPosition != _scrollPosition) {
+      try {
+        _scrollPosition?.removeListener(_onScrollUpdated);
+      } catch (_) {}
+      _scrollPosition = newPosition;
+      _scrollPosition?.addListener(_onScrollUpdated);
+    }
+  }
+
+  void _onScrollUpdated() {
+    if (!widget.autoPauseOffscreen) return;
+    _checkVisibility();
+  }
+
+  void _checkVisibility() {
+    if (!mounted || !widget.autoPauseOffscreen) return;
+    final visible = _isRenderObjectVisible();
+    final isOff = !visible;
+    if (isOff != _isOffscreen) {
+      _isOffscreen = isOff;
+      _syncTickerState();
+    }
+  }
+
+  bool _isRenderObjectVisible() {
+    if (!mounted) return false;
+    final renderObject = context.findRenderObject();
+    if (renderObject == null || !renderObject.attached) return true;
+    if (renderObject is! RenderBox) return true;
+    if (!renderObject.hasSize || renderObject.size.isEmpty) return true;
+
+    final view = View.maybeOf(context);
+    if (view == null) return true;
+    final physicalSize = view.physicalSize;
+    final pixelRatio = view.devicePixelRatio;
+    if (pixelRatio <= 0.0 || physicalSize.isEmpty) return true;
+    final screenSize = physicalSize / pixelRatio;
+
+    try {
+      final translation = renderObject.getTransformTo(null).getTranslation();
+      final rect = Rect.fromLTWH(
+        translation.x,
+        translation.y,
+        renderObject.size.width,
+        renderObject.size.height,
+      );
+
+      // Pre-wake buffer of 50 logical pixels so animation wakes up slightly before entering viewport
+      final screenBounds = Rect.fromLTWH(
+        -50.0,
+        -50.0,
+        screenSize.width + 100.0,
+        screenSize.height + 100.0,
+      );
+
+      return rect.overlaps(screenBounds);
+    } catch (_) {
+      return true;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!widget.autoPauseOnAppBackground) return;
+    final isBackground = state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden;
+    if (isBackground != _isAppInBackground) {
+      _isAppInBackground = isBackground;
+      _syncTickerState();
     }
   }
 
@@ -456,7 +585,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   }
 
   void _syncTickerState() {
-    if (_controller.isPaused) {
+    if (!_shouldTickerRun) {
       if (_ticker.isActive) {
         _ticker.stop();
       }
@@ -599,10 +728,31 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (staticChanged) _shaderStaticDirty = true;
     }
+
+    if (oldWidget.autoPauseOffscreen != widget.autoPauseOffscreen) {
+      if (!widget.autoPauseOffscreen) {
+        _isOffscreen = false;
+      } else {
+        _checkVisibility();
+      }
+      _syncTickerState();
+    }
+
+    if (oldWidget.autoPauseOnAppBackground != widget.autoPauseOnAppBackground) {
+      if (!widget.autoPauseOnAppBackground) {
+        _isAppInBackground = false;
+      }
+      _syncTickerState();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    try {
+      _scrollPosition?.removeListener(_onScrollUpdated);
+    } catch (_) {}
+    _scrollPosition = null;
     _controller.removeListener(_onControllerChanged);
     _ticker.dispose();
     _frameNotifier.dispose();
@@ -693,6 +843,12 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _onTick(Duration elapsed) {
     if (!mounted || _cachedSize == Size.zero) return;
+
+    if (widget.autoPauseOffscreen && !_isRenderObjectVisible()) {
+      _isOffscreen = true;
+      _syncTickerState();
+      return;
+    }
 
     final double dt =
         ((elapsed - _lastElapsed).inMicroseconds / 1e6).clamp(0.0, 0.05);
