@@ -348,6 +348,7 @@ void main() {
           await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       // 1. Initial hover at (50, 50)
       await gesture.addPointer(location: const Offset(50, 50));
+      await gesture.moveTo(const Offset(50, 50));
       await tester.pump();
       expect(touches.single, const Offset(50, 50));
 
@@ -399,6 +400,7 @@ void main() {
       final TestGesture gesture =
           await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
+      await gesture.moveTo(const Offset(50, 50));
       await tester.pump();
       expect(touches.single, const Offset(50, 50));
 
