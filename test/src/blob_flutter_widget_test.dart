@@ -461,6 +461,7 @@ void main() {
         ),
       );
       expect((customPaint.painter as BlobPainter).fallbackColor, isNotNull);
+      expect((customPaint.painter as BlobPainter).fallbackGradient, isNotNull);
 
       // Gradient fallback when empty
       await tester.pumpWidget(
