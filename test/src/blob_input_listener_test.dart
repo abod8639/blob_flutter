@@ -120,7 +120,7 @@ void main() {
     testWidgets(
         'mouse hover triggers dispersion and touches callback when enableHover is true',
         (tester) async {
-      final controller = BlobController();
+      final controller = BlobController(tapScaleFactor: 1.0);
       List<Offset> touches = [];
 
       await tester.pumpWidget(
@@ -318,6 +318,150 @@ void main() {
       await touch1.up();
       await touch2.up();
       await tester.pump();
+    });
+
+    testWidgets(
+        'mouse drag and release updates hover position to release position, not initial position',
+        (tester) async {
+      final controller = BlobController(tapScaleFactor: 1.0);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                enableHover: true,
+                onTouchesChanged: (t) {
+                  touches = List.of(t);
+                },
+                child: Container(width: 300, height: 300, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final TestGesture gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      // 1. Initial hover at (50, 50)
+      await gesture.addPointer(location: const Offset(50, 50));
+      await tester.pump();
+      expect(touches.single, const Offset(50, 50));
+
+      // 2. Mouse down at (50, 50)
+      await gesture.down(const Offset(50, 50));
+      await tester.pump();
+      expect(touches.single, const Offset(50, 50));
+
+      // 3. Mouse move/drag to (150, 150)
+      await gesture.moveTo(const Offset(150, 150));
+      await tester.pump();
+      expect(touches.single, const Offset(150, 150));
+
+      // 4. Mouse up / release at (150, 150)
+      await gesture.up();
+      await tester.pump();
+
+      // Must remain at the released position (150, 150), NOT snap back to initial (50, 50)
+      expect(touches.single, const Offset(150, 150));
+      expect(controller.dispersion, closeTo(0.5, 0.0001));
+
+      await gesture.removePointer();
+    });
+
+    testWidgets(
+        'mouse drag and release outside widget bounds clears hover position',
+        (tester) async {
+      final controller = BlobController(tapScaleFactor: 1.0);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                enableHover: true,
+                onTouchesChanged: (t) {
+                  touches = List.of(t);
+                },
+                child: Container(width: 200, height: 200, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final TestGesture gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(50, 50));
+      await tester.pump();
+      expect(touches.single, const Offset(50, 50));
+
+      await gesture.down(const Offset(50, 50));
+      await tester.pump();
+
+      // Drag outside widget bounds (widget is 200x200 at topLeft)
+      await gesture.moveTo(const Offset(400, 400));
+      await tester.pump();
+      expect(touches.single, const Offset(400, 400));
+
+      // Release outside bounds
+      await gesture.up();
+      await tester.pump();
+
+      // Hover position should be cleared and dispersion reset to 0
+      expect(touches.isEmpty, true);
+      expect(controller.dispersion, 0.0);
+
+      await gesture.removePointer();
+    });
+
+    testWidgets(
+        'touch device release clears hover position and resets dispersion',
+        (tester) async {
+      final controller = BlobController(tapScaleFactor: 1.0);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                enableHover: true,
+                onTouchesChanged: (t) {
+                  touches = List.of(t);
+                },
+                child: Container(width: 200, height: 200, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Touch gesture (kind: touch)
+      final TestGesture gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.touch);
+      await gesture.down(const Offset(50, 50));
+      await tester.pump();
+      expect(touches.single, const Offset(50, 50));
+
+      await gesture.moveTo(const Offset(100, 100));
+      await tester.pump();
+      expect(touches.single, const Offset(100, 100));
+
+      await gesture.up();
+      await tester.pump();
+
+      // Touch release should never leave ghost hover points
+      expect(touches.isEmpty, true);
+      expect(controller.dispersion, 0.0);
     });
   });
 }
