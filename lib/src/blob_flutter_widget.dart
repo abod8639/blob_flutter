@@ -336,7 +336,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   Gradient get _effectiveGradient => _controller.gradient ?? widget.gradient;
 
-  Gradient? get _effectiveFallbackGradient {
+  Gradient get _effectiveFallbackGradient {
     if (_controller.isRainbowMode) {
       return SweepGradient(colors: _effectiveColors);
     }
@@ -346,7 +346,9 @@ class _ParticleBlobState extends State<BlobFlutter>
     } else if (g.colors.length == 1) {
       return LinearGradient(colors: [g.colors.first, g.colors.first]);
     }
-    return g;
+    return const LinearGradient(
+      colors: [Colors.blueAccent, Colors.purpleAccent],
+    );
   }
 
   List<Color> get _effectiveColors {
