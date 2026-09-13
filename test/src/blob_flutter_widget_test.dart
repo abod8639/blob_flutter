@@ -1036,6 +1036,256 @@ void main() {
         BlobFlutter.enableAutoPlayInTests = false;
       }
     });
+
+    testWidgets(
+        'pauses ticker on app background and resumes on foreground when autoPauseOnAppBackground is true',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: true,
+                autoPauseOnAppBackground: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+      expect(state.isAppInBackground, isFalse);
+
+      // Transition to paused
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      expect(state.isAppInBackground, isTrue);
+      expect(state.isTickerActive, isFalse);
+
+      // Transition back to resumed
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      expect(state.isAppInBackground, isFalse);
+      expect(state.isTickerActive, isTrue);
+    });
+
+    testWidgets(
+        'does not resume ticker on app foreground if controller was manually paused',
+        (tester) async {
+      final controller = BlobController(isPaused: false);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                controller: controller,
+                autoPlay: true,
+                autoPauseOnAppBackground: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+
+      // User manually pauses
+      controller.pause();
+      await tester.pump();
+      expect(state.isTickerActive, isFalse);
+
+      // App goes to background and comes back
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      // Should remain paused because user manually paused it
+      expect(state.isTickerActive, isFalse);
+    });
+
+    testWidgets(
+        'does not pause ticker on app background when autoPauseOnAppBackground is false',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: true,
+                autoPauseOnAppBackground: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      expect(state.isTickerActive, isTrue);
+    });
+
+    testWidgets(
+        'pauses ticker when scrolled offscreen and resumes when scrolled back into view',
+        (tester) async {
+      final scrollController = ScrollController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scrollController,
+              child: const Column(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: BlobFlutter(
+                      autoPlay: true,
+                      autoPauseOffscreen: true,
+                    ),
+                  ),
+                  SizedBox(height: 2000),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+      expect(state.isOffscreen, isFalse);
+
+      // Scroll down so BlobFlutter is pushed 1500px offscreen (above viewport)
+      scrollController.jumpTo(1500);
+      await tester.pump();
+
+      expect(state.isOffscreen, isTrue);
+      expect(state.isTickerActive, isFalse);
+
+      // Scroll back up so BlobFlutter is back in viewport
+      scrollController.jumpTo(0);
+      await tester.pump();
+
+      expect(state.isOffscreen, isFalse);
+      expect(state.isTickerActive, isTrue);
+    });
+
+    testWidgets(
+        'does not pause ticker when offscreen if autoPauseOffscreen is false',
+        (tester) async {
+      final scrollController = ScrollController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scrollController,
+              child: const Column(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: BlobFlutter(
+                      autoPlay: true,
+                      autoPauseOffscreen: false,
+                    ),
+                  ),
+                  SizedBox(height: 2000),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+
+      scrollController.jumpTo(1500);
+      await tester.pump();
+
+      expect(state.isTickerActive, isTrue);
+    });
+
+    testWidgets(
+        'dynamic update of autoPauseOffscreen and autoPauseOnAppBackground via didUpdateWidget',
+        (tester) async {
+      final scrollController = ScrollController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scrollController,
+              child: const Column(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: BlobFlutter(
+                      autoPlay: true,
+                      autoPauseOffscreen: true,
+                      autoPauseOnAppBackground: true,
+                    ),
+                  ),
+                  SizedBox(height: 2000),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+
+      // Scroll offscreen -> paused
+      scrollController.jumpTo(1500);
+      await tester.pump();
+      expect(state.isTickerActive, isFalse);
+
+      // Dynamically update autoPauseOffscreen: false while offscreen -> should resume
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scrollController,
+              child: const Column(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: BlobFlutter(
+                      autoPlay: true,
+                      autoPauseOffscreen: false,
+                      autoPauseOnAppBackground: true,
+                    ),
+                  ),
+                  SizedBox(height: 2000),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(state.isTickerActive, isTrue);
+    });
   });
 }
 
