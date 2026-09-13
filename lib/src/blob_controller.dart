@@ -61,6 +61,9 @@ class BlobController extends ChangeNotifier {
   double _waveIntensity = 1.0;
   Gradient? _gradient;
 
+  // ── Playback State ────────────────────────────────────────────────────────
+  bool _isPaused = false;
+
   // ── Orientation / Rotation Angles ──────────────────────────────────────────
   double _baseRotationX = 0.0;
   double _baseRotationY = 0.0;
@@ -97,6 +100,7 @@ class BlobController extends ChangeNotifier {
     bool enableHoverRotation = false,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
     Gradient? gradient,
+    bool isPaused = false,
   })  : _radius = radius,
         _pointSize = pointSize,
         _particleCount = particleCount,
@@ -125,6 +129,7 @@ class BlobController extends ChangeNotifier {
         _enableHoverRotation = enableHoverRotation,
         _noiseType = noiseType,
         _gradient = gradient,
+        _isPaused = isPaused,
         assert(
           radius > 0.0,
           "BlobController: 'radius' must be greater than 0.0 (received $radius). "
@@ -338,6 +343,33 @@ class BlobController extends ChangeNotifier {
       changed = true;
     }
     if (changed) notifyListeners();
+  }
+
+  // ── Playback State & Controls ─────────────────────────────────────────────
+
+  /// Whether the animation loop is currently paused.
+  bool get isPaused => _isPaused;
+
+  /// Pauses the rendering and calculation loop, stopping the ticker completely
+  /// and reducing CPU and battery consumption to zero.
+  void pause() {
+    if (_isPaused) return;
+    _isPaused = true;
+    notifyListeners();
+  }
+
+  /// Resumes the animation loop if it was paused.
+  void resume() {
+    if (!_isPaused) return;
+    _isPaused = false;
+    notifyListeners();
+  }
+
+  /// Sets the paused state explicitly.
+  void setIsPaused(bool paused) {
+    if (_isPaused == paused) return;
+    _isPaused = paused;
+    notifyListeners();
   }
 
   // ── Geometry Setters ──────────────────────────────────────────────────────
