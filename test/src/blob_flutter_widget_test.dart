@@ -62,10 +62,6 @@ void main() {
         throwsAssertionError,
       );
       expect(
-        () => BlobFlutter(animationSpeed: -0.1),
-        throwsAssertionError,
-      );
-      expect(
         () => BlobFlutter(colorAnimationSpeed: -0.1),
         throwsAssertionError,
       );
@@ -233,7 +229,7 @@ void main() {
               height: 300,
               child: BlobFlutter(
                 particleCount: 500,
-                animationSpeed: 2.2,
+                speed: 2.2,
               ),
             ),
           ),
