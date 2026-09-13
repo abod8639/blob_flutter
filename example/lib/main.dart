@@ -126,7 +126,8 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -238,7 +239,8 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
                           shape: BoxShape.circle,
                           gradient: LinearGradient(colors: _palettes[i]),
                           border: Border.all(
-                            color: isSelected ? Colors.white : Colors.transparent,
+                            color:
+                                isSelected ? Colors.white : Colors.transparent,
                             width: 2.5,
                           ),
                         ),
@@ -279,7 +281,8 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
                           : Colors.white60,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _showSliders = !_showSliders),
+                    onPressed: () =>
+                        setState(() => _showSliders = !_showSliders),
                     tooltip: 'Adjust parameters',
                   ),
                 ],

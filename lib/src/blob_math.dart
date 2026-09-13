@@ -485,7 +485,8 @@ class BlobMath {
 
         // Multi-directional traveling wave undulations across the square plane
         final double phase1 = (u + v) * 3.5 * f + time * 2.5;
-        final double w1 = sin(phase1) + 0.25 * cos(phase1 * 2.0); // Stokes crest
+        final double w1 =
+            sin(phase1) + 0.25 * cos(phase1 * 2.0); // Stokes crest
         final double phase2 = (u - v) * 3.0 * f - time * 1.8;
         final double w2 = cos(phase2) * 0.65;
         final double rSq = sqrt(u * u + v * v);

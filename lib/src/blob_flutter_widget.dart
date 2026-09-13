@@ -235,7 +235,7 @@ class BlobFlutter extends StatefulWidget {
     this.silentErrorLogging = false,
     this.testShaderAssetPath,
     this.workerFactory,
-  }) : assert(
+  })  : assert(
           particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
           'Example fix: BlobFlutter(particleCount: 5000).',

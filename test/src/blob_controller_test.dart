@@ -144,7 +144,6 @@ void main() {
       controller.setSpeed(-2.0); // clamped to 0.0
       expect(controller.speed, 0.0);
 
-
       controller.setDispersion(4.0); // clamped to 3.0
       expect(controller.dispersion, 3.0);
       controller.setDispersion(-0.5); // clamped to 0.0

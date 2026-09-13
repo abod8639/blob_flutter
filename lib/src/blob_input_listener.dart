@@ -35,8 +35,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
       widget.enableHover || widget.controller.enableHover;
 
   void _updateTouchState(PointerEvent event, bool isDown) {
-    final bool isMouseOrTrackpad =
-        event.kind == PointerDeviceKind.mouse ||
+    final bool isMouseOrTrackpad = event.kind == PointerDeviceKind.mouse ||
         event.kind == PointerDeviceKind.trackpad;
 
     if (isDown) {

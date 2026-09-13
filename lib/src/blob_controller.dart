@@ -239,7 +239,6 @@ class BlobController extends ChangeNotifier {
   /// Animation speed multiplier. 1.0 = normal, 2.0 = double, 0.5 = half.
   double get speed => _speed;
 
-
   /// Radial dispersion. 0.0 = default shape, 1.0 = particles pushed far out.
   double get dispersion => _dispersion;
 
@@ -452,7 +451,6 @@ class BlobController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   /// Sets the dispersion level. Clamped to `[0.0, 3.0]`.
   void setDispersion(double value) {

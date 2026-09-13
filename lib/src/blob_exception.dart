@@ -61,6 +61,7 @@ class BlobShaderException extends BlobFlutterException {
   /// The asset paths that were attempted when loading the shader.
   final List<String> attemptedPaths;
 
+  /// Creates a [BlobShaderException].
   const BlobShaderException({
     required super.message,
     this.attemptedPaths = const [],
@@ -98,6 +99,7 @@ class BlobShaderException extends BlobFlutterException {
 
 /// Thrown or reported when the background particle computation isolate fails.
 class BlobWorkerException extends BlobFlutterException {
+  /// Creates a [BlobWorkerException].
   const BlobWorkerException({
     required super.message,
     super.details,
