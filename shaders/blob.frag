@@ -21,8 +21,10 @@
 ///   40   : uGradientType        (float) — 0.0 = Linear, 1.0 = Radial, 2.0 = Sweep
 ///   41   : uWaveIntensity       (float) — wave shimmer intensity (0.0 = pure gradient, 1.0 = liquid)
 ///   42   : uColorCount          (float) — number of active colors (1.0 to 8.0)
+///   43-46: uStops1              (vec4)  — color stops 1 to 4 [0.0, 1.0]
+///   47-50: uStops2              (vec4)  — color stops 5 to 8 [0.0, 1.0]
 ///
-/// Total: 43 floats.
+/// Total: 51 floats.
 
 #version 460 core
 
@@ -51,49 +53,69 @@ uniform float uColorAnimationSpeed;
 uniform float uGradientType;
 uniform float uWaveIntensity;
 uniform float uColorCount;
+uniform vec4  uStops1;
+uniform vec4  uStops2;
 
 out vec4 fragColor;
 
 // ── Colour Evaluation ─────────────────────────────────────────────────────────
 //
-// Smoothly evaluates up to 8 colors across [0.0, 1.0] based on uColorCount.
-// uColorCount is a uniform identical for every fragment, yielding zero warp divergence.
+// Evaluates colors based on custom gradient stops (uStops1, uStops2) and uColorCount.
+// If stops are evenly distributed, behaves identically to equidistant interpolation.
+// If custom stops are specified (e.g. [0.0, 0.2, 1.0]), interpolates strictly within
+// the matched stop interval.
 vec4 evaluateColor(float t) {
     if (uColorCount <= 1.5) {
         return uColor1;
     }
-    float segments = uColorCount - 1.0;
-    float scaled = clamp(t * segments, 0.0, segments);
-    float idx = min(floor(scaled), segments - 1.0);
-    float f = scaled - idx;
 
-    vec4 cA = uColor1;
-    vec4 cB = uColor2;
+    float s0 = uStops1.x;
+    float s1 = uStops1.y;
+    float s2 = uStops1.z;
+    float s3 = uStops1.w;
+    float s4 = uStops2.x;
+    float s5 = uStops2.y;
+    float s6 = uStops2.z;
+    float s7 = uStops2.w;
 
-    if (idx < 0.5) {
-        cA = uColor1;
-        cB = uColor2;
-    } else if (idx < 1.5) {
-        cA = uColor2;
-        cB = uColor3;
-    } else if (idx < 2.5) {
-        cA = uColor3;
-        cB = uColor4;
-    } else if (idx < 3.5) {
-        cA = uColor4;
-        cB = uColor5;
-    } else if (idx < 4.5) {
-        cA = uColor5;
-        cB = uColor6;
-    } else if (idx < 5.5) {
-        cA = uColor6;
-        cB = uColor7;
-    } else {
-        cA = uColor7;
-        cB = uColor8;
+    if (t <= s0) {
+        return uColor1;
     }
 
-    return mix(cA, cB, f);
+    if (uColorCount <= 2.5 || t <= s1) {
+        float d = max(s1 - s0, 0.00001);
+        float f = clamp((t - s0) / d, 0.0, 1.0);
+        return mix(uColor1, uColor2, f);
+    }
+    if (uColorCount <= 3.5 || t <= s2) {
+        float d = max(s2 - s1, 0.00001);
+        float f = clamp((t - s1) / d, 0.0, 1.0);
+        return mix(uColor2, uColor3, f);
+    }
+    if (uColorCount <= 4.5 || t <= s3) {
+        float d = max(s3 - s2, 0.00001);
+        float f = clamp((t - s2) / d, 0.0, 1.0);
+        return mix(uColor3, uColor4, f);
+    }
+    if (uColorCount <= 5.5 || t <= s4) {
+        float d = max(s4 - s3, 0.00001);
+        float f = clamp((t - s3) / d, 0.0, 1.0);
+        return mix(uColor4, uColor5, f);
+    }
+    if (uColorCount <= 6.5 || t <= s5) {
+        float d = max(s5 - s4, 0.00001);
+        float f = clamp((t - s4) / d, 0.0, 1.0);
+        return mix(uColor5, uColor6, f);
+    }
+    if (uColorCount <= 7.5 || t <= s6) {
+        float d = max(s6 - s5, 0.00001);
+        float f = clamp((t - s5) / d, 0.0, 1.0);
+        return mix(uColor6, uColor7, f);
+    }
+
+    float d = max(s7 - s6, 0.00001);
+    float f = clamp((t - s6) / d, 0.0, 1.0);
+    return mix(uColor7, uColor8, f);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
