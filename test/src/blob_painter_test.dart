@@ -26,16 +26,19 @@ void main() {
   group('BlobPainter Tests', () {
     test('initializes properties correctly', () {
       final positions = Float32List.fromList([1.0, 2.0]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.purple]);
       final painter = BlobPainter(
         positions: positions,
         generation: 5,
         pointSize: 3.5,
+        fallbackGradient: gradient,
         fallbackColor: Colors.purple,
       );
 
       expect(painter.positions, positions);
       expect(painter.generation, 5);
       expect(painter.pointSize, 3.5);
+      expect(painter.fallbackGradient, gradient);
       expect(painter.fallbackColor, Colors.purple);
       expect(painter.shader, isNull);
     });
@@ -46,6 +49,8 @@ void main() {
         positions: Float32List(0),
         generation: 1,
         pointSize: 2.0,
+        fallbackGradient:
+            const LinearGradient(colors: [Colors.red, Colors.blue]),
         fallbackColor: Colors.red,
       );
       painter.paint(canvas, Size.zero);
@@ -53,17 +58,20 @@ void main() {
     });
 
     test(
-        'paint method draws points on canvas with fallback color when shader is null',
+        'paint method applies fallbackGradient native shader when shader is null',
         () {
       final canvas = _MockCanvas();
       final positions = Float32List.fromList([10.0, 20.0, 30.0, 40.0]);
+      const gradient = LinearGradient(
+        colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+      );
       final painter = BlobPainter(
         positions: positions,
         generation: 1,
         pointSize: 3.0,
-        fallbackColor: const Color(0xFF4CAF50),
+        fallbackGradient: gradient,
       );
-      painter.paint(canvas, Size.zero);
+      painter.paint(canvas, const Size(100.0, 100.0));
 
       expect(canvas.drawRawPointsCallCount, 1);
       expect(canvas.pointMode, ui.PointMode.points);
@@ -71,9 +79,7 @@ void main() {
       expect(canvas.paint?.strokeWidth, 3.0);
       expect(canvas.paint?.strokeCap, StrokeCap.round);
       expect(canvas.paint?.isAntiAlias, true);
-      expect(
-          canvas.paint?.color.toARGB32(), const Color(0xFF4CAF50).toARGB32());
-      expect(canvas.paint?.shader, isNull);
+      expect(canvas.paint?.shader, isNotNull);
     });
 
     test(
@@ -81,11 +87,13 @@ void main() {
         () {
       final positions1 = Float32List(10);
       final positions2 = Float32List(10);
+      const gradient = LinearGradient(colors: [Colors.red, Colors.blue]);
 
       final painterBase = BlobPainter(
         positions: positions1,
         generation: 1,
         pointSize: 2.0,
+        fallbackGradient: gradient,
         fallbackColor: Colors.red,
       );
 
@@ -93,6 +101,7 @@ void main() {
         positions: positions1,
         generation: 1,
         pointSize: 2.0,
+        fallbackGradient: gradient,
         fallbackColor: Colors.red,
       );
 
@@ -100,6 +109,7 @@ void main() {
         positions: positions1,
         generation: 2,
         pointSize: 2.0,
+        fallbackGradient: gradient,
         fallbackColor: Colors.red,
       );
 
@@ -107,6 +117,7 @@ void main() {
         positions: positions1,
         generation: 1,
         pointSize: 3.0,
+        fallbackGradient: gradient,
         fallbackColor: Colors.red,
       );
 
@@ -114,6 +125,7 @@ void main() {
         positions: positions2,
         generation: 1,
         pointSize: 2.0,
+        fallbackGradient: gradient,
         fallbackColor: Colors.blue,
       );
 
@@ -179,6 +191,8 @@ void main() {
           generation: 1,
           shader: shader1,
           pointSize: 4.0,
+          fallbackGradient:
+              const LinearGradient(colors: [Colors.white, Colors.black]),
           fallbackColor: Colors.white,
         );
 
@@ -191,6 +205,8 @@ void main() {
           generation: 1,
           shader: shader2,
           pointSize: 4.0,
+          fallbackGradient:
+              const LinearGradient(colors: [Colors.white, Colors.black]),
           fallbackColor: Colors.white,
         );
 
