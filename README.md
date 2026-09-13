@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=&logo=Flutter&logoColor=white)]()
 [![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=&logo=dart&logoColor=white)]()
 
-[![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20All%20Platforms-02569B?style=&logo=flutter)](https://pub.dev/packages/blob_flutter)
+[![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20Web%20--%20Linux%20--%20Windows%20--%20MacOS%20--%20Android%20--%20iOS-02569B?style=&logo=flutter)](https://pub.dev/packages/blob_flutter)
 
 
 [![Pub Points](https://img.shields.io/pub/points/blob_flutter?style=&logo=dart&color=2E8B57)](https://pub.dev/packages/blob_flutter/score)
@@ -70,21 +70,7 @@ dependencies:
 import 'package:blob_flutter/blob_flutter.dart';
 ```
 
-### 3. Register the Shader Asset
-
-> [!IMPORTANT]
-> Add the following to **your application's** `pubspec.yaml` (not the library's pubspec). Without this step, the GPU color shader will not load and the blob falls back to CPU rendering with a warning in the console.
-
-```yaml
-flutter:
-  uses-material-design: true
-  shaders:                                     # <-----
-    - packages/blob_flutter/shaders/blob.frag  # <-----
-```
-
-After adding it, run `flutter pub get` and perform a **full app restart** — Hot Reload alone is insufficient to compile new shaders.
-
-### 4. Use
+### 3. Use
 The simplest way to render a basic Blob:
 
 ```dart
