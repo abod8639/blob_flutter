@@ -38,6 +38,17 @@ import 'blob_worker.dart';
 /// and shaders ([gradient], `isRainbowMode`) can be controlled dynamically at runtime
 /// without rebuilding the widget tree.
 class BlobFlutter extends StatefulWidget {
+  /// Global toggle controlling whether [BlobFlutter] automatically starts
+  /// playing when running in a test environment (`flutter_test`).
+  ///
+  /// Defaults to `false` so that [WidgetTester.pumpAndSettle] does not time out.
+  /// Set to `true` if your test suite explicitly pumps frames via `tester.pump(duration)`
+  /// and expects tickers to run without manual activation.
+  static bool enableAutoPlayInTests = false;
+
+  /// Whether the current execution context is inside a Flutter test environment.
+  static bool get isRunningInTest => BlobShaderHelper.isRunningInTest;
+
   /// Total number of particles. Default: 5000.
   final int particleCount;
 
@@ -198,8 +209,10 @@ class BlobFlutter extends StatefulWidget {
 
   /// Whether to suppress automatic FlutterError reporting to the debugging console.
   ///
-  /// Defaults to `false`. Set to `true` if you prefer handling errors exclusively via [onError].
-  final bool silentErrorLogging;
+  /// In production apps, defaults to `false`.
+  /// In test environments (e.g. `flutter_test`), automatically defaults to `true`
+  /// to prevent shader asset load failures from polluting or breaking test suites.
+  final bool? silentErrorLogging;
 
   /// Internal testing override for verifying missing shader asset fallback handling.
   @visibleForTesting
@@ -211,11 +224,11 @@ class BlobFlutter extends StatefulWidget {
 
   /// Whether the animation loop starts playing automatically.
   ///
-  /// Set to `false` to keep the blob in a paused state until [BlobController.resume] is called.
-  /// Ideal for saving battery on static screens or enabling [WidgetTester.pumpAndSettle] in tests.
-  ///
-  /// Default: `true`.
-  final bool autoPlay;
+  /// In production apps, defaults to `true`.
+  /// In test environments (e.g. `flutter_test`), automatically defaults to `false`
+  /// to prevent [WidgetTester.pumpAndSettle] from timing out, unless explicitly
+  /// set to `true` or enabled via [BlobFlutter.enableAutoPlayInTests].
+  final bool? autoPlay;
 
   /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
@@ -241,10 +254,10 @@ class BlobFlutter extends StatefulWidget {
     this.noiseType = BlobNoiseType.harmonic,
     this.onError,
     this.errorBuilder,
-    this.silentErrorLogging = false,
+    this.silentErrorLogging,
     this.testShaderAssetPath,
     this.workerFactory,
-    this.autoPlay = true,
+    this.autoPlay,
   })  : assert(
           particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
@@ -380,6 +393,15 @@ class _ParticleBlobState extends State<BlobFlutter>
     return colors.isNotEmpty ? colors.first : Colors.pinkAccent;
   }
 
+  // ── Test & Environment Helpers ────────────────────────────────────────────
+
+  bool get _effectiveAutoPlay =>
+      widget.autoPlay ??
+      (!BlobFlutter.isRunningInTest || BlobFlutter.enableAutoPlayInTests);
+
+  bool get _effectiveSilentErrorLogging =>
+      widget.silentErrorLogging ?? BlobFlutter.isRunningInTest;
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -405,7 +427,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           waveIntensity: widget.waveIntensity,
           noiseType: widget.noiseType,
           gradient: widget.gradient,
-          isPaused: !widget.autoPlay,
+          isPaused: !_effectiveAutoPlay,
         );
 
     _lastParticleCount = _controller.particleCount;
@@ -511,7 +533,7 @@ class _ParticleBlobState extends State<BlobFlutter>
             waveIntensity: widget.waveIntensity,
             noiseType: widget.noiseType,
             gradient: widget.gradient,
-            isPaused: !widget.autoPlay,
+            isPaused: !_effectiveAutoPlay,
           );
       _lastParticleCount = _controller.particleCount;
       _controller.addListener(_onControllerChanged);
@@ -523,7 +545,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     } else if (_ownsController) {
       bool staticChanged = false;
       if (oldWidget.autoPlay != widget.autoPlay) {
-        _controller.setIsPaused(!widget.autoPlay);
+        _controller.setIsPaused(!_effectiveAutoPlay);
       }
       if (oldWidget.radius != widget.radius) {
         _controller.setRadius(widget.radius);
@@ -613,7 +635,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   Future<void> _loadShader() async {
     final program = await BlobShaderHelper.loadProgram(
-      silent: widget.silentErrorLogging,
+      silent: _effectiveSilentErrorLogging,
       overrideAssetPath: widget.testShaderAssetPath,
       onError: (exception) {
         if (!mounted) return;
