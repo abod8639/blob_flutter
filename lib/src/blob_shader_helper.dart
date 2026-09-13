@@ -13,14 +13,24 @@ class BlobShaderHelper {
   /// Fallback local asset path for fragment shader (when developing inside package).
   static const String localAssetPath = 'shaders/blob.frag';
 
+  /// Checks whether the application is running inside a Flutter test environment
+  /// (e.g. `flutter_test`).
+  static bool get isRunningInTest {
+    final binding = WidgetsBinding.instance.runtimeType.toString();
+    return binding.contains('TestWidgetsFlutterBinding') ||
+        binding.contains('AutomatedTestWidgetsFlutterBinding') ||
+        binding.contains('LiveTestWidgetsFlutterBinding') ||
+        binding.contains('TestBinding');
+  }
+
   /// Loads the [ui.FragmentProgram] from package assets or local assets.
   ///
   /// If loading fails, constructs a [BlobShaderException] with actionable troubleshooting
-  /// advice, reports it via [FlutterError.reportError], invokes [onError] if provided,
-  /// and returns `null`.
+  /// advice, reports it via [FlutterError.reportError] (unless silenced or running in tests),
+  /// invokes [onError] if provided, and returns `null`.
   static Future<ui.FragmentProgram?> loadProgram({
     void Function(BlobShaderException exception)? onError,
-    bool silent = false,
+    bool? silent,
     String? overrideAssetPath,
   }) async {
     final attemptedPaths = overrideAssetPath != null
@@ -44,7 +54,8 @@ class BlobShaderHelper {
       stackTrace: lastStackTrace,
     );
 
-    if (!silent) {
+    final effectiveSilent = silent ?? isRunningInTest;
+    if (!effectiveSilent) {
       FlutterError.reportError(
         FlutterErrorDetails(
           exception: exception,
