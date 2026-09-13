@@ -46,7 +46,7 @@
 
 - **Zero-Jank Architecture**: Offloads heavy 3D math and vertex projections to a persistent background `Isolate`.
 - **GPU Fragment Shaders**: Hardware-accelerated per-pixel color gradients (Linear, Radial, Sweep) via custom GLSL.
-- **7 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, and more.
+- **8 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, and more.
 - **Fluid Touch Interaction**: Natural multi-touch drag rotation, hover tracking, and tap dispersion.
 - **Zero-Allocation Pipeline**: Pre-allocated buffers ensure zero heap object allocations during the render loop.
 - **Resource-Conscious Engineering**: Crafted with rigorous mathematical precision to respect developers and end-user devices—maximizing performance while preventing battery drain and memory thrashing.
