@@ -45,6 +45,12 @@ void main() {
         // Test pushColors
         BlobShaderHelper.pushColors(
           shader: shader,
+          colors: const [],
+          isRainbowMode: false,
+        );
+
+        BlobShaderHelper.pushColors(
+          shader: shader,
           colors: [const Color(0xFFFF0000)],
           isRainbowMode: false,
         );
@@ -57,7 +63,21 @@ void main() {
             const Color(0xFF0000FF),
             const Color(0xFFFFFF00),
           ],
+          isRainbowMode: false,
+        );
+
+        // Test with 8 colors
+        BlobShaderHelper.pushColors(
+          shader: shader,
+          colors: List.generate(8, (i) => Color(0xFF000000 + i * 0x111111)),
           isRainbowMode: true,
+        );
+
+        // Test with > 8 colors (downsampling)
+        BlobShaderHelper.pushColors(
+          shader: shader,
+          colors: List.generate(12, (i) => Color(0xFF000000 + i * 0x101010)),
+          isRainbowMode: false,
         );
 
         // Test pushGradientParams with various gradient types
