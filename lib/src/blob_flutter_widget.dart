@@ -207,7 +207,13 @@ class BlobFlutter extends StatefulWidget {
 
   /// Internal testing override for injecting or mocking a [BlobWorker].
   @visibleForTesting
-  final BlobWorker Function()? workerFactory;
+  /// Whether the animation loop starts playing automatically.
+  ///
+  /// Set to `false` to keep the blob in a paused state until [BlobController.resume] is called.
+  /// Ideal for saving battery on static screens or enabling [WidgetTester.pumpAndSettle] in tests.
+  ///
+  /// Default: `true`.
+  final bool autoPlay;
 
   /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
@@ -236,6 +242,7 @@ class BlobFlutter extends StatefulWidget {
     this.silentErrorLogging = false,
     this.testShaderAssetPath,
     this.workerFactory,
+    this.autoPlay = true,
   })  : assert(
           particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
