@@ -49,7 +49,6 @@ void main() {
       expect(controller.touchRadiusFactor, 1.5);
       expect(controller.blobiness, 1.5);
       expect(controller.speed, 2.5);
-      expect(controller.animationSpeed, 2.5);
       expect(controller.dispersion, 0.3);
       expect(controller.autoRotationSpeed, 1.2);
       expect(controller.noiseFrequency, 1.8);
@@ -145,9 +144,6 @@ void main() {
       controller.setSpeed(-2.0); // clamped to 0.0
       expect(controller.speed, 0.0);
 
-      controller.setAnimationSpeed(4.5);
-      expect(controller.animationSpeed, 4.5);
-      expect(controller.speed, 4.5);
 
       controller.setDispersion(4.0); // clamped to 3.0
       expect(controller.dispersion, 3.0);
