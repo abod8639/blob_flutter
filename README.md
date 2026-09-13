@@ -70,7 +70,20 @@ dependencies:
 import 'package:blob_flutter/blob_flutter.dart';
 ```
 
-### 3. Use
+### 3. Register the Shader Asset
+
+> [!IMPORTANT]
+> Add the following to **your application's** `pubspec.yaml` (not the library's pubspec). Without this step, the GPU color shader will not load and the blob falls back to CPU rendering with a warning in the console.
+
+```yaml
+flutter:
+  shaders:
+    - packages/blob_flutter/shaders/blob.frag
+```
+
+After adding it, run `flutter pub get` and perform a **full app restart** — Hot Reload alone is insufficient to compile new shaders.
+
+### 4. Use
 The simplest way to render a basic Blob:
 
 ```dart
@@ -131,6 +144,11 @@ class _MyBlobState extends State<MyBlob> {
   }
 }
 ```
+
+> [!IMPORTANT]
+> When an external `BlobController` is provided, all widget-level properties
+> (`gradient`, `radius`, `pointSize`, `speed`, `noiseType`, etc.) are **ignored**.
+> Configure the blob exclusively through the controller — do not set both.
 
 ---
 
