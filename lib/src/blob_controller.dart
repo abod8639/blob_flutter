@@ -47,8 +47,8 @@ class BlobController extends ChangeNotifier {
   double _viewDistance = 2.0;
 
   // ── Touch & Interaction ───────────────────────────────────────────────────
-  double _tapScaleFactor = 1.0;
-  double _touchRadiusFactor = 1.0;
+  double _tapScaleFactor = 0.4;
+  double _touchRadiusFactor = 0.3;
   bool _enableHover = false;
   bool _enablePinchToScale = true;
   bool _enableDragRotation = false;
