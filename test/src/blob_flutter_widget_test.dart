@@ -344,6 +344,7 @@ void main() {
               width: 300,
               height: 300,
               child: BlobFlutter(
+                autoPlay: true,
                 particleCount: 500,
               ),
             ),
@@ -915,6 +916,106 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 32));
       expect(find.byType(BlobFlutter), findsOneWidget);
+    });
+
+    testWidgets(
+        'default BlobFlutter() automatically disables autoPlay in tests allowing pumpAndSettle without timeout',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(),
+            ),
+          ),
+        ),
+      );
+
+      // In tests, autoPlay defaults to false automatically:
+      // pumpAndSettle MUST complete immediately without any timeout!
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
+      expect(BlobFlutter.isRunningInTest, isTrue);
+    });
+
+    testWidgets(
+        'default BlobFlutter() automatically silences shader loading errors in tests without FlutterError.reportError',
+        (tester) async {
+      Object? flutterErrorCaught;
+      final originalOnError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        flutterErrorCaught = details.exception;
+        originalOnError?.call(details);
+      };
+
+      try {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: BlobFlutter(),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // No unhandled FlutterError should have been recorded by the test binding
+        expect(flutterErrorCaught, isNull);
+        expect(find.byType(BlobFlutter), findsOneWidget);
+      } finally {
+        FlutterError.onError = originalOnError;
+      }
+    });
+
+    testWidgets(
+        'BlobFlutter.enableAutoPlayInTests globally controls autoPlay in test environment',
+        (tester) async {
+      BlobFlutter.enableAutoPlayInTests = true;
+      try {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: BlobFlutter(),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pump();
+
+        var customPaint = tester.widget<CustomPaint>(
+          find.descendant(
+            of: find.byType(BlobFlutter),
+            matching: find.byType(CustomPaint),
+          ),
+        );
+        final firstGen = (customPaint.painter as BlobPainter).generation;
+
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+
+        customPaint = tester.widget<CustomPaint>(
+          find.descendant(
+            of: find.byType(BlobFlutter),
+            matching: find.byType(CustomPaint),
+          ),
+        );
+        final secondGen = (customPaint.painter as BlobPainter).generation;
+
+        expect(secondGen, greaterThan(firstGen));
+      } finally {
+        BlobFlutter.enableAutoPlayInTests = false;
+      }
     });
   });
 }
