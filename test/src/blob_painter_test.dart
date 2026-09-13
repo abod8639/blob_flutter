@@ -123,6 +123,48 @@ void main() {
       expect(painterBase.shouldRepaint(painterDiffColor), true);
     });
 
+    test(
+        'paint method applies fallbackGradient native shader when shader is null',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([10.0, 20.0, 30.0, 40.0]);
+      const gradient = LinearGradient(
+        colors: [Colors.red, Colors.yellow, Colors.blue],
+      );
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 3.0,
+        fallbackColor: Colors.black,
+        fallbackGradient: gradient,
+      );
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      expect(canvas.drawRawPointsCallCount, 1);
+      expect(canvas.paint?.shader, isNotNull);
+
+      final painterSame = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 3.0,
+        fallbackColor: Colors.black,
+        fallbackGradient: gradient,
+      );
+      expect(painter.shouldRepaint(painterSame), false);
+
+      const diffGradient = LinearGradient(
+        colors: [Colors.cyan, Colors.purple],
+      );
+      final painterDiffGrad = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 3.0,
+        fallbackColor: Colors.black,
+        fallbackGradient: diffGradient,
+      );
+      expect(painter.shouldRepaint(painterDiffGrad), true);
+    });
+
     test('paint and shouldRepaint with real FragmentShader if available',
         () async {
       final program = await BlobShaderHelper.loadProgram();
