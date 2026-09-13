@@ -821,6 +821,7 @@ class _ParticleBlobState extends State<BlobFlutter>
       BlobShaderHelper.pushColors(
         shader: s,
         colors: _effectiveColors,
+        stops: currentGradient.stops,
         isRainbowMode: false,
       );
       _shaderColorsDirty = false;
