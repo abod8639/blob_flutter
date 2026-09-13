@@ -356,6 +356,11 @@ class BlobMath {
 
   static final Map<int, Float32List> _sphereCache = {};
 
+  /// Maximum distinct sphere sizes held in memory at once.
+  /// Prevents unbounded memory growth when [particleCount] is changed frequently
+  /// (e.g. via a Slider). Oldest entry is evicted when the limit is reached.
+  static const int _maxCacheEntries = 8;
+
   /// Generates points evenly distributed on a unit sphere using the Fibonacci
   /// lattice algorithm, stored in a flat [Float32List] of length [samples * 3].
   ///
@@ -364,23 +369,30 @@ class BlobMath {
   /// BUG-01 fix: Guards against [samples] <= 1 to prevent division by zero.
   static Float32List generateFibonacciSphere(int samples) {
     assert(samples > 0, 'samples must be greater than 0');
-    // PERF-08: Fibonacci Sphere Caching
-    return _sphereCache.putIfAbsent(samples, () {
-      final buffer = Float32List(samples * 3);
+    // PERF-08: Bounded Fibonacci Sphere Cache.
+    // Return cached buffer if available.
+    if (_sphereCache.containsKey(samples)) {
+      return _sphereCache[samples]!;
+    }
+    // Evict the oldest entry to keep memory bounded.
+    if (_sphereCache.length >= _maxCacheEntries) {
+      _sphereCache.remove(_sphereCache.keys.first);
+    }
+    final buffer = Float32List(samples * 3);
 
-      for (int i = 0; i < samples; i++) {
-        // BUG-01: safe division — when samples == 1, y = 0.0
-        final double y = samples > 1 ? 1.0 - (i / (samples - 1)) * 2.0 : 0.0;
+    for (int i = 0; i < samples; i++) {
+      // BUG-01: safe division — when samples == 1, y = 0.0
+      final double y = samples > 1 ? 1.0 - (i / (samples - 1)) * 2.0 : 0.0;
 
-        final double radiusAtY = sqrt((1.0 - y * y).clamp(0.0, 1.0));
-        final double theta = _goldenAngle * i;
+      final double radiusAtY = sqrt((1.0 - y * y).clamp(0.0, 1.0));
+      final double theta = _goldenAngle * i;
 
-        buffer[i * 3] = cos(theta) * radiusAtY; // x
-        buffer[i * 3 + 1] = y; // y
-        buffer[i * 3 + 2] = sin(theta) * radiusAtY; // z
-      }
-      return buffer;
-    });
+      buffer[i * 3] = cos(theta) * radiusAtY; // x
+      buffer[i * 3 + 1] = y; // y
+      buffer[i * 3 + 2] = sin(theta) * radiusAtY; // z
+    }
+    _sphereCache[samples] = buffer;
+    return buffer;
   }
 
   /// Wraps [time] to stay within [0, 2π * 100] to prevent floating-point
