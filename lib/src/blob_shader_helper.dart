@@ -113,18 +113,38 @@ class BlobShaderHelper {
     shader.setFloat(41, waveIntensity);
   }
 
-  /// Pushes uColor1-8 and uColorCount (indices 3-34, 42).
+  /// Pushes uColor1-8, uColorCount, and uStops1-2 (indices 3-34, 42, 43-50).
   ///
-  /// Supports up to 8 colors. If [colors] has more than 8 colors, it samples
-  /// 8 colors smoothly across the gradient palette so no range is lost.
+  /// Supports up to 8 colors and their corresponding [stops]. If [colors] has
+  /// more than 8 colors, it samples 8 colors and stops smoothly across the gradient palette.
   static void pushColors({
     required ui.FragmentShader shader,
     required List<Color> colors,
+    List<double>? stops,
+    required bool isRainbowMode,
+  }) {
+    pushColorsToSetter(
+      setFloat: shader.setFloat,
+      colors: colors,
+      stops: stops,
+      isRainbowMode: isRainbowMode,
+    );
+  }
+
+  /// Low-level uniform pusher targeting a raw [setFloat] callback.
+  /// Decouples uniform logic from [ui.FragmentShader] for zero-dependency unit testing.
+  @visibleForTesting
+  static void pushColorsToSetter({
+    required void Function(int index, double value) setFloat,
+    required List<Color> colors,
+    List<double>? stops,
     required bool isRainbowMode,
   }) {
     if (colors.isEmpty) return;
 
     List<Color> effectiveColors = colors;
+    List<double>? effectiveStops = stops;
+
     if (colors.length > 8) {
       effectiveColors = List<Color>.generate(8, (i) {
         final double index = i * (colors.length - 1) / 7.0;
@@ -134,6 +154,17 @@ class BlobShaderHelper {
         return Color.lerp(colors[lower], colors[upper], index - lower) ??
             colors[lower];
       });
+
+      if (stops != null && stops.length == colors.length) {
+        effectiveStops = List<double>.generate(8, (i) {
+          final double index = i * (stops.length - 1) / 7.0;
+          final int lower = index.floor();
+          final int upper = index.ceil();
+          if (lower == upper) return stops[lower];
+          final t = index - lower;
+          return stops[lower] + (stops[upper] - stops[lower]) * t;
+        });
+      }
     }
 
     final int count = effectiveColors.length.clamp(1, 8);
@@ -142,14 +173,39 @@ class BlobShaderHelper {
     for (int i = 0; i < 8; i++) {
       final c = i < count ? effectiveColors[i] : lastColor;
       final int baseIdx = 3 + i * 4;
-      shader.setFloat(baseIdx, c.r);
-      shader.setFloat(baseIdx + 1, c.g);
-      shader.setFloat(baseIdx + 2, c.b);
-      shader.setFloat(baseIdx + 3, c.a);
+      setFloat(baseIdx, c.r);
+      setFloat(baseIdx + 1, c.g);
+      setFloat(baseIdx + 2, c.b);
+      setFloat(baseIdx + 3, c.a);
     }
 
     // 42: uColorCount
-    shader.setFloat(42, isRainbowMode ? 8.0 : count.toDouble());
+    setFloat(42, isRainbowMode ? 8.0 : count.toDouble());
+
+    // 43-50: uStops1 (indices 43-46) and uStops2 (indices 47-50)
+    final bool hasValidStops = !isRainbowMode &&
+        effectiveStops != null &&
+        effectiveStops.length >= count;
+
+    double lastStop = 0.0;
+    for (int i = 0; i < 8; i++) {
+      double stopVal;
+      if (isRainbowMode) {
+        stopVal = i / 7.0;
+      } else if (hasValidStops) {
+        if (i < count) {
+          stopVal = effectiveStops[i].clamp(0.0, 1.0);
+          lastStop = stopVal;
+        } else {
+          stopVal = lastStop;
+        }
+      } else {
+        stopVal = count > 1
+            ? (i.clamp(0, count - 1) / (count - 1)).clamp(0.0, 1.0)
+            : (i == 0 ? 0.0 : 1.0);
+      }
+      setFloat(43 + i, stopVal);
+    }
   }
 
   /// Parses [gradient] and pushes gradient geometry + type uniforms.
