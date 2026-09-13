@@ -11,14 +11,18 @@
 ///   7-10 : uColor2              (vec4)  — 2nd color (RGBA, normalized)
 ///   11-14: uColor3              (vec4)  — 3rd color (RGBA, normalized)
 ///   15-18: uColor4              (vec4)  — 4th color (RGBA, normalized)
-///   19-20: uGradientStart       (vec2)  — normalized UV start / center [0.0, 1.0]
-///   21-22: uGradientEnd         (vec2)  — normalized UV end / radius
-///   23   : uColorAnimationSpeed (float) — color animation speed (0.0 = static)
-///   24   : uGradientType        (float) — 0.0 = Linear, 1.0 = Radial, 2.0 = Sweep
-///   25   : uWaveIntensity       (float) — wave shimmer intensity (0.0 = pure gradient, 1.0 = liquid)
-///   26   : uColorCount          (float) — number of active colors (1.0 to 4.0)
+///   19-22: uColor5              (vec4)  — 5th color (RGBA, normalized)
+///   23-26: uColor6              (vec4)  — 6th color (RGBA, normalized)
+///   27-30: uColor7              (vec4)  — 7th color (RGBA, normalized)
+///   31-34: uColor8              (vec4)  — 8th color (RGBA, normalized)
+///   35-36: uGradientStart       (vec2)  — normalized UV start / center [0.0, 1.0]
+///   37-38: uGradientEnd         (vec2)  — normalized UV end / radius
+///   39   : uColorAnimationSpeed (float) — color animation speed (0.0 = static)
+///   40   : uGradientType        (float) — 0.0 = Linear, 1.0 = Radial, 2.0 = Sweep
+///   41   : uWaveIntensity       (float) — wave shimmer intensity (0.0 = pure gradient, 1.0 = liquid)
+///   42   : uColorCount          (float) — number of active colors (1.0 to 8.0)
 ///
-/// Total: 27 floats.
+/// Total: 43 floats.
 
 #version 460 core
 
@@ -37,6 +41,10 @@ uniform vec4  uColor1;
 uniform vec4  uColor2;
 uniform vec4  uColor3;
 uniform vec4  uColor4;
+uniform vec4  uColor5;
+uniform vec4  uColor6;
+uniform vec4  uColor7;
+uniform vec4  uColor8;
 uniform vec2  uGradientStart;
 uniform vec2  uGradientEnd;
 uniform float uColorAnimationSpeed;
@@ -48,27 +56,44 @@ out vec4 fragColor;
 
 // ── Colour Evaluation ─────────────────────────────────────────────────────────
 //
-// uColorCount is a uniform — identical for every fragment in the draw call, so
-// these branches are "uniform branches" with negligible GPU overhead (no warp
-// divergence).  The compiler typically flattens them into conditional moves.
+// Smoothly evaluates up to 8 colors across [0.0, 1.0] based on uColorCount.
+// uColorCount is a uniform identical for every fragment, yielding zero warp divergence.
 vec4 evaluateColor(float t) {
     if (uColorCount <= 1.5) {
         return uColor1;
-    } else if (uColorCount <= 2.5) {
-        return mix(uColor1, uColor2, t);
-    } else if (uColorCount <= 3.5) {
-        return t <= 0.5
-            ? mix(uColor1, uColor2, t * 2.0)
-            : mix(uColor2, uColor3, (t - 0.5) * 2.0);
-    } else {
-        if (t <= 0.333333) {
-            return mix(uColor1, uColor2, t * 3.0);
-        } else if (t <= 0.666666) {
-            return mix(uColor2, uColor3, (t - 0.333333) * 3.0);
-        } else {
-            return mix(uColor3, uColor4, (t - 0.666666) * 3.0);
-        }
     }
+    float segments = uColorCount - 1.0;
+    float scaled = clamp(t * segments, 0.0, segments);
+    float idx = min(floor(scaled), segments - 1.0);
+    float f = scaled - idx;
+
+    vec4 cA = uColor1;
+    vec4 cB = uColor2;
+
+    if (idx < 0.5) {
+        cA = uColor1;
+        cB = uColor2;
+    } else if (idx < 1.5) {
+        cA = uColor2;
+        cB = uColor3;
+    } else if (idx < 2.5) {
+        cA = uColor3;
+        cB = uColor4;
+    } else if (idx < 3.5) {
+        cA = uColor4;
+        cB = uColor5;
+    } else if (idx < 4.5) {
+        cA = uColor5;
+        cB = uColor6;
+    } else if (idx < 5.5) {
+        cA = uColor6;
+        cB = uColor7;
+    } else {
+        cA = uColor7;
+        cB = uColor8;
+    }
+
+    return mix(cA, cB, f);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
