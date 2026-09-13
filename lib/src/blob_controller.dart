@@ -79,8 +79,8 @@ class BlobController extends ChangeNotifier {
     Offset centerOffset = Offset.zero,
     Alignment alignment = Alignment.center,
     double dampingFactor = 0.92,
-    double tapScaleFactor = 1.0,
-    double touchRadiusFactor = 1.0,
+    double tapScaleFactor = 0.4,
+    double touchRadiusFactor = 0.3,
     double autoRotationSpeed = 0.5,
     double blobiness = 1.0,
     double dispersion = 0.0,
@@ -163,12 +163,12 @@ class BlobController extends ChangeNotifier {
         assert(
           tapScaleFactor >= 0.0,
           "BlobController: 'tapScaleFactor' must be non-negative (received $tapScaleFactor). "
-          'Example fix: BlobController(tapScaleFactor: 1.0).',
+          'Example fix: BlobController(tapScaleFactor: 0.4).',
         ),
         assert(
           touchRadiusFactor >= 0.0,
           "BlobController: 'touchRadiusFactor' must be non-negative (received $touchRadiusFactor). "
-          'Example fix: BlobController(touchRadiusFactor: 1.0).',
+          'Example fix: BlobController(touchRadiusFactor: 0.3).',
         ),
         assert(
           blobiness >= 0.0,
@@ -239,18 +239,16 @@ class BlobController extends ChangeNotifier {
   /// Animation speed multiplier. 1.0 = normal, 2.0 = double, 0.5 = half.
   double get speed => _speed;
 
-  /// Alias for [speed].
-  double get animationSpeed => _speed;
 
   /// Radial dispersion. 0.0 = default shape, 1.0 = particles pushed far out.
   double get dispersion => _dispersion;
 
   /// Scale multiplier applied to particle dispersion on touch/tap.
-  /// Range: `[0.0, 5.0]`. Default: 1.0.
+  /// Range: `[0.0, 5.0]`. Default: 0.4.
   double get tapScaleFactor => _tapScaleFactor;
 
   /// Multiplier for the touch interaction radius.
-  /// Range: `[0.1, 5.0]`. Default: 1.0.
+  /// Range: `[0.1, 5.0]`. Default: 0.3.
   double get touchRadiusFactor => _touchRadiusFactor;
 
   /// Damping factor applied each frame: 1.0 = no decay, 0.0 = instant stop.
@@ -455,8 +453,6 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Alias for [setSpeed].
-  void setAnimationSpeed(double value) => setSpeed(value);
 
   /// Sets the dispersion level. Clamped to `[0.0, 3.0]`.
   void setDispersion(double value) {
