@@ -66,13 +66,20 @@ class BlobWorker {
 
   /// Submits [params] to the worker for parallel computation.
   ///
+  /// When [recycleBuffer] is provided (e.g. from a previous frame), its memory
+  /// is transferred zero-copy to the worker isolate and reused directly as the
+  /// output projection buffer, eliminating per-frame heap allocations (Double Buffering).
+  ///
   /// Returns a [Future] that resolves with the projected [Float32List] when
   /// the worker finishes.  Returns `null` if [dispose] has been called.
-  Future<Float32List?> compute(ProjectParamsFlat params) {
+  Future<Float32List?> compute(ProjectParamsFlat params, [Float32List? recycleBuffer]) {
     if (_tx == null || _disposed) return Future.value(null);
     final completer = Completer<Float32List?>();
     _pending.add(completer);
-    _tx!.send(params.toMessage());
+    final TransferableTypedData? transferableRecycled = recycleBuffer != null
+        ? TransferableTypedData.fromList([recycleBuffer])
+        : null;
+    _tx!.send([params.toMessage(), transferableRecycled]);
     return completer.future;
   }
 
@@ -108,10 +115,32 @@ class BlobWorker {
     await for (final msg in rx) {
       if (msg is! List) continue;
 
-      final p = ProjectParamsFlat.fromMessage(msg.cast<dynamic>());
+      final Object? first = msg.isNotEmpty ? msg[0] : null;
+      final List<dynamic> paramsList;
+      final TransferableTypedData? recycledTransferable;
 
-      // Compute projected positions into a fresh buffer.
-      final output = Float32List(count * 2);
+      if (first is List) {
+        paramsList = first;
+        recycledTransferable =
+            msg.length > 1 ? msg[1] as TransferableTypedData? : null;
+      } else {
+        paramsList = msg;
+        recycledTransferable = null;
+      }
+
+      final p = ProjectParamsFlat.fromMessage(paramsList);
+
+      // Reuse recycled buffer if available and matches dimensions, otherwise allocate.
+      Float32List output;
+      if (recycledTransferable != null) {
+        output = recycledTransferable.materialize().asFloat32List();
+        if (output.length != count * 2) {
+          output = Float32List(count * 2);
+        }
+      } else {
+        output = Float32List(count * 2);
+      }
+
       BlobMath.projectParticles(
         count: p.count,
         radius: p.radius,
@@ -136,8 +165,6 @@ class BlobWorker {
       );
 
       // Transfer ownership back to main isolate — zero-copy on native.
-      // After this call `output` is neutered; we allocate a fresh buffer
-      // at the top of each iteration, so there is no use-after-transfer.
       mainPort.send(TransferableTypedData.fromList([output]));
     }
   }
