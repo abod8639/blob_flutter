@@ -247,6 +247,33 @@ class BlobFlutter extends StatefulWidget {
   /// and automatically resumes when the app returns to [AppLifecycleState.resumed].
   final bool autoPauseOnAppBackground;
 
+  /// Whether the blob responds to touch, drag, and mouse interactions.
+  ///
+  /// When `false`, touch gestures and mouse hover events are completely ignored
+  /// and pass through seamlessly to underlying widgets in a [Stack] (ideal for
+  /// background wallpapers or decorative illustrations).
+  ///
+  /// Default: `true`.
+  final bool interactive;
+
+  /// How pointer events should be hit-tested by the blob container.
+  ///
+  /// - [HitTestBehavior.translucent] (default): Receives pointer events within its
+  ///   bounds to disperse particles and allow drag rotation while ALSO allowing
+  ///   events to pass through to underlying widgets (e.g. buttons or text fields in a [Stack]).
+  /// - [HitTestBehavior.opaque]: Completely absorbs all touch and mouse events.
+  /// - [HitTestBehavior.deferToChild]: Only intercepts events if a hit-testable child is tapped.
+  final HitTestBehavior hitTestBehavior;
+
+  /// Whether multi-touch pinch-to-scale zooming is enabled.
+  ///
+  /// When `false` (default on [BlobFlutter]), prevents [GestureDetector] from
+  /// registering a `ScaleGestureRecognizer` into the Flutter Gesture Arena, ensuring
+  /// zero competition and butter-smooth scrolling inside parent [ListView] or [PageView] widgets.
+  ///
+  /// Default: `false`.
+  final bool enablePinchToScale;
+
   /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
     super.key,
@@ -266,6 +293,9 @@ class BlobFlutter extends StatefulWidget {
     this.enableHover = false,
     this.enableDragRotation = false,
     this.enableHoverRotation = false,
+    this.enablePinchToScale = false,
+    this.interactive = true,
+    this.hitTestBehavior = HitTestBehavior.translucent,
     this.rotationX = 0.0,
     this.rotationY = 0.0,
     this.noiseType = BlobNoiseType.harmonic,
@@ -364,6 +394,11 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   Float32List _baseSphere = Float32List(0);
   Float32List _projectedPoints = Float32List(0);
+  Float32List? _recycleBuffer;
+
+  final Paint _paint = Paint()
+    ..strokeCap = StrokeCap.round
+    ..isAntiAlias = true;
 
   final BlobTouchManager _touchManager = BlobTouchManager();
 
@@ -460,6 +495,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           enableHover: widget.enableHover,
           enableDragRotation: widget.enableDragRotation,
           enableHoverRotation: widget.enableHoverRotation,
+          enablePinchToScale: widget.enablePinchToScale,
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
@@ -657,6 +693,7 @@ class _ParticleBlobState extends State<BlobFlutter>
             enableHover: widget.enableHover,
             enableDragRotation: widget.enableDragRotation,
             enableHoverRotation: widget.enableHoverRotation,
+            enablePinchToScale: widget.enablePinchToScale,
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
@@ -711,6 +748,9 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.enableHoverRotation != widget.enableHoverRotation) {
         _controller.setEnableHoverRotation(widget.enableHoverRotation);
+      }
+      if (oldWidget.enablePinchToScale != widget.enablePinchToScale) {
+        _controller.setEnablePinchToScale(widget.enablePinchToScale);
       }
       if (oldWidget.rotationX != widget.rotationX) {
         _controller.setRotationX(widget.rotationX);
@@ -773,6 +813,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     // The worker will replace _projectedPoints on its first successful result.
     final newLength = count * 2;
     if (_projectedPoints.length != newLength) {
+      _recycleBuffer = null;
       final oldPoints = _projectedPoints;
       _projectedPoints = Float32List(newLength);
       final copyLen =
@@ -861,7 +902,9 @@ class _ParticleBlobState extends State<BlobFlutter>
 
     if (_workerReady && !_workerBusy) {
       _workerBusy = true;
-      _worker!.compute(_buildWorkerParams()).then(_onParticlesReady);
+      final recycle = _recycleBuffer;
+      _recycleBuffer = null;
+      _worker!.compute(_buildWorkerParams(), recycle).then(_onParticlesReady);
     } else if (!_workerReady) {
       _touchManager.updateLocalTouches(context);
       final double alignOffsetX =
@@ -903,6 +946,9 @@ class _ParticleBlobState extends State<BlobFlutter>
     _workerBusy = false;
     if (!mounted || result == null) return;
 
+    if (_projectedPoints.isNotEmpty) {
+      _recycleBuffer = _projectedPoints;
+    }
     _projectedPoints = result;
     _frameCount++;
     _frameNotifier.value = _frameCount;
@@ -1024,6 +1070,8 @@ class _ParticleBlobState extends State<BlobFlutter>
             child: BlobInputListener(
               controller: _controller,
               enableHover: widget.enableHover,
+              hitTestBehavior: widget.hitTestBehavior,
+              interactive: widget.interactive,
               onTouchesChanged: (touches) {
                 _touchManager.updateActiveTouches(touches);
               },
@@ -1039,6 +1087,7 @@ class _ParticleBlobState extends State<BlobFlutter>
                         pointSize: _controller.pointSize,
                         fallbackColor: _color1,
                         fallbackGradient: _effectiveFallbackGradient,
+                        paint: _paint,
                       ),
                       size: Size.infinite,
                       isComplex: true,
