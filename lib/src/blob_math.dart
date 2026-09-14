@@ -237,8 +237,8 @@ class BlobMath {
       double time, double time15, double blobiness) {
     final double raw = (sin(px * 4.0 * f + time) +
             cos(py * 4.0 * f - time) +
-            sin(pz * 4.0 * f + time15)) /
-        3.0;
+            sin(pz * 4.0 * f + time15)) *
+        0.3333333333333333;
     final double spike = 1.0 - raw.abs();
     final double n = spike * spike * spike;
     return 1.0 + (n * 0.6 - 0.1) * blobiness;
@@ -260,7 +260,8 @@ class BlobMath {
     final double c1 = cos(px * 3.0 * f + time);
     final double c2 = cos(py * 3.0 * f - time);
     final double c3 = cos(pz * 3.0 * f + time15);
-    final double cell = sqrt((c1 * c1 + c2 * c2 + c3 * c3) / 3.0);
+    final double cell =
+        sqrt((c1 * c1 + c2 * c2 + c3 * c3) * 0.3333333333333333);
     return 1.0 + (cell - 0.58) * 0.5 * blobiness;
   }
 
@@ -428,6 +429,8 @@ class BlobMath {
     required double viewDistance,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
     double touchRadiusFactor = 1.0,
+    int startIndex = 0,
+    int stride = 1,
   }) {
     final double centerX = (viewportWidth / 2.0) + centerOffsetX;
     final double centerY = (viewportHeight / 2.0) + centerOffsetY;
@@ -467,7 +470,7 @@ class BlobMath {
     final int rows = count > 0 ? max(1, (count / cols).ceil()) : 1;
     final int lastRowPts = count - (rows - 1) * cols;
 
-    for (int i = 0; i < count; i++) {
+    for (int i = startIndex; i < count; i += stride) {
       final int base = i * 3;
 
       double px;
@@ -526,11 +529,11 @@ class BlobMath {
 
       // Perspective projection with clamped Z denominator
       final double safeZ = (viewDistance + rz).clamp(0.1, 10.0);
-      final double baseScale = effectiveRadius / safeZ;
+      final double baseScale2 = (effectiveRadius / safeZ) * 2.0;
 
       // Projected screen coordinates before dispersion
-      final double screenX = centerX + rx * baseScale * 2.0;
-      final double screenY = centerY + ry * baseScale * 2.0;
+      final double screenX = centerX + rx * baseScale2;
+      final double screenY = centerY + ry * baseScale2;
 
       // Direction-aware touch dispersion with strong central peak and smooth edge fade-out
       double extraPush = 0.0;
@@ -561,8 +564,8 @@ class BlobMath {
       ry *= pushScale;
 
       final int outIndex = i * 2;
-      projectedPoints[outIndex] = centerX + rx * baseScale * 2.0;
-      projectedPoints[outIndex + 1] = centerY + ry * baseScale * 2.0;
+      projectedPoints[outIndex] = centerX + rx * baseScale2;
+      projectedPoints[outIndex + 1] = centerY + ry * baseScale2;
     }
   }
 }
