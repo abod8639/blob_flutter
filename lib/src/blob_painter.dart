@@ -21,15 +21,16 @@ class BlobPainter extends CustomPainter {
 
   int get generation => _generation;
 
-  // ── Shared Paint ────────────────────────────────────────────────────────────
-  /// Single [Paint] instance shared across all [BlobPainter.paint] calls.
+  // ── Instance Paint ──────────────────────────────────────────────────────────
+  /// Encapsulated [Paint] instance dedicated to this painter/widget instance.
   ///
-  /// Canvas drawing always executes on the UI thread (never concurrently), so
-  /// sharing a single mutable [Paint] is safe and eliminates one heap
-  /// allocation per frame at 60 Hz.
-  static final Paint _sharedPaint = Paint()
-    ..strokeCap = StrokeCap.round
-    ..isAntiAlias = true;
+  /// Prevents state leakage, color bleeding, and race conditions between multiple
+  /// concurrent [BlobFlutter] widgets rendered on the same screen.
+  final Paint _paint;
+
+  /// Exposes the [Paint] instance for testing and introspection.
+  @visibleForTesting
+  Paint get paintInstance => _paint;
 
   BlobPainter({
     required this.positions,
@@ -38,29 +39,35 @@ class BlobPainter extends CustomPainter {
     required this.pointSize,
     required this.fallbackGradient,
     this.fallbackColor = const Color(0xFF448AFF),
-  }) : _generation = generation;
+    Paint? paint,
+  })  : _generation = generation,
+        _paint = paint ??
+            (Paint()
+              ..strokeCap = StrokeCap.round
+              ..isAntiAlias = true);
 
   @override
   void paint(Canvas canvas, Size size) {
     if (positions.isEmpty) return;
 
-    _sharedPaint.strokeWidth = pointSize;
+    _paint.strokeWidth = pointSize;
     if (shader != null) {
-      _sharedPaint.shader = shader;
+      _paint.shader = shader;
+      _paint.color = const Color(0xFF000000);
     } else {
       // Primary fallback: Render complete native GPU gradient via Canvas engine
       final rect = (size.isEmpty || !size.isFinite)
           ? Rect.fromLTWH(0, 0, pointSize, pointSize)
           : Offset.zero & size;
       try {
-        _sharedPaint.shader = fallbackGradient.createShader(rect);
+        _paint.shader = fallbackGradient.createShader(rect);
       } catch (_) {
-        _sharedPaint.shader = null;
-        _sharedPaint.color = fallbackColor;
+        _paint.shader = null;
+        _paint.color = fallbackColor;
       }
     }
 
-    canvas.drawRawPoints(ui.PointMode.points, positions, _sharedPaint);
+    canvas.drawRawPoints(ui.PointMode.points, positions, _paint);
   }
 
   /// Only request repaint when the frame generation counter has changed,
