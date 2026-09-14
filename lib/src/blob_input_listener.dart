@@ -13,6 +13,8 @@ class BlobInputListener extends StatefulWidget {
   final BlobController controller;
   final ValueChanged<List<Offset>> onTouchesChanged;
   final bool enableHover;
+  final HitTestBehavior hitTestBehavior;
+  final bool interactive;
 
   const BlobInputListener({
     super.key,
@@ -20,6 +22,8 @@ class BlobInputListener extends StatefulWidget {
     required this.controller,
     required this.onTouchesChanged,
     this.enableHover = false,
+    this.hitTestBehavior = HitTestBehavior.translucent,
+    this.interactive = true,
   });
 
   @override
@@ -34,7 +38,27 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   bool get _isHoverEffective =>
       widget.enableHover || widget.controller.enableHover;
 
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void _updateTouchState(PointerEvent event, bool isDown) {
+    if (!widget.interactive) return;
+
     final bool isMouseOrTrackpad = event.kind == PointerDeviceKind.mouse ||
         event.kind == PointerDeviceKind.trackpad;
 
@@ -68,6 +92,16 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   }
 
   void _notifyTouches() {
+    if (!widget.interactive) {
+      if (_touchPoints.isNotEmpty || _hoverPosition != null) {
+        _touchPoints.clear();
+        _hoverPosition = null;
+      }
+      widget.controller.setDispersion(0.0);
+      widget.onTouchesChanged(const []);
+      return;
+    }
+
     if (_touchPoints.isNotEmpty) {
       // Scale dispersion based on the number of active fingers and the tap scale factor
       widget.controller.setDispersion(
@@ -89,16 +123,55 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   @override
   void didUpdateWidget(BlobInputListener oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_isHoverEffective && _hoverPosition != null) {
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+    if ((!_isHoverEffective && _hoverPosition != null) ||
+        (!widget.interactive &&
+            (_touchPoints.isNotEmpty || _hoverPosition != null))) {
       _hoverPosition = null;
+      _touchPoints.clear();
       _notifyTouches();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.interactive) {
+      return IgnorePointer(
+        ignoring: true,
+        child: widget.child,
+      );
+    }
+
+    final bool canScale = widget.controller.enablePinchToScale;
+    final bool canDragRotate = widget.controller.enableDragRotation;
+    final bool attachScaleRecognizer = canScale || canDragRotate;
+
+    Widget content = widget.child;
+    if (attachScaleRecognizer) {
+      content = GestureDetector(
+        behavior: widget.hitTestBehavior,
+        onScaleStart: (details) {
+          _baseScale = widget.controller.scale;
+        },
+        onScaleUpdate: (details) {
+          if (details.pointerCount > 1 &&
+              widget.controller.enablePinchToScale &&
+              details.scale != 1.0) {
+            widget.controller.setScale(_baseScale * details.scale);
+          } else if (widget.controller.enableDragRotation) {
+            // Drag / pan rotation impulse
+            widget.controller.addRotationImpulse(details.focalPointDelta);
+          }
+        },
+        child: content,
+      );
+    }
+
     return MouseRegion(
-      opaque: true,
+      opaque: widget.hitTestBehavior == HitTestBehavior.opaque,
       onHover: (event) {
         if (_touchPoints.isEmpty) {
           // Suppress rotation on hover unless explicitly enabled in controller
@@ -120,7 +193,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         }
       },
       child: Listener(
-        behavior: HitTestBehavior.opaque,
+        behavior: widget.hitTestBehavior,
         onPointerDown: (event) => _updateTouchState(event, true),
         onPointerMove: (event) => _updateTouchState(event, true),
         onPointerUp: (event) => _updateTouchState(event, false),
@@ -129,23 +202,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
           _hoverPosition = null;
           _notifyTouches();
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onScaleStart: (details) {
-            _baseScale = widget.controller.scale;
-          },
-          onScaleUpdate: (details) {
-            if (details.pointerCount > 1 &&
-                widget.controller.enablePinchToScale &&
-                details.scale != 1.0) {
-              widget.controller.setScale(_baseScale * details.scale);
-            } else if (widget.controller.enableDragRotation) {
-              // Drag / pan rotation impulse
-              widget.controller.addRotationImpulse(details.focalPointDelta);
-            }
-          },
-          child: widget.child,
-        ),
+        child: content,
       ),
     );
   }
