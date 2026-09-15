@@ -432,7 +432,7 @@ void main() {
               width: 300,
               height: 300,
               child: BlobFlutter(
-                enableHover: true,
+                hover: true,
               ),
             ),
           ),
@@ -519,9 +519,9 @@ void main() {
                 isColorAnimated: false,
                 colorAnimationSpeed: 1.0,
                 waveIntensity: 1.0,
-                enableHover: false,
-                enableDragRotation: false,
-                enableHoverRotation: false,
+                hover: false,
+                dragRotation: false,
+                hoverRotation: false,
                 noiseType: BlobNoiseType.simplex,
                 gradient: LinearGradient(colors: [Colors.red, Colors.blue]),
               ),
@@ -555,9 +555,9 @@ void main() {
                 isColorAnimated: true,
                 colorAnimationSpeed: 3.0,
                 waveIntensity: 2.0,
-                enableHover: true,
-                enableDragRotation: true,
-                enableHoverRotation: true,
+                hover: true,
+                dragRotation: true,
+                hoverRotation: true,
                 noiseType: BlobNoiseType.harmonic,
                 gradient: RadialGradient(colors: [Colors.green, Colors.yellow]),
               ),
@@ -579,9 +579,9 @@ void main() {
       expect(inputListener.controller.isColorAnimated, true);
       expect(inputListener.controller.colorAnimationSpeed, 3.0);
       expect(inputListener.controller.waveIntensity, 2.0);
-      expect(inputListener.controller.enableHover, true);
-      expect(inputListener.controller.enableDragRotation, true);
-      expect(inputListener.controller.enableHoverRotation, true);
+      expect(inputListener.controller.hover, true);
+      expect(inputListener.controller.dragRotation, true);
+      expect(inputListener.controller.hoverRotation, true);
       expect(inputListener.controller.noiseType, BlobNoiseType.harmonic);
 
       // 3. Switch from owned controller to external controller
@@ -993,7 +993,7 @@ void main() {
     testWidgets(
         'BlobFlutter.enableAutoPlayInTests globally controls autoPlay in test environment',
         (tester) async {
-      BlobFlutter.enableAutoPlayInTests = true;
+      BlobFlutter.autoPlayInTests = true;
       try {
         await tester.pumpWidget(
           const MaterialApp(
@@ -1030,7 +1030,7 @@ void main() {
 
         expect(secondGen, greaterThan(firstGen));
       } finally {
-        BlobFlutter.enableAutoPlayInTests = false;
+        BlobFlutter.autoPlayInTests = false;
       }
     });
 
