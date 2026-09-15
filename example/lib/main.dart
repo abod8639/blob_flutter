@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:blob_flutter/blob_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -36,6 +34,9 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
     [Color(0xFFFF007F), Color(0xFFFFBE0B)], // Sunset Pink & Gold
     [Color(0xFF00B4D8), Color(0xFF06D6A0)], // Ocean Blue & Mint
     [Color(0xFFFF5400), Color(0xFFFF0054)], // Fire Orange & Red
+    [Color(0xFFFFD700), Color(0xFF8B00FF)], // Gold & Purple
+    [Color(0xFF4ECDC4), Color(0xFF1A535C)], // Mint & Dark Teal
+    [Color(0xFF8B00FF), Color(0xFF4ECDC4)], // Purple & Mint
   ];
 
   int _selectedPalette = 0;
@@ -55,8 +56,10 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
       speed: _speed,
       blobiness: _blobiness,
       noiseType: _selectedNoise,
-      enableDragRotation: true,
-      enablePinchToScale: true,
+      enableDragRotation: false,
+      enablePinchToScale: false,
+      enableHoverRotation: false,
+      enableHover: true,
       gradient: LinearGradient(
         colors: _palettes[_selectedPalette],
         begin: Alignment.topLeft,
@@ -116,8 +119,6 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
           Positioned.fill(
             child: BlobFlutter(
               controller: _controller,
-              enableDragRotation: false,
-              enableHover: true,
             ),
           ),
 
@@ -167,28 +168,24 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
   }
 
   Widget _buildControlsPanel() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF141923).withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141923).withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.14),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          child: Column(
+        ],
+      ),
+      child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // 1. Noise Algorithm Selector
@@ -226,6 +223,8 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
 
               // 2. Color Palettes, Rainbow Mode, and Tune Toggle
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                // mainAxisSize: MainAxisSize.min,
                 children: [
                   ...List.generate(_palettes.length, (i) {
                     final isSelected = !_isRainbow && _selectedPalette == i;
@@ -272,7 +271,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
                       ),
                     ),
                   ),
-                  const Spacer(),
+                  // const Spacer(),
                   IconButton(
                     icon: Icon(
                       _showSliders ? Icons.tune : Icons.tune_outlined,
@@ -310,8 +309,6 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
               ],
             ],
           ),
-        ),
-      ),
     );
   }
 
