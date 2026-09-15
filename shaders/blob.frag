@@ -145,15 +145,13 @@ void main() {
         t = (angle + PI) / TWO_PI;
     }
 
-    // Wave shimmer — only computed when animation is active.
-    // Both conditions are uniforms (same value for every fragment), so the
-    // branch causes zero GPU warp divergence.
+    // Wave shimmer — smooth, organic chromatic liquid effect
     if (uColorAnimationSpeed > 0.0 && uWaveIntensity > 0.0) {
         float anim    = uTime * uColorAnimationSpeed;
-        float wave1   = sin(uv.x * PI     + anim * 0.5) * 0.25;
-        float wave2   = cos(uv.y * PI     - anim * 0.3) * 0.15;
-        float shimmer = sin((uv.x + uv.y) * TWO_PI + anim * 1.2) * 0.05;
-        t += (wave1 + wave2 + shimmer) * uWaveIntensity;
+        float wave1   = sin(uv.x * PI * 2.0 + anim * 0.8) * 0.08;
+        float wave2   = cos(uv.y * PI * 2.0 - anim * 0.6) * 0.06;
+        float shimmer = sin((uv.x + uv.y) * TWO_PI + anim * 1.5) * 0.03;
+        t += (wave1 + wave2 + shimmer) * min(uWaveIntensity, 2.0);
     }
 
     fragColor = evaluateColor(clamp(t, 0.0, 1.0));
