@@ -17,10 +17,13 @@ class BlobShaderHelper {
   /// (e.g. `flutter_test`).
   static bool get isRunningInTest {
     final binding = WidgetsBinding.instance.runtimeType.toString();
-    return binding.contains('TestWidgetsFlutterBinding') ||
-        binding.contains('AutomatedTestWidgetsFlutterBinding') ||
-        binding.contains('LiveTestWidgetsFlutterBinding') ||
-        binding.contains('TestBinding');
+    return isTestBinding(binding);
+  }
+
+  /// Checks whether [binding] indicates a Flutter test binding.
+  @visibleForTesting
+  static bool isTestBinding(String binding) {
+    return binding.contains('Test') && binding.contains('Binding');
   }
 
   /// Loads the [ui.FragmentProgram] from package assets or local assets.
@@ -161,8 +164,7 @@ class BlobShaderHelper {
         final int lower = index.floor();
         final int upper = index.ceil();
         if (lower == upper) return colors[lower];
-        return Color.lerp(colors[lower], colors[upper], index - lower) ??
-            colors[lower];
+        return Color.lerp(colors[lower], colors[upper], index - lower)!;
       });
 
       if (stops != null && stops.length == colors.length) {

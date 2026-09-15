@@ -189,5 +189,31 @@ void main() {
       expect(floats[43], closeTo(0.0, 0.0001));
       expect(floats[50], closeTo(1.0, 0.0001));
     });
+
+    test(
+        'isTestBinding and isRunningInTest identify test environments (L20-L24)',
+        () {
+      expect(BlobShaderHelper.isRunningInTest, isTrue);
+      expect(
+          BlobShaderHelper.isTestBinding('AutomatedTestWidgetsFlutterBinding'),
+          isTrue);
+      expect(
+          BlobShaderHelper.isTestBinding('LiveTestWidgetsFlutterBinding'),
+          isTrue);
+      expect(
+          BlobShaderHelper.isTestBinding('TestWidgetsFlutterBinding'), isTrue);
+      expect(BlobShaderHelper.isTestBinding('TestBinding'), isTrue);
+      expect(BlobShaderHelper.isTestBinding('WidgetsFlutterBinding'), isFalse);
+      expect(BlobShaderHelper.isTestBinding('CustomBinding'), isFalse);
+    });
+
+    test(
+        'loadProgram with default silent=null suppresses reportError in tests (L57)',
+        () async {
+      final program = await BlobShaderHelper.loadProgram(
+        overrideAssetPath: 'shaders/missing_for_silent_null.frag',
+      );
+      expect(program, isNull);
+    });
   });
 }
