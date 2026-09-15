@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:blob_flutter/src/blob_compute_params.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_controller.dart';
