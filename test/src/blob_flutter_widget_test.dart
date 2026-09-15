@@ -1323,10 +1323,15 @@ void main() {
 
 class _FailingInitBlobWorker extends BlobWorker {
   @override
-  Future<void> init(Float32List baseSphere, int count) {
+  Future<void> init(
+    Float32List baseSphere,
+    int count, {
+    void Function(BlobWorkerException error)? onError,
+  }) {
     return Future.error(Exception('Simulated worker init failure'));
   }
 }
+
 
 class _EmptyGradient extends Gradient {
   const _EmptyGradient() : super(colors: const []);
