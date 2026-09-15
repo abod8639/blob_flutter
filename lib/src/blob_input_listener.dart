@@ -96,9 +96,9 @@ class _BlobInputListenerState extends State<BlobInputListener> {
     } else {
       _touchPoints.remove(event.pointer);
       if (isMouseOrTrackpad) {
-        final renderObject =
-            BlobInputListener.debugFindRenderObject?.call(context) ??
-                context.findRenderObject();
+        final renderObject = BlobInputListener.debugFindRenderObject != null
+            ? BlobInputListener.debugFindRenderObject!(context)
+            : context.findRenderObject();
         if (renderObject is RenderBox &&
             renderObject.attached &&
             renderObject.hasSize) {
