@@ -413,6 +413,10 @@ class BlobController extends ChangeNotifier {
 
   /// Configures the minimum and maximum allowable scale limits.
   ///
+  /// Allows tests to disable debug assertions to verify the [FlutterError.reportError] fallback.
+  @visibleForTesting
+  static bool debugEnableAssertsInSetScaleLimits = true;
+
   /// In debug mode, asserts are raised immediately for invalid inputs.
   /// In profile/release mode, invalid values are reported via
   /// [FlutterError.reportError] and silently ignored.
@@ -421,16 +425,20 @@ class BlobController extends ChangeNotifier {
     final double effectiveMax = maxScale ?? _maxScale;
 
     // Validate: minScale must be > 0 and <= effectiveMax.
-    assert(
-      effectiveMin > 0.0,
-      "BlobController.setScaleLimits: 'minScale' must be > 0.0 (received $effectiveMin). "
-      'Example fix: setScaleLimits(minScale: 0.1, maxScale: 10.0).',
-    );
-    assert(
-      effectiveMin <= effectiveMax,
-      "BlobController.setScaleLimits: 'minScale' ($effectiveMin) must be <= 'maxScale' ($effectiveMax). "
-      'Example fix: setScaleLimits(minScale: 0.1, maxScale: 10.0).',
-    );
+    assert(() {
+      if (!debugEnableAssertsInSetScaleLimits) return true;
+      assert(
+        effectiveMin > 0.0,
+        "BlobController.setScaleLimits: 'minScale' must be > 0.0 (received $effectiveMin). "
+        'Example fix: setScaleLimits(minScale: 0.1, maxScale: 10.0).',
+      );
+      assert(
+        effectiveMin <= effectiveMax,
+        "BlobController.setScaleLimits: 'minScale' ($effectiveMin) must be <= 'maxScale' ($effectiveMax). "
+        'Example fix: setScaleLimits(minScale: 0.1, maxScale: 10.0).',
+      );
+      return true;
+    }());
 
     if (effectiveMin <= 0.0 || effectiveMin > effectiveMax) {
       FlutterError.reportError(FlutterErrorDetails(
