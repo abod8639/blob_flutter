@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
+import 'package:meta/meta.dart';
 import 'blob_compute_params.dart';
 import 'blob_exception.dart';
 import 'blob_math.dart';
@@ -39,6 +40,10 @@ class BlobWorker {
 
   /// `true` once the worker isolate has sent its [SendPort] back.
   bool get isReady => _tx != null;
+
+  /// Internal error port [SendPort] exposed for testing error-handling logic.
+  @visibleForTesting
+  SendPort get errorPortForTesting => _errorPort.sendPort;
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
