@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -66,7 +65,7 @@ void main() {
       expect(coordinator.isWorkerReady, isFalse);
     });
 
-    test('initWorker handles async isolate error callback (L65-L69)', () async {
+    test('startWorker handles async isolate error callback (L65-L69)', () async {
       final coordinator = BlobParticleCoordinator();
       coordinator.generateBuffers(20);
       final mockWorker = MockBlobWorker();
@@ -74,11 +73,10 @@ void main() {
       BlobFlutterException? capturedError;
       bool? isAsyncFlag;
 
-      coordinator.initWorker(
+      coordinator.startWorker(
         workerFactory: () => mockWorker,
         particleCount: 20,
-        silentErrorLogging: true,
-        onError: (err, st, {bool isAsync = false}) {
+        onError: (err, st, {required bool isAsync}) {
           capturedError = err;
           isAsyncFlag = isAsync;
         },
@@ -111,11 +109,10 @@ void main() {
       coordinator.generateBuffers(20);
       final failingWorker = FailingComputeWorker();
 
-      coordinator.initWorker(
+      coordinator.startWorker(
         workerFactory: () => failingWorker,
         particleCount: 20,
-        silentErrorLogging: true,
-        onError: (_, __, {bool isAsync = false}) {},
+        onError: (_, __, {required bool isAsync}) {},
         onWorkerReady: () {},
       );
 
