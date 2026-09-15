@@ -465,5 +465,47 @@ void main() {
       expect(touches.isEmpty, true);
       expect(controller.dispersion, 0.0);
     });
+
+    testWidgets(
+        'does not rebuild BlobInputListener when rotation impulse or dispersion changes',
+        (tester) async {
+      final controller = BlobController(
+        enableDragRotation: true,
+        enablePinchToScale: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                onTouchesChanged: (_) {},
+                child: Container(width: 200, height: 200, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(GestureDetector), findsOneWidget);
+
+      // Add rotation impulse and dispersion without changing structural flags
+      controller.addRotationImpulse(const Offset(10, 20));
+      controller.setDispersion(0.5);
+      await tester.pump();
+
+      // GestureDetector is still present and unchanged
+      expect(find.byType(GestureDetector), findsOneWidget);
+
+      // Changing structural configuration flags updates the tree
+      controller.setEnableDragRotation(false);
+      controller.setEnablePinchToScale(false);
+      await tester.pump();
+
+      // GestureDetector is unmounted when scale and drag rotation are both disabled
+      expect(find.byType(GestureDetector), findsNothing);
+    });
   });
 }
