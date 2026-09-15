@@ -502,24 +502,39 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _renderStaticFrame() {
     if (_cachedSize == Size.zero || !mounted) return;
-    _updateCombinedOffset();
-    _shaderCoordinator.updateDynamicUniforms(
-      controller: _controller,
-      widgetGradient: widget.gradient,
-      cachedSize: _cachedSize,
-      time: _time,
-    );
-    _particleCoordinator.renderStaticFrame(
-      controller: _controller,
-      touchManager: _touchManager,
-      cachedSize: _cachedSize,
-      time: _time,
-      context: context,
-      onFrameUpdated: () {
-        _frameCount++;
-        _frameNotifier.value = _frameCount;
-      },
-    );
+    try {
+      _updateCombinedOffset();
+      _shaderCoordinator.updateDynamicUniforms(
+        controller: _controller,
+        widgetGradient: widget.gradient,
+        cachedSize: _cachedSize,
+        time: _time,
+        onError: (renderError) {
+          if (mounted) {
+            setState(() => _lastError = renderError);
+          }
+          widget.onError?.call(renderError, renderError.stackTrace);
+        },
+      );
+      _particleCoordinator.renderStaticFrame(
+        controller: _controller,
+        touchManager: _touchManager,
+        cachedSize: _cachedSize,
+        time: _time,
+        context: context,
+        onFrameUpdated: () {
+          _frameCount++;
+          _frameNotifier.value = _frameCount;
+        },
+      );
+    } catch (err, st) {
+      final exception = BlobFlutterException(
+        message: 'Unexpected error during static frame render.',
+        cause: err,
+        stackTrace: st,
+      );
+      widget.onError?.call(exception, st);
+    }
   }
 
   @override
@@ -724,32 +739,50 @@ class _ParticleBlobState extends State<BlobFlutter>
       return;
     }
 
-    final double dt =
-        ((elapsed - _lastElapsed).inMicroseconds / 1e6).clamp(0.0, 0.05);
-    _lastElapsed = elapsed;
+    try {
+      final double dt =
+          ((elapsed - _lastElapsed).inMicroseconds / 1e6).clamp(0.0, 0.05);
+      _lastElapsed = elapsed;
 
-    _time = BlobMath.wrapTime(_time + dt * _controller.speed);
-    _controller.applyDamping();
+      _time = BlobMath.wrapTime(_time + dt * _controller.speed);
+      _controller.applyDamping();
 
-    _shaderCoordinator.updateDynamicUniforms(
-      controller: _controller,
-      widgetGradient: widget.gradient,
-      cachedSize: _cachedSize,
-      time: _time,
-    );
+      _shaderCoordinator.updateDynamicUniforms(
+        controller: _controller,
+        widgetGradient: widget.gradient,
+        cachedSize: _cachedSize,
+        time: _time,
+        onError: (renderError) {
+          if (mounted) {
+            setState(() => _lastError = renderError);
+          }
+          widget.onError?.call(renderError, renderError.stackTrace);
+        },
+      );
 
-    _particleCoordinator.processTick(
-      controller: _controller,
-      touchManager: _touchManager,
-      cachedSize: _cachedSize,
-      time: _time,
-      context: context,
-      isStillMounted: mounted,
-      onFrameUpdated: () {
-        _frameCount++;
-        _frameNotifier.value = _frameCount;
-      },
-    );
+      _particleCoordinator.processTick(
+        controller: _controller,
+        touchManager: _touchManager,
+        cachedSize: _cachedSize,
+        time: _time,
+        context: context,
+        isStillMounted: mounted,
+        onFrameUpdated: () {
+          _frameCount++;
+          _frameNotifier.value = _frameCount;
+        },
+        onComputeError: (exception, st) {
+          widget.onError?.call(exception, st);
+        },
+      );
+    } catch (err, st) {
+      final exception = BlobFlutterException(
+        message: 'Unexpected error during animation tick.',
+        cause: err,
+        stackTrace: st,
+      );
+      widget.onError?.call(exception, st);
+    }
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
