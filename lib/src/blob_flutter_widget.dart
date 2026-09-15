@@ -857,7 +857,7 @@ class _ParticleBlobState extends State<BlobFlutter>
                         paint: _paint,
                       ),
                       size: Size.infinite,
-                      isComplex: true,
+                      isComplex: false,
                       willChange: true,
                     ),
                   );
