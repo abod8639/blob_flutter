@@ -369,6 +369,10 @@ class _ParticleBlobState extends State<BlobFlutter>
   @visibleForTesting
   bool get isAppInBackground => _visibilityManager.isAppInBackground;
 
+  /// Executes a single animation tick for testing deterministic tick handling.
+  @visibleForTesting
+  void onTickForTesting(Duration elapsed) => _onTick(elapsed);
+
   // ── Test & Environment Helpers ────────────────────────────────────────────
 
   bool get _effectiveAutoPlay =>
