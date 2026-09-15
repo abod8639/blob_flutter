@@ -63,6 +63,7 @@ class BlobParticleCoordinator {
             _baseSphere,
             particleCount,
             onError: (exception) {
+              if (_worker != w) return;
               // Isolate unhandled error after successful handshake.
               onError(exception, exception.stackTrace, isAsync: true);
             },
@@ -74,6 +75,7 @@ class BlobParticleCoordinator {
             }
           })
           .catchError((Object err, StackTrace st) {
+            if (_worker != w) return;
             final exception =
                 BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
             _workerReady = false;
