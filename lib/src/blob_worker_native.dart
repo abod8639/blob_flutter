@@ -44,6 +44,16 @@ class BlobWorker {
   @visibleForTesting
   SendPort get errorPortForTesting => _errorPort.sendPort;
 
+  /// Function used to spawn worker isolates. Can be overridden in unit tests.
+  @visibleForTesting
+  static Future<Isolate> Function(
+    void Function(List<Object?>),
+    List<Object?>, {
+    bool errorsAreFatal,
+    SendPort? onError,
+    String? debugName,
+  }) isolateSpawner = Isolate.spawn;
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   /// Spawns the worker [Isolate] and transfers [baseSphere] to it.
@@ -90,7 +100,7 @@ class BlobWorker {
       onError?.call(exception);
     });
 
-    Isolate.spawn(
+    isolateSpawner(
       _workerEntry,
       [_rx.sendPort, baseSphere, count],
       debugName: 'blob_particle_worker',
