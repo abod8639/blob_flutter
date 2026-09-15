@@ -64,7 +64,7 @@ void main() {
       const emptyGradient = LinearGradient(colors: []);
       expect(
         coordinator.getFallbackColor(controller, emptyGradient, 0.0),
-        Colors.pinkAccent,
+        Colors.blueAccent,
       );
     });
 
