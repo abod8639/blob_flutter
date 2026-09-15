@@ -12,7 +12,7 @@ class BlobInputListener extends StatefulWidget {
   final Widget child;
   final BlobController controller;
   final ValueChanged<List<Offset>> onTouchesChanged;
-  final bool enableHover;
+  final bool hover;
   final HitTestBehavior hitTestBehavior;
   final bool interactive;
 
@@ -21,7 +21,7 @@ class BlobInputListener extends StatefulWidget {
     required this.child,
     required this.controller,
     required this.onTouchesChanged,
-    this.enableHover = false,
+    this.hover = false,
     this.hitTestBehavior = HitTestBehavior.translucent,
     this.interactive = true,
   });
@@ -36,20 +36,20 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   double _baseScale = 1.0;
 
   bool get _isHoverEffective =>
-      widget.enableHover || widget.controller.enableHover;
+      widget.hover || widget.controller.hover;
 
   late bool _cachedCanScale;
   late bool _cachedCanDragRotate;
-  late bool _cachedEnableHover;
-  late bool _cachedEnableHoverRotation;
+  late bool _cachedhover;
+  late bool _cachedhoverRotation;
 
   @override
   void initState() {
     super.initState();
-    _cachedCanScale = widget.controller.enablePinchToScale;
-    _cachedCanDragRotate = widget.controller.enableDragRotation;
-    _cachedEnableHover = widget.controller.enableHover;
-    _cachedEnableHoverRotation = widget.controller.enableHoverRotation;
+    _cachedCanScale = widget.controller.pinchToScale;
+    _cachedCanDragRotate = widget.controller.dragRotation;
+    _cachedhover = widget.controller.hover;
+    _cachedhoverRotation = widget.controller.hoverRotation;
     widget.controller.addListener(_onControllerChanged);
   }
 
@@ -61,19 +61,19 @@ class _BlobInputListenerState extends State<BlobInputListener> {
 
   void _onControllerChanged() {
     if (!mounted) return;
-    final canScale = widget.controller.enablePinchToScale;
-    final canDragRotate = widget.controller.enableDragRotation;
-    final enableHover = widget.controller.enableHover;
-    final enableHoverRotation = widget.controller.enableHoverRotation;
+    final canScale = widget.controller.pinchToScale;
+    final canDragRotate = widget.controller.dragRotation;
+    final enableHover = widget.controller.hover;
+    final enableHoverRotation = widget.controller.hoverRotation;
 
     if (canScale != _cachedCanScale ||
         canDragRotate != _cachedCanDragRotate ||
-        enableHover != _cachedEnableHover ||
-        enableHoverRotation != _cachedEnableHoverRotation) {
+        enableHover != _cachedhover ||
+        enableHoverRotation != _cachedhoverRotation) {
       _cachedCanScale = canScale;
       _cachedCanDragRotate = canDragRotate;
-      _cachedEnableHover = enableHover;
-      _cachedEnableHoverRotation = enableHoverRotation;
+      _cachedhover = enableHover;
+      _cachedhoverRotation = enableHoverRotation;
       setState(() {});
     }
   }
@@ -148,10 +148,10 @@ class _BlobInputListenerState extends State<BlobInputListener> {
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
-      _cachedCanScale = widget.controller.enablePinchToScale;
-      _cachedCanDragRotate = widget.controller.enableDragRotation;
-      _cachedEnableHover = widget.controller.enableHover;
-      _cachedEnableHoverRotation = widget.controller.enableHoverRotation;
+      _cachedCanScale = widget.controller.pinchToScale;
+      _cachedCanDragRotate = widget.controller.dragRotation;
+      _cachedhover = widget.controller.hover;
+      _cachedhoverRotation = widget.controller.hoverRotation;
     }
     if ((!_isHoverEffective && _hoverPosition != null) ||
         (!widget.interactive &&
@@ -171,8 +171,8 @@ class _BlobInputListenerState extends State<BlobInputListener> {
       );
     }
 
-    final bool canScale = widget.controller.enablePinchToScale;
-    final bool canDragRotate = widget.controller.enableDragRotation;
+    final bool canScale = widget.controller.pinchToScale;
+    final bool canDragRotate = widget.controller.dragRotation;
     final bool attachScaleRecognizer = canScale || canDragRotate;
 
     Widget content = widget.child;
@@ -184,10 +184,10 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         },
         onScaleUpdate: (details) {
           if (details.pointerCount > 1 &&
-              widget.controller.enablePinchToScale &&
+              widget.controller.pinchToScale &&
               details.scale != 1.0) {
             widget.controller.setScale(_baseScale * details.scale);
-          } else if (widget.controller.enableDragRotation) {
+          } else if (widget.controller.dragRotation) {
             // Drag / pan rotation impulse
             widget.controller.addRotationImpulse(details.focalPointDelta);
           }
@@ -201,7 +201,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
       onHover: (event) {
         if (_touchPoints.isEmpty) {
           // Suppress rotation on hover unless explicitly enabled in controller
-          if (widget.controller.enableHoverRotation &&
+          if (widget.controller.hoverRotation &&
               event.localDelta.distanceSquared >= 2.25) {
             widget.controller.addRotationImpulse(event.localDelta * 0.3);
           }
