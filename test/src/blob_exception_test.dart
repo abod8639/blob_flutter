@@ -165,5 +165,89 @@ void main() {
       expect(str, contains('IGNORED'));
       expect(str, contains('radius: ...,'));
     });
+
+    // ── BlobErrorCode Tests ────────────────────────────────────────────────
+
+    test('BlobErrorCode enum has the expected values', () {
+      expect(BlobErrorCode.values, containsAll([
+        BlobErrorCode.shaderLoadFailed,
+        BlobErrorCode.renderFailed,
+        BlobErrorCode.workerSpawnFailed,
+        BlobErrorCode.workerComputeFailed,
+        BlobErrorCode.parameterOutOfRange,
+        BlobErrorCode.controllerConflict,
+        BlobErrorCode.unknown,
+      ]));
+    });
+
+    test('each exception subclass returns the correct BlobErrorCode', () {
+      expect(
+        const BlobFlutterException(message: 'test').code,
+        BlobErrorCode.unknown,
+      );
+      expect(
+        BlobShaderException.assetLoadFailed(attemptedPaths: ['path/x.frag'])
+            .code,
+        BlobErrorCode.shaderLoadFailed,
+      );
+      expect(
+        BlobRenderException.shaderUniformFailed(cause: 'gpu error').code,
+        BlobErrorCode.renderFailed,
+      );
+      expect(
+        BlobWorkerException.spawnFailed(cause: 'err').code,
+        BlobErrorCode.workerSpawnFailed,
+      );
+      expect(
+        BlobWorkerException.computeFailed(cause: 'err').code,
+        BlobErrorCode.workerComputeFailed,
+      );
+      expect(
+        BlobParameterException.outOfRange(
+          parameterName: 'p',
+          invalidValue: -1,
+          validRange: 'p > 0',
+        ).code,
+        BlobErrorCode.parameterOutOfRange,
+      );
+      expect(
+        BlobControllerConflictException.fromParameters(['radius']).code,
+        BlobErrorCode.controllerConflict,
+      );
+    });
+
+    test('BlobFlutterException.toString() includes the error code name', () {
+      final exception = BlobShaderException.assetLoadFailed(
+        attemptedPaths: ['shaders/blob.frag'],
+      );
+      expect(exception.toString(), contains('shaderLoadFailed'));
+    });
+
+    // ── BlobRenderException Tests ──────────────────────────────────────────
+
+    test('BlobRenderException.shaderUniformFailed formats correctly', () {
+      final exception = BlobRenderException.shaderUniformFailed(
+        cause: Exception('index out of bounds'),
+      );
+
+      expect(exception.code, BlobErrorCode.renderFailed);
+      expect(exception.message, contains('uniforms'));
+      expect(exception.solutionHint, contains('CPU point rendering'));
+      expect(exception.cause, isNotNull);
+
+      final str = exception.toString();
+      expect(str, contains('renderFailed'));
+      expect(str, contains('GPU'));
+    });
+
+    test(
+        'BlobRenderException.shaderUniformFailed without cause still formats correctly',
+        () {
+      final exception = BlobRenderException.shaderUniformFailed();
+      expect(exception.code, BlobErrorCode.renderFailed);
+      expect(exception.message, isNotEmpty);
+      expect(exception.solutionHint, isNotNull);
+      expect(exception.cause, isNull);
+    });
   });
 }
