@@ -58,7 +58,7 @@ class BlobWorker {
     Float32List baseSphere,
     int count, {
     void Function(BlobWorkerException error)? onError,
-  }) async {
+  }) {
     _rx.listen(_onMessage);
 
     // Subscribe to isolate error port before spawning so we never miss an
@@ -90,19 +90,26 @@ class BlobWorker {
       onError?.call(exception);
     });
 
-    final isolate = await Isolate.spawn(
+    Isolate.spawn(
       _workerEntry,
       [_rx.sendPort, baseSphere, count],
       debugName: 'blob_particle_worker',
       errorsAreFatal: false,
       onError: _errorPort.sendPort,
-    );
-
-    if (_disposed) {
-      isolate.kill(priority: Isolate.immediate);
-      return;
-    }
-    _isolate = isolate;
+    ).then((isolate) {
+      if (_disposed) {
+        isolate.kill(priority: Isolate.immediate);
+      } else {
+        _isolate = isolate;
+      }
+    }).catchError((Object error, StackTrace stackTrace) {
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.completeError(
+          BlobWorkerException.spawnFailed(cause: error, stackTrace: stackTrace),
+          stackTrace,
+        );
+      }
+    });
 
     return _readyCompleter.future;
   }
