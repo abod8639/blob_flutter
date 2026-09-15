@@ -106,6 +106,8 @@ class _MyBlobState extends State<MyBlob> {
   void initState() {
     super.initState();
     _controller = BlobController(
+      particleCount: 5000,
+      radius: 150.0,
       noiseType: BlobNoiseType.simplex,
       dampingFactor: 0.95,
       isColorAnimated: true,
@@ -124,18 +126,16 @@ class _MyBlobState extends State<MyBlob> {
       onDoubleTap: () => _controller.setNoiseType(BlobNoiseType.spiky),
       child: BlobFlutter(
         controller: _controller,
-        particleCount: 5000,
-        radius: 150.0,
       ),
     );
   }
 }
 ```
 
-> [!IMPORTANT]
-> When an external `BlobController` is provided, all widget-level properties
-> (`gradient`, `radius`, `pointSize`, `speed`, `noiseType`, etc.) are **ignored**.
-> Configure the blob exclusively through the controller — do not set both.
+> [!WARNING]
+> **Avoid Parameter Conflicts (`BlobControllerConflictException`):**
+> When an external `BlobController` is provided to `BlobFlutter`, passing any widget-level configuration properties (`particleCount`, `radius`, `pointSize`, `speed`, `noiseType`, `gradient`, etc.) alongside `controller` will throw a **`BlobControllerConflictException`**.
+> Always configure those properties directly inside `BlobController(...)` — never define them on both.
 
 ---
 
