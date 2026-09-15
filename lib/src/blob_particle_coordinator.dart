@@ -58,29 +58,26 @@ class BlobParticleCoordinator {
     try {
       final w = workerFactory?.call() ?? BlobWorker();
       _worker = w;
-      w
-          .init(
-            _baseSphere,
-            particleCount,
-            onError: (exception) {
-              if (_worker != w) return;
-              // Isolate unhandled error after successful handshake.
-              onError(exception, exception.stackTrace, isAsync: true);
-            },
-          )
-          .then((_) {
-            if (_worker == w) {
-              _workerReady = true;
-              onWorkerReady();
-            }
-          })
-          .catchError((Object err, StackTrace st) {
-            if (_worker != w) return;
-            final exception =
-                BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
-            _workerReady = false;
-            onError(exception, st, isAsync: true);
-          });
+      w.init(
+        _baseSphere,
+        particleCount,
+        onError: (exception) {
+          if (_worker != w) return;
+          // Isolate unhandled error after successful handshake.
+          onError(exception, exception.stackTrace, isAsync: true);
+        },
+      ).then((_) {
+        if (_worker == w) {
+          _workerReady = true;
+          onWorkerReady();
+        }
+      }).catchError((Object err, StackTrace st) {
+        if (_worker != w) return;
+        final exception =
+            BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
+        _workerReady = false;
+        onError(exception, st, isAsync: true);
+      });
     } catch (err, st) {
       final exception =
           BlobWorkerException.spawnFailed(cause: err, stackTrace: st);

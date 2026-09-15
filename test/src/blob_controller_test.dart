@@ -420,8 +420,10 @@ void main() {
       expect(pausedController.isPaused, true);
     });
 
-    test('setScaleLimits handles partial limits, clamping, and notifyListeners', () {
-      final controller = BlobController(minScale: 0.5, maxScale: 3.0, scale: 2.0);
+    test('setScaleLimits handles partial limits, clamping, and notifyListeners',
+        () {
+      final controller =
+          BlobController(minScale: 0.5, maxScale: 3.0, scale: 2.0);
       int notificationCount = 0;
       controller.addListener(() => notificationCount++);
 
@@ -456,13 +458,17 @@ void main() {
       expect(notificationCount, 0);
 
       // 6. Debug asserts for invalid inputs
-      expect(() => controller.setScaleLimits(minScale: -0.5), throwsAssertionError);
-      expect(() => controller.setScaleLimits(minScale: 5.0, maxScale: 2.0), throwsAssertionError);
+      expect(() => controller.setScaleLimits(minScale: -0.5),
+          throwsAssertionError);
+      expect(() => controller.setScaleLimits(minScale: 5.0, maxScale: 2.0),
+          throwsAssertionError);
 
       controller.dispose();
     });
 
-    test('setScaleLimits reports FlutterError when asserts are disabled for invalid inputs', () {
+    test(
+        'setScaleLimits reports FlutterError when asserts are disabled for invalid inputs',
+        () {
       final controller = BlobController(minScale: 0.5, maxScale: 3.0);
       FlutterErrorDetails? reportedDetails;
       final oldHandler = FlutterError.onError;
@@ -493,7 +499,8 @@ void main() {
     });
 
     test('applyScaleFactor handles factor <= 0 and factor > 0', () {
-      final controller = BlobController(scale: 2.0, minScale: 0.1, maxScale: 5.0);
+      final controller =
+          BlobController(scale: 2.0, minScale: 0.1, maxScale: 5.0);
 
       // Factor <= 0 returns early without changing scale
       controller.applyScaleFactor(0.0);

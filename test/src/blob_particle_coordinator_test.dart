@@ -65,7 +65,8 @@ void main() {
       expect(coordinator.isWorkerReady, isFalse);
     });
 
-    test('startWorker handles async isolate error callback (L65-L69)', () async {
+    test('startWorker handles async isolate error callback (L65-L69)',
+        () async {
       final coordinator = BlobParticleCoordinator();
       coordinator.generateBuffers(20);
       final mockWorker = MockBlobWorker();

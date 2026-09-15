@@ -54,7 +54,9 @@ class BlobTouchManager {
     final int count = _activeTouches.length;
     final List<Offset> localList = List<Offset>.generate(
       count,
-      (i) => box != null ? box.globalToLocal(_activeTouches[i]) : _activeTouches[i],
+      (i) => box != null
+          ? box.globalToLocal(_activeTouches[i])
+          : _activeTouches[i],
       growable: false,
     );
     _localTouches = localList;

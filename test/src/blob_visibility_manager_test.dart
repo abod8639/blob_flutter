@@ -4,7 +4,8 @@ import 'package:blob_flutter/src/blob_visibility_manager.dart';
 
 void main() {
   group('BlobVisibilityManager Unit & Widget Tests', () {
-    testWidgets('removes scroll listener when scroll position changes or detaches (L45)',
+    testWidgets(
+        'removes scroll listener when scroll position changes or detaches (L45)',
         (tester) async {
       final manager = BlobVisibilityManager(onStateChanged: () {});
 
@@ -76,10 +77,12 @@ void main() {
       scrollController2.dispose();
     });
 
-    testWidgets('checkTickVisibility triggers offscreen state on 30th tick when not visible (L122-L129)',
+    testWidgets(
+        'checkTickVisibility triggers offscreen state on 30th tick when not visible (L122-L129)',
         (tester) async {
       bool stateChanged = false;
-      final manager = BlobVisibilityManager(onStateChanged: () => stateChanged = true);
+      final manager =
+          BlobVisibilityManager(onStateChanged: () => stateChanged = true);
 
       // Mount an offscreen widget (placed far below the screen viewport)
       await tester.pumpWidget(
@@ -92,7 +95,10 @@ void main() {
                   left: 0.0,
                   child: Builder(
                     builder: (context) {
-                      return const SizedBox(key: ValueKey('offscreen_box'), width: 100, height: 100);
+                      return const SizedBox(
+                          key: ValueKey('offscreen_box'),
+                          width: 100,
+                          height: 100);
                     },
                   ),
                 ),
@@ -103,7 +109,8 @@ void main() {
       );
       await tester.pump();
 
-      final offscreenContext = tester.element(find.byKey(const ValueKey('offscreen_box')));
+      final offscreenContext =
+          tester.element(find.byKey(const ValueKey('offscreen_box')));
 
       // First 29 ticks return false
       for (int i = 0; i < 29; i++) {
@@ -128,16 +135,19 @@ void main() {
       manager.dispose();
     });
 
-    testWidgets('handleWidgetUpdated handles toggling autoPauseOffscreen and autoPauseOnAppBackground (L155-L171)',
+    testWidgets(
+        'handleWidgetUpdated handles toggling autoPauseOffscreen and autoPauseOnAppBackground (L155-L171)',
         (tester) async {
       int stateChangeCount = 0;
-      final manager = BlobVisibilityManager(onStateChanged: () => stateChangeCount++);
+      final manager =
+          BlobVisibilityManager(onStateChanged: () => stateChangeCount++);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder: (context) => const SizedBox(key: ValueKey('test_box'), width: 100, height: 100),
+              builder: (context) => const SizedBox(
+                  key: ValueKey('test_box'), width: 100, height: 100),
             ),
           ),
         ),

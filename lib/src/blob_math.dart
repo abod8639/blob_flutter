@@ -512,7 +512,8 @@ class BlobMath {
           final int c = i % cols;
           final int ptsInRow = (r == rows - 1) ? lastRowPts : cols;
 
-          final double u = ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
+          final double u =
+              ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
           final double v = rows > 1 ? (r / (rows - 1)) * 2.0 - 1.0 : 0.0;
 
           final double phase1 = (u + v) * 3.5 * f + time * 2.5;
@@ -533,7 +534,8 @@ class BlobMath {
 
           final double rx = px * m00 + pz * m02;
           final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
-          final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+          final double rz =
+              px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
 
           double safeZ = viewDistance + rz;
           if (safeZ < 0.65) {
@@ -554,7 +556,8 @@ class BlobMath {
           final int c = i % cols;
           final int ptsInRow = (r == rows - 1) ? lastRowPts : cols;
 
-          final double u = ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
+          final double u =
+              ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
           final double v = rows > 1 ? (r / (rows - 1)) * 2.0 - 1.0 : 0.0;
 
           final double phase1 = (u + v) * 3.5 * f + time * 2.5;
@@ -575,7 +578,8 @@ class BlobMath {
 
           final double rx = px * m00 + pz * m02;
           final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
-          final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+          final double rz =
+              px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
 
           double safeZ = viewDistance + rz;
           if (safeZ < 0.65) {

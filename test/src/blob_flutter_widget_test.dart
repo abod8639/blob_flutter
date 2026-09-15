@@ -1322,7 +1322,8 @@ void main() {
       expect(conflicts, ['particleCount', 'speed']);
     });
 
-    testWidgets('_renderStaticFrame handles shader uniform update error (L512-L517)',
+    testWidgets(
+        '_renderStaticFrame handles shader uniform update error (L512-L517)',
         (tester) async {
       BlobFlutterException? capturedError;
       final controller = BlobController(isPaused: true);
@@ -1364,7 +1365,8 @@ void main() {
       }
     });
 
-    testWidgets('_renderStaticFrame handles unexpected error during static render (L530-L537)',
+    testWidgets(
+        '_renderStaticFrame handles unexpected error during static render (L530-L537)',
         (tester) async {
       BlobFlutterException? capturedError;
       final controller = BlobController(isPaused: true);
@@ -1398,14 +1400,16 @@ void main() {
         await tester.pump();
 
         expect(capturedError, isNotNull);
-        expect(capturedError!.message, contains('Unexpected error during static frame render.'));
+        expect(capturedError!.message,
+            contains('Unexpected error during static frame render.'));
       } finally {
         BlobParticleCoordinator.debugOnRenderStaticFrame = null;
         controller.dispose();
       }
     });
 
-    testWidgets('didUpdateWidget updates autoPlay, pinchToScale, rotationX, and rotationY (L589-L591, L628-L636)',
+    testWidgets(
+        'didUpdateWidget updates autoPlay, pinchToScale, rotationX, and rotationY (L589-L591, L628-L636)',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -1507,7 +1511,8 @@ void main() {
           home: Scaffold(
             body: BlobFlutter(
               controller: controller,
-              workerFactory: () => throw Exception('Sync factory restart failure'),
+              workerFactory: () =>
+                  throw Exception('Sync factory restart failure'),
               onError: (err, st) => syncError = err,
             ),
           ),
@@ -1644,7 +1649,8 @@ void main() {
       await tester.pump();
 
       expect(capturedError, isA<BlobWorkerException>());
-      expect(capturedError!.message, contains('background particle computation'));
+      expect(
+          capturedError!.message, contains('background particle computation'));
     });
 
     testWidgets(
@@ -1705,7 +1711,8 @@ class _FailingComputeBlobWorker extends BlobWorker {
   bool get isReady => true;
 
   @override
-  Future<Float32List?> compute(ProjectParamsFlat params, [Float32List? recycleBuffer]) {
+  Future<Float32List?> compute(ProjectParamsFlat params,
+      [Float32List? recycleBuffer]) {
     return Future.error(Exception('Simulated compute failure'));
   }
 }
@@ -1743,4 +1750,3 @@ class _EmptyGradient extends Gradient {
   @override
   Gradient withOpacity(double opacity) => this;
 }
-

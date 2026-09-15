@@ -449,7 +449,8 @@ class BlobController extends ChangeNotifier {
           "Call was ignored.",
         ),
         library: 'blob_flutter',
-        context: ErrorDescription('while calling BlobController.setScaleLimits'),
+        context:
+            ErrorDescription('while calling BlobController.setScaleLimits'),
       ));
       return;
     }
@@ -468,7 +469,6 @@ class BlobController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   /// Applies a relative scale factor multiplier (useful for pinch gestures).
   void applyScaleFactor(double factor) {

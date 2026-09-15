@@ -127,7 +127,8 @@ void main() {
         onError: (e) => receivedError = e,
       );
 
-      worker.errorPortForTesting.send(['Test Isolate Crash', 'Stack frame #1\nStack frame #2']);
+      worker.errorPortForTesting
+          .send(['Test Isolate Crash', 'Stack frame #1\nStack frame #2']);
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(receivedError, isNotNull);
@@ -166,7 +167,8 @@ void main() {
       expect(receivedError, isNull);
     });
 
-    test('errorPort completes readyCompleter with error if isolate crashes before handshake',
+    test(
+        'errorPort completes readyCompleter with error if isolate crashes before handshake',
         () async {
       final worker = BlobWorker();
       const count = 10;

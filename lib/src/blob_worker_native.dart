@@ -79,10 +79,9 @@ class BlobWorker {
       final String errorStr = errorMessage is List && errorMessage.isNotEmpty
           ? errorMessage[0].toString()
           : errorMessage.toString();
-      final String? stackStr =
-          errorMessage is List && errorMessage.length > 1
-              ? errorMessage[1]?.toString()
-              : null;
+      final String? stackStr = errorMessage is List && errorMessage.length > 1
+          ? errorMessage[1]?.toString()
+          : null;
       final StackTrace? stackTrace =
           stackStr != null ? StackTrace.fromString(stackStr) : null;
 
@@ -147,7 +146,8 @@ class BlobWorker {
   ///
   /// Returns a [Future] that resolves with the projected [Float32List] when
   /// the worker finishes.  Returns `null` if [dispose] has been called.
-  Future<Float32List?> compute(ProjectParamsFlat params, [Float32List? recycleBuffer]) {
+  Future<Float32List?> compute(ProjectParamsFlat params,
+      [Float32List? recycleBuffer]) {
     if (_tx == null || _disposed) return Future.value(null);
     final completer = Completer<Float32List?>();
     _pending.add(completer);

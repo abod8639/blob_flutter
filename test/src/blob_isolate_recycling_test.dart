@@ -59,7 +59,8 @@ void main() {
       worker.dispose();
     });
 
-    test('reallocates output buffer when recycled buffer length does not match count * 2',
+    test(
+        'reallocates output buffer when recycled buffer length does not match count * 2',
         () async {
       final worker = BlobWorker();
       const count = 30;

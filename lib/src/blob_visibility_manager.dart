@@ -32,7 +32,8 @@ class BlobVisibilityManager {
     _updateScrollListener(context, autoPauseOffscreen);
     if (autoPauseOffscreen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        checkVisibility(context: context, autoPauseOffscreen: autoPauseOffscreen);
+        checkVisibility(
+            context: context, autoPauseOffscreen: autoPauseOffscreen);
       });
     }
   }
@@ -157,7 +158,8 @@ class BlobVisibilityManager {
       if (!newAutoPauseOffscreen) {
         _isOffscreen = false;
       } else {
-        checkVisibility(context: context, autoPauseOffscreen: newAutoPauseOffscreen);
+        checkVisibility(
+            context: context, autoPauseOffscreen: newAutoPauseOffscreen);
       }
       onStateChanged();
     }

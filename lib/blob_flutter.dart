@@ -4,12 +4,12 @@ library;
 export 'src/blob_flutter_widget.dart';
 export 'src/blob_noise_type.dart';
 export 'src/blob_controller.dart';
-export 'src/blob_exception.dart' show
-    BlobErrorCode,
-    BlobFlutterException,
-    BlobShaderException,
-    BlobRenderException,
-    BlobWorkerException,
-    BlobParameterException,
-    BlobControllerConflictException;
-
+export 'src/blob_exception.dart'
+    show
+        BlobErrorCode,
+        BlobFlutterException,
+        BlobShaderException,
+        BlobRenderException,
+        BlobWorkerException,
+        BlobParameterException,
+        BlobControllerConflictException;

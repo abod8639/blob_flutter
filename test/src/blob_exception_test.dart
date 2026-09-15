@@ -155,7 +155,8 @@ void main() {
           ['radius', 'speed', 'particleCount']);
       expect(exception.message, contains("'radius', 'speed', 'particleCount'"));
       expect(exception.details, contains('BlobController'));
-      expect(exception.solutionHint, contains('final controller = BlobController('));
+      expect(exception.solutionHint,
+          contains('final controller = BlobController('));
       expect(exception.solutionHint, contains('radius: ...,'));
       expect(exception.solutionHint, contains('speed: ...,'));
       expect(exception.solutionHint, contains('particleCount: ...,'));
@@ -169,15 +170,17 @@ void main() {
     // ── BlobErrorCode Tests ────────────────────────────────────────────────
 
     test('BlobErrorCode enum has the expected values', () {
-      expect(BlobErrorCode.values, containsAll([
-        BlobErrorCode.shaderLoadFailed,
-        BlobErrorCode.renderFailed,
-        BlobErrorCode.workerSpawnFailed,
-        BlobErrorCode.workerComputeFailed,
-        BlobErrorCode.parameterOutOfRange,
-        BlobErrorCode.controllerConflict,
-        BlobErrorCode.unknown,
-      ]));
+      expect(
+          BlobErrorCode.values,
+          containsAll([
+            BlobErrorCode.shaderLoadFailed,
+            BlobErrorCode.renderFailed,
+            BlobErrorCode.workerSpawnFailed,
+            BlobErrorCode.workerComputeFailed,
+            BlobErrorCode.parameterOutOfRange,
+            BlobErrorCode.controllerConflict,
+            BlobErrorCode.unknown,
+          ]));
     });
 
     test('each exception subclass returns the correct BlobErrorCode', () {

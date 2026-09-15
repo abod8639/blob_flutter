@@ -103,7 +103,9 @@ void main() {
       }
     });
 
-    test('pushColorsToSetter correctly pushes custom gradient stops (indices 43-50)', () {
+    test(
+        'pushColorsToSetter correctly pushes custom gradient stops (indices 43-50)',
+        () {
       final floats = <int, double>{};
       final colors = [
         const Color(0xFFFF0000),
@@ -135,7 +137,9 @@ void main() {
       expect(floats[50], closeTo(1.0, 0.0001));
     });
 
-    test('pushColorsToSetter with null stops calculates evenly distributed stops', () {
+    test(
+        'pushColorsToSetter with null stops calculates evenly distributed stops',
+        () {
       final floats = <int, double>{};
       final colors = [
         const Color(0xFFFF0000),
@@ -157,7 +161,9 @@ void main() {
       expect(floats[46], closeTo(1.0, 0.0001));
     });
 
-    test('pushColorsToSetter with isRainbowMode = true distributes 8 stops across 0.0 to 1.0', () {
+    test(
+        'pushColorsToSetter with isRainbowMode = true distributes 8 stops across 0.0 to 1.0',
+        () {
       final floats = <int, double>{};
       final colors = List.generate(8, (i) => Color(0xFF000000 + i * 0x111111));
 
@@ -197,8 +203,7 @@ void main() {
       expect(
           BlobShaderHelper.isTestBinding('AutomatedTestWidgetsFlutterBinding'),
           isTrue);
-      expect(
-          BlobShaderHelper.isTestBinding('LiveTestWidgetsFlutterBinding'),
+      expect(BlobShaderHelper.isTestBinding('LiveTestWidgetsFlutterBinding'),
           isTrue);
       expect(
           BlobShaderHelper.isTestBinding('TestWidgetsFlutterBinding'), isTrue);

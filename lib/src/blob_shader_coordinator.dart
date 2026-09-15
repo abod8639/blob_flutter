@@ -50,7 +50,8 @@ class BlobShaderCoordinator {
   }
 
   /// Resolves the effective [Gradient] from the controller or widget fallback.
-  Gradient getEffectiveGradient(BlobController controller, Gradient widgetGradient) {
+  Gradient getEffectiveGradient(
+      BlobController controller, Gradient widgetGradient) {
     return controller.gradient ?? widgetGradient;
   }
 
@@ -81,7 +82,8 @@ class BlobShaderCoordinator {
     double time,
   ) {
     if (controller.isRainbowMode) {
-      return SweepGradient(colors: getEffectiveColors(controller, widgetGradient, time));
+      return SweepGradient(
+          colors: getEffectiveColors(controller, widgetGradient, time));
     }
     final g = getEffectiveGradient(controller, widgetGradient);
     if (g.colors.length >= 2) {

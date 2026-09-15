@@ -39,8 +39,7 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   Offset? _hoverPosition;
   double _baseScale = 1.0;
 
-  bool get _isHoverEffective =>
-      widget.hover || widget.controller.hover;
+  bool get _isHoverEffective => widget.hover || widget.controller.hover;
 
   late bool _cachedCanScale;
   late bool _cachedCanDragRotate;

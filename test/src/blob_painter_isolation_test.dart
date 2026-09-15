@@ -10,7 +10,8 @@ void main() {
         positions: Float32List(10),
         generation: 1,
         pointSize: 2.0,
-        fallbackGradient: const LinearGradient(colors: [Colors.blue, Colors.red]),
+        fallbackGradient:
+            const LinearGradient(colors: [Colors.blue, Colors.red]),
         fallbackColor: Colors.red,
       );
 
@@ -18,7 +19,8 @@ void main() {
         positions: Float32List(10),
         generation: 1,
         pointSize: 4.0,
-        fallbackGradient: const LinearGradient(colors: [Colors.green, Colors.yellow]),
+        fallbackGradient:
+            const LinearGradient(colors: [Colors.green, Colors.yellow]),
         fallbackColor: Colors.yellow,
       );
 
@@ -32,7 +34,8 @@ void main() {
         positions: Float32List(10),
         generation: 1,
         pointSize: 2.0,
-        fallbackGradient: const LinearGradient(colors: [Colors.blue, Colors.red]),
+        fallbackGradient:
+            const LinearGradient(colors: [Colors.blue, Colors.red]),
         paint: customPaint,
       );
 
@@ -44,7 +47,8 @@ void main() {
         positions: Float32List.fromList([10, 10, 20, 20]),
         generation: 1,
         pointSize: 2.0,
-        fallbackGradient: const LinearGradient(colors: [Colors.red, Colors.red]),
+        fallbackGradient:
+            const LinearGradient(colors: [Colors.red, Colors.red]),
         fallbackColor: Colors.red,
       );
 
@@ -52,7 +56,8 @@ void main() {
         positions: Float32List.fromList([30, 30, 40, 40]),
         generation: 1,
         pointSize: 5.0,
-        fallbackGradient: const LinearGradient(colors: [Colors.blue, Colors.blue]),
+        fallbackGradient:
+            const LinearGradient(colors: [Colors.blue, Colors.blue]),
         fallbackColor: Colors.blue,
       );
 

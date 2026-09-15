@@ -384,7 +384,8 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   bool get _shouldTickerRun =>
       !_controller.isPaused &&
-      !(widget.autoPauseOnAppBackground && _visibilityManager.isAppInBackground) &&
+      !(widget.autoPauseOnAppBackground &&
+          _visibilityManager.isAppInBackground) &&
       !(widget.autoPauseOffscreen && _visibilityManager.isOffscreen);
 
   void _updateCombinedOffset() {

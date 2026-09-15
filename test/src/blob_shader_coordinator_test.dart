@@ -6,7 +6,9 @@ import 'package:blob_flutter/src/blob_shader_coordinator.dart';
 
 void main() {
   group('BlobShaderCoordinator Tests', () {
-    test('getEffectiveFallbackGradient handles 1 color, 0 colors, and rainbow (L90)', () {
+    test(
+        'getEffectiveFallbackGradient handles 1 color, 0 colors, and rainbow (L90)',
+        () {
       final coordinator = BlobShaderCoordinator();
       final controller = BlobController();
 
@@ -33,7 +35,8 @@ void main() {
       expect(fallbackEmpty.colors[1], Colors.purpleAccent);
 
       // Test with 2+ colors
-      const twoColorGradient = LinearGradient(colors: [Colors.green, Colors.yellow]);
+      const twoColorGradient =
+          LinearGradient(colors: [Colors.green, Colors.yellow]);
       final fallback2 = coordinator.getEffectiveFallbackGradient(
         controller,
         twoColorGradient,
@@ -77,7 +80,9 @@ void main() {
       expect(coordinator.shader, isNull);
     });
 
-    test('updateDynamicUniforms catches uniform error and triggers onError (L185-L188)', () {
+    test(
+        'updateDynamicUniforms catches uniform error and triggers onError (L185-L188)',
+        () {
       final coordinator = BlobShaderCoordinator();
       final controller = BlobController();
       BlobRenderException? capturedError;
@@ -89,7 +94,8 @@ void main() {
       try {
         coordinator.updateDynamicUniforms(
           controller: controller,
-          widgetGradient: const LinearGradient(colors: [Colors.red, Colors.blue]),
+          widgetGradient:
+              const LinearGradient(colors: [Colors.red, Colors.blue]),
           cachedSize: const Size(200, 200),
           time: 1.0,
           onError: (err) {
@@ -99,7 +105,8 @@ void main() {
 
         expect(capturedError, isNotNull);
         expect(capturedError!.code, BlobErrorCode.renderFailed);
-        expect(capturedError!.cause.toString(), contains('Simulated uniform failure'));
+        expect(capturedError!.cause.toString(),
+            contains('Simulated uniform failure'));
         expect(coordinator.shader, isNull);
       } finally {
         BlobShaderCoordinator.debugOnUpdateDynamicUniforms = null;

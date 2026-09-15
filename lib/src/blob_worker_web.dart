@@ -32,13 +32,13 @@ class BlobWorker {
     _disposed = false;
   }
 
-
   /// Runs [BlobMath.projectParticles] synchronously and returns a completed
   /// [Future] wrapping the result buffer.
   ///
   /// Computes all particles every frame synchronously without temporal interleaving,
   /// ensuring a crisp, glitch-free 3D appearance identical to native platforms.
-  Future<Float32List?> compute(ProjectParamsFlat p, [Float32List? recycleBuffer]) {
+  Future<Float32List?> compute(ProjectParamsFlat p,
+      [Float32List? recycleBuffer]) {
     if (_disposed) return Future.value(null);
 
     final int requiredLength = p.count * 2;

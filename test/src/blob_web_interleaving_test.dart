@@ -7,7 +7,8 @@ import 'package:blob_flutter/src/blob_worker_web.dart';
 
 void main() {
   group('Blob Web Temporal Interleaving Tests', () {
-    test('BlobMath.projectParticles updates only specified indices when stride > 1',
+    test(
+        'BlobMath.projectParticles updates only specified indices when stride > 1',
         () {
       const count = 10;
       final sphere = BlobMath.generateFibonacciSphere(count);
