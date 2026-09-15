@@ -59,7 +59,7 @@ void main() {
                     radius: 100,
                     hitTestBehavior: HitTestBehavior.translucent,
                     interactive: true,
-                    enableDragRotation: false,
+                    dragRotation: false,
                   ),
                 ),
               ],
@@ -136,8 +136,8 @@ void main() {
                     height: 300,
                     child: BlobFlutter(
                       radius: 80,
-                      enableDragRotation: false,
-                      enablePinchToScale: false,
+                      dragRotation: false,
+                      pinchToScale: false,
                     ),
                   );
                 }
