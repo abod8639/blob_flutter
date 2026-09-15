@@ -314,16 +314,7 @@ class BlobFlutter extends StatefulWidget {
   }
 
   @override
-  State<BlobFlutter> createState() {
-    final conflicts = findConflictingParameters(this);
-    if (controller != null && conflicts.isNotEmpty) {
-      final exception =
-          BlobControllerConflictException.fromParameters(conflicts);
-      onError?.call(exception, StackTrace.current);
-      throw exception;
-    }
-    return _ParticleBlobState();
-  }
+  State<BlobFlutter> createState() => _ParticleBlobState();
 }
 
 class _ParticleBlobState extends State<BlobFlutter>
