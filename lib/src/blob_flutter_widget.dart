@@ -936,7 +936,8 @@ class _ParticleBlobState extends State<BlobFlutter>
       );
       _frameCount++;
       _frameNotifier.value = _frameCount;
-    } else {
+    } else if (_controller.isColorAnimated || _controller.isRainbowMode) {
+      // Worker is computing next particle positions; refresh frame for color animation
       _frameCount++;
       _frameNotifier.value = _frameCount;
     }
@@ -1006,6 +1007,9 @@ class _ParticleBlobState extends State<BlobFlutter>
         isColorAnimated: _controller.isColorAnimated,
         colorAnimationSpeed: _controller.colorAnimationSpeed,
         waveIntensity: _controller.waveIntensity,
+        centerOffset: _controller.centerOffset,
+        radius: _controller.radius * _controller.scale,
+        alignment: _controller.alignment,
       );
       _shaderStaticDirty = false;
     }
@@ -1087,6 +1091,12 @@ class _ParticleBlobState extends State<BlobFlutter>
                         pointSize: _controller.pointSize,
                         fallbackColor: _color1,
                         fallbackGradient: _effectiveFallbackGradient,
+                        centerOffset: _controller.centerOffset +
+                            Offset(
+                              _controller.alignment.x * (_cachedSize.width / 2.0),
+                              _controller.alignment.y * (_cachedSize.height / 2.0),
+                            ),
+                        radius: _controller.radius * _controller.scale,
                         paint: _paint,
                       ),
                       size: Size.infinite,
