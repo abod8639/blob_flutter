@@ -43,7 +43,7 @@ void main() {
       expect(touches.isEmpty, true);
 
       // Now enable drag rotation and test
-      controller.setEnableDragRotation(true);
+      controller.setDragRotation(true);
       final gesture2 = await tester.startGesture(const Offset(100, 100));
       await gesture2.moveBy(const Offset(20, 30));
       await tester.pump();
@@ -86,9 +86,9 @@ void main() {
     });
 
     testWidgets(
-        'mouse hover triggers rotation impulse only when enableHoverRotation is true',
+        'mouse hover triggers rotation impulse only when hoverRotation is true',
         (tester) async {
-      final controller = BlobController(enableHoverRotation: true);
+      final controller = BlobController(hoverRotation: true);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -118,7 +118,7 @@ void main() {
     });
 
     testWidgets(
-        'mouse hover triggers dispersion and touches callback when enableHover is true',
+        'mouse hover triggers dispersion and touches callback when hover is true',
         (tester) async {
       final controller = BlobController(tapScaleFactor: 1.0);
       List<Offset> touches = [];
@@ -130,7 +130,7 @@ void main() {
               alignment: Alignment.topLeft,
               child: BlobInputListener(
                 controller: controller,
-                enableHover: true,
+                hover: true,
                 onTouchesChanged: (t) {
                   touches = t;
                 },
@@ -208,7 +208,7 @@ void main() {
               alignment: Alignment.topLeft,
               child: BlobInputListener(
                 controller: controller,
-                enableHover: true,
+                hover: true,
                 onTouchesChanged: (t) {
                   touches = t;
                 },
@@ -226,7 +226,7 @@ void main() {
       await tester.pump();
       expect(touches.isNotEmpty, true);
 
-      // Rebuild with enableHover = false
+      // Rebuild with hover = false
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -234,7 +234,7 @@ void main() {
               alignment: Alignment.topLeft,
               child: BlobInputListener(
                 controller: controller,
-                enableHover: false,
+                hover: false,
                 onTouchesChanged: (t) {
                   touches = t;
                 },
@@ -251,9 +251,9 @@ void main() {
     });
 
     testWidgets(
-        'pinch-to-scale gesture scales the blob when enablePinchToScale is true',
+        'pinch-to-scale gesture scales the blob when pinchToScale is true',
         (tester) async {
-      final controller = BlobController(enablePinchToScale: true);
+      final controller = BlobController(pinchToScale: true);
       controller.setScale(1.0);
 
       await tester.pumpWidget(
@@ -289,7 +289,7 @@ void main() {
         'multi-touch falls back to drag rotation when enablePinchToScale is false',
         (tester) async {
       final controller =
-          BlobController(enablePinchToScale: false, enableDragRotation: true);
+          BlobController(pinchToScale: false, dragRotation: true);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -333,7 +333,7 @@ void main() {
               alignment: Alignment.topLeft,
               child: BlobInputListener(
                 controller: controller,
-                enableHover: true,
+                hover: true,
                 onTouchesChanged: (t) {
                   touches = List.of(t);
                 },
@@ -386,7 +386,7 @@ void main() {
               alignment: Alignment.topLeft,
               child: BlobInputListener(
                 controller: controller,
-                enableHover: true,
+                hover: true,
                 onTouchesChanged: (t) {
                   touches = List.of(t);
                 },
@@ -436,7 +436,7 @@ void main() {
               alignment: Alignment.topLeft,
               child: BlobInputListener(
                 controller: controller,
-                enableHover: true,
+                hover: true,
                 onTouchesChanged: (t) {
                   touches = List.of(t);
                 },
@@ -470,8 +470,8 @@ void main() {
         'does not rebuild BlobInputListener when rotation impulse or dispersion changes',
         (tester) async {
       final controller = BlobController(
-        enableDragRotation: true,
-        enablePinchToScale: true,
+        dragRotation: true,
+        pinchToScale: true,
       );
 
       await tester.pumpWidget(
@@ -500,8 +500,8 @@ void main() {
       expect(find.byType(GestureDetector), findsOneWidget);
 
       // Changing structural configuration flags updates the tree
-      controller.setEnableDragRotation(false);
-      controller.setEnablePinchToScale(false);
+      controller.setDragRotation(false);
+      controller.setPinchToScale(false);
       await tester.pump();
 
       // GestureDetector is unmounted when scale and drag rotation are both disabled
