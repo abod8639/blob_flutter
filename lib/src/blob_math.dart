@@ -527,9 +527,9 @@ class BlobMath {
       double ry = yAfterX;
       final double rz = zAfterX;
 
-      // Perspective projection with clamped Z denominator
-      final double safeZ = (viewDistance + rz).clamp(0.1, 10.0);
-      final double baseScale2 = (effectiveRadius / safeZ) * 2.0;
+      // Perspective projection with safe focal length scaling and clamped Z denominator (prevents near-plane explosion)
+      final double safeZ = (viewDistance + rz).clamp(0.65, 20.0);
+      final double baseScale2 = (effectiveRadius / safeZ) * viewDistance;
 
       // Projected screen coordinates before dispersion
       final double screenX = centerX + rx * baseScale2;
@@ -558,8 +558,8 @@ class BlobMath {
         extraPush = dispersion;
       }
 
-      // Apply dispersion push only to X and Y screen displacements
-      final double pushScale = 1.0 + extraPush;
+      // Apply dispersion push with safe ceiling to prevent tearing and distortion
+      final double pushScale = 1.0 + extraPush.clamp(0.0, 4.0);
       rx *= pushScale;
       ry *= pushScale;
 
