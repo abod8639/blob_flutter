@@ -119,12 +119,12 @@ void main() {
       expect(res1, isNotNull);
       expect(res1!.length, count * 2);
 
-      // Frame 2 (interleaved computation)
+      // Frame 2 (full computation without interleaving)
       final res2 = await worker.compute(params);
       expect(res2, isNotNull);
       expect(res2!.length, count * 2);
 
-      // Frame 3 (interleaved computation next phase)
+      // Frame 3 (full computation next frame)
       final res3 = await worker.compute(params);
       expect(res3, isNotNull);
       expect(res3!.length, count * 2);
