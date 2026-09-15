@@ -1464,7 +1464,8 @@ void main() {
         ),
       );
 
-      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      final element =
+          tester.element(find.byType(BlobFlutter)) as StatefulElement;
       final newWidget = BlobFlutter(
         controller: controller,
         particleCount: 500,
@@ -1472,7 +1473,7 @@ void main() {
       );
 
       expect(
-        () => state.didUpdateWidget(newWidget),
+        () => element.update(newWidget),
         throwsA(isA<BlobControllerConflictException>()),
       );
       expect(capturedError, isA<BlobControllerConflictException>());
@@ -1541,6 +1542,25 @@ void main() {
     testWidgets(
         '_onTick periodic checkTickVisibility detects offscreen and calls _syncTickerState (L729)',
         (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Offstage(
+              offstage: false,
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: BlobFlutter(
+                  autoPlay: false,
+                  autoPauseOffscreen: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
