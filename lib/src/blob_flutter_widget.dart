@@ -43,7 +43,7 @@ class BlobFlutter extends StatefulWidget {
   /// Defaults to `false` so that `WidgetTester.pumpAndSettle` does not time out.
   /// Set to `true` if your test suite explicitly pumps frames via `tester.pump(duration)`
   /// and expects tickers to run without manual activation.
-  static bool enableAutoPlayInTests = false;
+  static bool autoPlayInTests = false;
 
   /// Whether the current execution context is inside a Flutter test environment.
   static bool get isRunningInTest => BlobShaderHelper.isRunningInTest;
@@ -59,10 +59,10 @@ class BlobFlutter extends StatefulWidget {
   final bool? _isColorAnimated;
   final double? _colorAnimationSpeed;
   final double? _waveIntensity;
-  final bool? _enableHover;
-  final bool? _enableDragRotation;
-  final bool? _enableHoverRotation;
-  final bool? _enablePinchToScale;
+  final bool? _hover;
+  final bool? _dragRotation;
+  final bool? _hoverRotation;
+  final bool? _pinchToScale;
   final double? _rotationX;
   final double? _rotationY;
   final BlobNoiseType? _noiseType;
@@ -109,16 +109,16 @@ class BlobFlutter extends StatefulWidget {
   double get waveIntensity => _waveIntensity ?? 1.0;
 
   /// Whether particles disperse and react to mouse cursor hovering without clicking.
-  bool get enableHover => _enableHover ?? false;
+  bool get hover => _hover ?? false;
 
   /// Whether mouse/touch drag gestures rotate and spin the 3D object on the canvas.
-  bool get enableDragRotation => _enableDragRotation ?? false;
+  bool get dragRotation => _dragRotation ?? false;
 
   /// Whether moving the mouse cursor without clicking applies subtle 3D tilt towards the cursor.
-  bool get enableHoverRotation => _enableHoverRotation ?? false;
+  bool get hoverRotation => _hoverRotation ?? false;
 
   /// Whether multi-touch pinch-to-scale zooming is enabled.
-  bool get enablePinchToScale => _enablePinchToScale ?? false;
+  bool get pinchToScale => _pinchToScale ?? false;
 
   /// Initial persistent 3D orientation angle around the horizontal X-axis (pitch/tilt) in radians.
   double get rotationX => _rotationX ?? 0.0;
@@ -213,10 +213,10 @@ class BlobFlutter extends StatefulWidget {
     bool? isColorAnimated,
     double? colorAnimationSpeed,
     double? waveIntensity,
-    bool? enableHover,
-    bool? enableDragRotation,
-    bool? enableHoverRotation,
-    bool? enablePinchToScale,
+    bool? hover,
+    bool? dragRotation,
+    bool? hoverRotation,
+    bool? pinchToScale,
     this.interactive = true,
     this.hitTestBehavior = HitTestBehavior.translucent,
     double? rotationX,
@@ -240,10 +240,10 @@ class BlobFlutter extends StatefulWidget {
         _isColorAnimated = isColorAnimated,
         _colorAnimationSpeed = colorAnimationSpeed,
         _waveIntensity = waveIntensity,
-        _enableHover = enableHover,
-        _enableDragRotation = enableDragRotation,
-        _enableHoverRotation = enableHoverRotation,
-        _enablePinchToScale = enablePinchToScale,
+        _hover = hover,
+        _dragRotation = dragRotation,
+        _hoverRotation = hoverRotation,
+        _pinchToScale = pinchToScale,
         _rotationX = rotationX,
         _rotationY = rotationY,
         _noiseType = noiseType,
@@ -303,10 +303,10 @@ class BlobFlutter extends StatefulWidget {
     if (w._isColorAnimated != null) list.add('isColorAnimated');
     if (w._colorAnimationSpeed != null) list.add('colorAnimationSpeed');
     if (w._waveIntensity != null) list.add('waveIntensity');
-    if (w._enableHover != null) list.add('enableHover');
-    if (w._enableDragRotation != null) list.add('enableDragRotation');
-    if (w._enableHoverRotation != null) list.add('enableHoverRotation');
-    if (w._enablePinchToScale != null) list.add('enablePinchToScale');
+    if (w._hover != null) list.add('hover');
+    if (w._dragRotation != null) list.add('dragRotation');
+    if (w._hoverRotation != null) list.add('hoverRotation');
+    if (w._pinchToScale != null) list.add('pinchToScale');
     if (w._rotationX != null) list.add('rotationX');
     if (w._rotationY != null) list.add('rotationY');
     if (w._noiseType != null) list.add('noiseType');
@@ -382,7 +382,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   bool get _effectiveAutoPlay =>
       widget.autoPlay ??
-      (!BlobFlutter.isRunningInTest || BlobFlutter.enableAutoPlayInTests);
+      (!BlobFlutter.isRunningInTest || BlobFlutter.autoPlayInTests);
 
   bool get _effectiveSilentErrorLogging =>
       widget.silentErrorLogging ?? BlobFlutter.isRunningInTest;
@@ -432,10 +432,10 @@ class _ParticleBlobState extends State<BlobFlutter>
           touchRadiusFactor: widget.touchRadiusFactor,
           rotationX: widget.rotationX,
           rotationY: widget.rotationY,
-          enableHover: widget.enableHover,
-          enableDragRotation: widget.enableDragRotation,
-          enableHoverRotation: widget.enableHoverRotation,
-          enablePinchToScale: widget.enablePinchToScale,
+          hover: widget.hover,
+          dragRotation: widget.dragRotation,
+          hoverRotation: widget.hoverRotation,
+          pinchToScale: widget.pinchToScale,
           isColorAnimated: widget.isColorAnimated,
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
@@ -552,10 +552,10 @@ class _ParticleBlobState extends State<BlobFlutter>
             touchRadiusFactor: widget.touchRadiusFactor,
             rotationX: widget.rotationX,
             rotationY: widget.rotationY,
-            enableHover: widget.enableHover,
-            enableDragRotation: widget.enableDragRotation,
-            enableHoverRotation: widget.enableHoverRotation,
-            enablePinchToScale: widget.enablePinchToScale,
+            hover: widget.hover,
+            dragRotation: widget.dragRotation,
+            hoverRotation: widget.hoverRotation,
+            pinchToScale: widget.pinchToScale,
             isColorAnimated: widget.isColorAnimated,
             colorAnimationSpeed: widget.colorAnimationSpeed,
             waveIntensity: widget.waveIntensity,
@@ -601,17 +601,17 @@ class _ParticleBlobState extends State<BlobFlutter>
         _controller.setWaveIntensity(widget.waveIntensity);
         staticChanged = true;
       }
-      if (oldWidget.enableHover != widget.enableHover) {
-        _controller.setEnableHover(widget.enableHover);
+      if (oldWidget.hover != widget.hover) {
+        _controller.setHover(widget.hover);
       }
-      if (oldWidget.enableDragRotation != widget.enableDragRotation) {
-        _controller.setEnableDragRotation(widget.enableDragRotation);
+      if (oldWidget.dragRotation != widget.dragRotation) {
+        _controller.setDragRotation(widget.dragRotation);
       }
-      if (oldWidget.enableHoverRotation != widget.enableHoverRotation) {
-        _controller.setEnableHoverRotation(widget.enableHoverRotation);
+      if (oldWidget.hoverRotation != widget.hoverRotation) {
+        _controller.setHoverRotation(widget.hoverRotation);
       }
-      if (oldWidget.enablePinchToScale != widget.enablePinchToScale) {
-        _controller.setEnablePinchToScale(widget.enablePinchToScale);
+      if (oldWidget.pinchToScale != widget.pinchToScale) {
+        _controller.setPinchToScale(widget.pinchToScale);
       }
       if (oldWidget.rotationX != widget.rotationX) {
         _controller.setRotationX(widget.rotationX);
@@ -792,7 +792,7 @@ class _ParticleBlobState extends State<BlobFlutter>
             height: height,
             child: BlobInputListener(
               controller: _controller,
-              enableHover: widget.enableHover,
+              hover: widget.hover,
               hitTestBehavior: widget.hitTestBehavior,
               interactive: widget.interactive,
               onTouchesChanged: (touches) {
