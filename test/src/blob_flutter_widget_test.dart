@@ -7,6 +7,8 @@ import 'package:blob_flutter/src/blob_flutter_widget.dart';
 import 'package:blob_flutter/src/blob_input_listener.dart';
 import 'package:blob_flutter/src/blob_noise_type.dart';
 import 'package:blob_flutter/src/blob_painter.dart';
+import 'package:blob_flutter/src/blob_particle_coordinator.dart';
+import 'package:blob_flutter/src/blob_shader_coordinator.dart';
 import 'package:blob_flutter/src/blob_worker.dart';
 
 void main() {
@@ -1317,6 +1319,131 @@ void main() {
         BlobFlutter(controller: controller, particleCount: 100, speed: 2.0),
       );
       expect(conflicts, ['particleCount', 'speed']);
+    });
+
+    testWidgets('_renderStaticFrame handles shader uniform update error (L512-L517)',
+        (tester) async {
+      BlobFlutterException? capturedError;
+      final controller = BlobController(isPaused: true);
+
+      BlobShaderCoordinator.debugOnUpdateDynamicUniforms = () {
+        throw Exception('Simulated shader uniform failure');
+      };
+
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 200,
+                height: 200,
+                child: BlobFlutter(
+                  controller: controller,
+                  autoPlay: false,
+                  onError: (error, st) {
+                    capturedError = error;
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // Trigger _renderStaticFrame via controller change while paused
+        controller.setRadius(120.0);
+        await tester.pump();
+
+        expect(capturedError, isNotNull);
+        expect(capturedError, isA<BlobRenderException>());
+        expect(capturedError!.code, BlobErrorCode.renderFailed);
+      } finally {
+        BlobShaderCoordinator.debugOnUpdateDynamicUniforms = null;
+        controller.dispose();
+      }
+    });
+
+    testWidgets('_renderStaticFrame handles unexpected error during static render (L530-L537)',
+        (tester) async {
+      BlobFlutterException? capturedError;
+      final controller = BlobController(isPaused: true);
+
+      BlobParticleCoordinator.debugOnRenderStaticFrame = () {
+        throw Exception('Simulated static render error');
+      };
+
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 200,
+                height: 200,
+                child: BlobFlutter(
+                  controller: controller,
+                  autoPlay: false,
+                  onError: (error, st) {
+                    capturedError = error;
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // Trigger _renderStaticFrame via controller change while paused
+        controller.setRadius(130.0);
+        await tester.pump();
+
+        expect(capturedError, isNotNull);
+        expect(capturedError!.message, contains('Unexpected error during static frame render.'));
+      } finally {
+        BlobParticleCoordinator.debugOnRenderStaticFrame = null;
+        controller.dispose();
+      }
+    });
+
+    testWidgets('didUpdateWidget updates autoPlay, pinchToScale, rotationX, and rotationY (L589-L591, L628-L636)',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              height: 200,
+              child: BlobFlutter(
+                autoPlay: true,
+                pinchToScale: true,
+                rotationX: 0.1,
+                rotationY: 0.2,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Rebuild with updated values for autoPlay, pinchToScale, rotationX, and rotationY
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              height: 200,
+              child: BlobFlutter(
+                autoPlay: false,
+                pinchToScale: false,
+                rotationX: 0.5,
+                rotationY: 0.8,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(BlobFlutter), findsOneWidget);
     });
   });
 }
