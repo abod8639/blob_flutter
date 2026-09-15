@@ -400,6 +400,18 @@ class _ParticleBlobState extends State<BlobFlutter>
     ..strokeCap = StrokeCap.round
     ..isAntiAlias = true;
 
+  int _visibilityTickCounter = 0;
+  Offset _cachedCombinedOffset = Offset.zero;
+
+  void _updateCombinedOffset() {
+    _cachedCombinedOffset = Offset(
+      _controller.centerOffset.dx +
+          _controller.alignment.x * (_cachedSize.width / 2.0),
+      _controller.centerOffset.dy +
+          _controller.alignment.y * (_cachedSize.height / 2.0),
+    );
+  }
+
   final BlobTouchManager _touchManager = BlobTouchManager();
 
   // ── Shader & Dirty Tracking ────────────────────────────────────────────────
@@ -609,6 +621,7 @@ class _ParticleBlobState extends State<BlobFlutter>
   }
 
   void _onControllerChanged() {
+    _updateCombinedOffset();
     if (_controller.particleCount != _lastParticleCount) {
       _lastParticleCount = _controller.particleCount;
       _generateBuffers(_lastParticleCount);
@@ -885,10 +898,16 @@ class _ParticleBlobState extends State<BlobFlutter>
   void _onTick(Duration elapsed) {
     if (!mounted || _cachedSize == Size.zero) return;
 
-    if (widget.autoPauseOffscreen && !_isRenderObjectVisible()) {
-      _isOffscreen = true;
-      _syncTickerState();
-      return;
+    if (widget.autoPauseOffscreen) {
+      _visibilityTickCounter++;
+      if (_visibilityTickCounter >= 30) {
+        _visibilityTickCounter = 0;
+        if (!_isRenderObjectVisible()) {
+          _isOffscreen = true;
+          _syncTickerState();
+          return;
+        }
+      }
     }
 
     final double dt =
@@ -1058,6 +1077,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           final newSize = Size(width, height);
           if (newSize != _cachedSize) {
             _cachedSize = newSize;
+            _updateCombinedOffset();
             _shaderStaticDirty = true;
             if (_controller.isPaused) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1091,11 +1111,7 @@ class _ParticleBlobState extends State<BlobFlutter>
                         pointSize: _controller.pointSize,
                         fallbackColor: _color1,
                         fallbackGradient: _effectiveFallbackGradient,
-                        centerOffset: _controller.centerOffset +
-                            Offset(
-                              _controller.alignment.x * (_cachedSize.width / 2.0),
-                              _controller.alignment.y * (_cachedSize.height / 2.0),
-                            ),
+                        centerOffset: _cachedCombinedOffset,
                         radius: _controller.radius * _controller.scale,
                         paint: _paint,
                       ),
