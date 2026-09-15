@@ -293,7 +293,6 @@ void main() {
               width: 300,
               height: 300,
               child: BlobFlutter(
-                particleCount: 500,
                 controller: controller1,
               ),
             ),
@@ -314,7 +313,6 @@ void main() {
               width: 300,
               height: 300,
               child: BlobFlutter(
-                particleCount: 500,
                 controller: controller2,
               ),
             ),
@@ -646,7 +644,6 @@ void main() {
               width: 300,
               height: 300,
               child: BlobFlutter(
-                particleCount: 50,
                 controller: workerController,
               ),
             ),
@@ -1285,6 +1282,41 @@ void main() {
       );
       await tester.pump();
       expect(state.isTickerActive, isTrue);
+    });
+
+    testWidgets(
+        'BlobFlutter throws BlobControllerConflictException when parameters passed alongside controller',
+        (tester) async {
+      final controller = BlobController();
+      BlobFlutterException? capturedError;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              radius: 200.0,
+              onError: (error, stackTrace) {
+                capturedError = error;
+              },
+            ),
+          ),
+        ),
+      );
+
+      final dynamic exception = tester.takeException();
+      expect(exception, isA<BlobControllerConflictException>());
+      final conflictException = exception as BlobControllerConflictException;
+      expect(conflictException.conflictingParameters, contains('radius'));
+      expect(conflictException.toString(), contains('IGNORED'));
+      expect(conflictException.toString(), contains('radius: ...,'));
+      expect(capturedError, isA<BlobControllerConflictException>());
+
+      // Verifying static helper findConflictingParameters
+      final conflicts = BlobFlutter.findConflictingParameters(
+        BlobFlutter(controller: controller, particleCount: 100, speed: 2.0),
+      );
+      expect(conflicts, ['particleCount', 'speed']);
     });
   });
 }
