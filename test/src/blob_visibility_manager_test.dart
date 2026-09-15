@@ -6,8 +6,7 @@ void main() {
   group('BlobVisibilityManager Unit & Widget Tests', () {
     testWidgets('removes scroll listener when scroll position changes or detaches (L45)',
         (tester) async {
-      bool stateChanged = false;
-      final manager = BlobVisibilityManager(onStateChanged: () => stateChanged = true);
+      final manager = BlobVisibilityManager(onStateChanged: () {});
 
       final scrollController1 = ScrollController();
       final scrollController2 = ScrollController();
