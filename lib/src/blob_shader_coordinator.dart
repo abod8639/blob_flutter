@@ -105,54 +105,69 @@ class BlobShaderCoordinator {
   }
 
   /// Pushes static and dynamic uniforms to the GPU fragment shader.
+  ///
+  /// If any uniform push call throws (e.g., invalid uniform index or GPU
+  /// context loss), the shader is automatically disabled and [onError] is
+  /// called with a [BlobRenderException], causing the widget to fall back
+  /// to CPU point rendering for subsequent frames.
   void updateDynamicUniforms({
     required BlobController controller,
     required Gradient widgetGradient,
     required Size cachedSize,
     required double time,
+    void Function(BlobRenderException error)? onError,
   }) {
     final s = _shader;
     if (s == null) return;
 
-    final currentGradient = getEffectiveGradient(controller, widgetGradient);
-    if (currentGradient != _lastPushedGradient) {
-      _lastPushedGradient = currentGradient;
-      _shaderStaticDirty = true;
-      _shaderColorsDirty = true;
-    }
+    try {
+      final currentGradient = getEffectiveGradient(controller, widgetGradient);
+      if (currentGradient != _lastPushedGradient) {
+        _lastPushedGradient = currentGradient;
+        _shaderStaticDirty = true;
+        _shaderColorsDirty = true;
+      }
 
-    if (_shaderStaticDirty) {
-      BlobShaderHelper.pushStaticUniforms(
-        shader: s,
-        size: cachedSize,
-        gradient: currentGradient,
-        isColorAnimated: controller.isColorAnimated,
-        colorAnimationSpeed: controller.colorAnimationSpeed,
-        waveIntensity: controller.waveIntensity,
-        centerOffset: controller.centerOffset,
-        radius: controller.radius * controller.scale,
-        alignment: controller.alignment,
-      );
-      _shaderStaticDirty = false;
-    }
+      if (_shaderStaticDirty) {
+        BlobShaderHelper.pushStaticUniforms(
+          shader: s,
+          size: cachedSize,
+          gradient: currentGradient,
+          isColorAnimated: controller.isColorAnimated,
+          colorAnimationSpeed: controller.colorAnimationSpeed,
+          waveIntensity: controller.waveIntensity,
+          centerOffset: controller.centerOffset,
+          radius: controller.radius * controller.scale,
+          alignment: controller.alignment,
+        );
+        _shaderStaticDirty = false;
+      }
 
-    // Index 2: uTime
-    s.setFloat(2, time);
+      // Index 2: uTime
+      s.setFloat(2, time);
 
-    if (controller.isRainbowMode) {
-      BlobShaderHelper.pushColors(
-        shader: s,
-        colors: getEffectiveColors(controller, widgetGradient, time),
-        isRainbowMode: true,
+      if (controller.isRainbowMode) {
+        BlobShaderHelper.pushColors(
+          shader: s,
+          colors: getEffectiveColors(controller, widgetGradient, time),
+          isRainbowMode: true,
+        );
+      } else if (_shaderColorsDirty) {
+        BlobShaderHelper.pushColors(
+          shader: s,
+          colors: getEffectiveColors(controller, widgetGradient, time),
+          stops: currentGradient.stops,
+          isRainbowMode: false,
+        );
+        _shaderColorsDirty = false;
+      }
+    } catch (err, st) {
+      // Disable the shader so the widget falls back to CPU point rendering.
+      _shader?.dispose();
+      _shader = null;
+      onError?.call(
+        BlobRenderException.shaderUniformFailed(cause: err, stackTrace: st),
       );
-    } else if (_shaderColorsDirty) {
-      BlobShaderHelper.pushColors(
-        shader: s,
-        colors: getEffectiveColors(controller, widgetGradient, time),
-        stops: currentGradient.stops,
-        isRainbowMode: false,
-      );
-      _shaderColorsDirty = false;
     }
   }
 
