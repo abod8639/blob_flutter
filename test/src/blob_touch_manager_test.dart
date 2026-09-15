@@ -71,6 +71,23 @@ void main() {
       manager.updateLocalTouches(savedContext);
       expect(identical(manager.encodedTouches, prevBuffer), true);
 
+      // Re-use cached RenderBox when touches change while still attached (covers box != null && box.attached)
+      manager.updateActiveTouches([
+        const Offset(70, 130),
+      ]);
+      manager.updateLocalTouches(savedContext);
+      expect(manager.localTouches.length, 1);
+      expect(manager.localTouches[0], const Offset(20, 30));
+
+      // When cached box becomes unattached (!box.attached)
+      await tester.pumpWidget(const SizedBox());
+      manager.updateActiveTouches([
+        const Offset(80, 140),
+      ]);
+      manager.updateLocalTouches(savedContext);
+      expect(manager.localTouches.length, 1);
+      expect(manager.localTouches[0], const Offset(80, 140));
+
       // Clear touches
       manager.updateActiveTouches([]);
       manager.updateLocalTouches(savedContext);
