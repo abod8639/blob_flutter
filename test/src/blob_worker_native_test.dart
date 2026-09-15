@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_compute_params.dart';
+import 'package:blob_flutter/src/blob_exception.dart';
 import 'package:blob_flutter/src/blob_math.dart';
 import 'package:blob_flutter/src/blob_noise_type.dart';
 import 'package:blob_flutter/src/blob_worker_native.dart';
@@ -75,6 +76,46 @@ void main() {
 
       final result = await worker.compute(params);
       expect(result, isNull);
+      worker.dispose();
+    });
+
+    test('dispose before handshake completes the readyCompleter with error',
+        () async {
+      final worker = BlobWorker();
+      const count = 10;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      // Start init (begins the handshake async), then immediately dispose.
+      final initFuture = worker.init(sphere, count);
+      worker.dispose();
+
+      // The future should complete with a BlobWorkerException, not hang forever.
+      bool caughtError = false;
+      try {
+        await initFuture;
+      } on BlobWorkerException {
+        caughtError = true;
+      } catch (_) {
+        caughtError = true;
+      }
+      expect(caughtError, isTrue);
+    });
+
+    test('init accepts and does not call onError when worker starts normally',
+        () async {
+      final worker = BlobWorker();
+      const count = 20;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      BlobWorkerException? receivedError;
+      await worker.init(
+        sphere,
+        count,
+        onError: (e) => receivedError = e,
+      );
+
+      expect(worker.isReady, true);
+      expect(receivedError, isNull);
       worker.dispose();
     });
   });
