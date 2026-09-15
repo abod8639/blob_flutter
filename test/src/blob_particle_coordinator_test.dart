@@ -109,20 +109,6 @@ void main() {
       coordinator.generateBuffers(20);
       final failingWorker = FailingComputeWorker();
 
-      coordinator.startWorker(
-        workerFactory: () => failingWorker,
-        particleCount: 20,
-        onError: (_, __, {required bool isAsync}) {},
-        onWorkerReady: () {},
-      );
-
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(coordinator.isWorkerReady, isTrue);
-
-      final controller = BlobController();
-      final touchManager = BlobTouchManager();
-      BlobFlutterException? capturedComputeError;
-
       late BuildContext savedContext;
       await tester.pumpWidget(
         MaterialApp(
@@ -134,6 +120,20 @@ void main() {
           ),
         ),
       );
+
+      coordinator.startWorker(
+        workerFactory: () => failingWorker,
+        particleCount: 20,
+        onError: (_, __, {required bool isAsync}) {},
+        onWorkerReady: () {},
+      );
+
+      await tester.pump();
+      expect(coordinator.isWorkerReady, isTrue);
+
+      final controller = BlobController();
+      final touchManager = BlobTouchManager();
+      BlobFlutterException? capturedComputeError;
 
       coordinator.processTick(
         controller: controller,
@@ -148,8 +148,8 @@ void main() {
         },
       );
 
-      // Wait for the async compute error to propagate through .catchError (L224-L228)
-      await tester.pump(const Duration(milliseconds: 20));
+      // Let microtasks and catchError execute
+      await tester.pump();
 
       expect(capturedComputeError, isNotNull);
       expect(capturedComputeError, isA<BlobWorkerException>());
