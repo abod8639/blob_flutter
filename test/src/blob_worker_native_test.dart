@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_compute_params.dart';
@@ -184,6 +186,67 @@ void main() {
       );
 
       worker.dispose();
+    });
+
+    test(
+        'init completes with error when isolate spawn fails asynchronously (L106-L111)',
+        () async {
+      final worker = BlobWorker();
+      const count = 10;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      BlobWorker.isolateSpawner = (
+        void Function(List<Object?>) entry,
+        List<Object?> message, {
+        bool errorsAreFatal = false,
+        SendPort? onError,
+        String? debugName,
+      }) {
+        return Future.error(Exception('Spawn failed async'));
+      };
+
+      try {
+        await expectLater(
+          worker.init(sphere, count),
+          throwsA(isA<BlobWorkerException>().having(
+            (e) => e.code,
+            'code',
+            BlobErrorCode.workerSpawnFailed,
+          )),
+        );
+      } finally {
+        BlobWorker.isolateSpawner = Isolate.spawn;
+        worker.dispose();
+      }
+    });
+
+    test(
+        'catchError in init does not re-complete readyCompleter if already disposed',
+        () async {
+      final worker = BlobWorker();
+      const count = 10;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      final completer = Completer<Isolate>();
+      BlobWorker.isolateSpawner = (
+        void Function(List<Object?>) entry,
+        List<Object?> message, {
+        bool errorsAreFatal = false,
+        SendPort? onError,
+        String? debugName,
+      }) {
+        return completer.future;
+      };
+
+      try {
+        final initFuture = worker.init(sphere, count);
+        worker.dispose();
+        // Now reject the spawn future after worker is already disposed
+        completer.completeError(Exception('Spawn failed after dispose'));
+        await expectLater(initFuture, completes);
+      } finally {
+        BlobWorker.isolateSpawner = Isolate.spawn;
+      }
     });
   });
 }
