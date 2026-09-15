@@ -1545,8 +1545,8 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: Offstage(
-              offstage: false,
+            body: Transform.translate(
+              offset: Offset(0, 5000),
               child: SizedBox(
                 width: 200,
                 height: 200,
@@ -1561,27 +1561,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Offstage(
-              offstage: true,
-              child: SizedBox(
-                width: 200,
-                height: 200,
-                child: BlobFlutter(
-                  autoPlay: false,
-                  autoPauseOffscreen: true,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-
-      final state =
-          tester.state(find.byType(BlobFlutter, skipOffstage: false)) as dynamic;
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
       expect(state.isOffscreen, isFalse);
 
       // Trigger 30 ticks so checkTickVisibility reaches 30th tick
