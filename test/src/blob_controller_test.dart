@@ -232,6 +232,15 @@ void main() {
       expect(controller.rotationX, 0.0);
       expect(controller.rotationY, 0.0);
 
+      // Test resetGeometry when already at default values
+      controller.resetGeometry();
+
+      // Test resetGeometry when only rotationY is non-zero (L729)
+      controller.addRotationImpulse(const Offset(10, 0));
+      controller.resetGeometry();
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
+
       controller.setScale(1.8);
       controller.setCenterOffset(const Offset(40, -25));
       controller.addRotationImpulse(const Offset(15, 20));
@@ -248,6 +257,9 @@ void main() {
       controller.resetAll();
       expect(controller.rotationX, 0.0);
       expect(controller.rotationY, 0.0);
+
+      // Test resetAll when already at default values
+      controller.resetAll();
 
       // Call resetAll again when already at default values (tests false branches)
       controller.resetAll();
@@ -359,6 +371,15 @@ void main() {
           controller.rotationX, closeTo(1.0 + (20.0 * 0.005) * 0.92, 0.0001));
 
       // After reset, returns to zero
+      controller.resetRotation();
+      expect(controller.rotationX, 0.0);
+      expect(controller.rotationY, 0.0);
+
+      // Calling resetRotation when already zero (L700 false branch)
+      controller.resetRotation();
+
+      // Test resetRotation when only rotationY is non-zero (L700 true branch)
+      controller.addRotationImpulse(const Offset(10, 0));
       controller.resetRotation();
       expect(controller.rotationX, 0.0);
       expect(controller.rotationY, 0.0);
