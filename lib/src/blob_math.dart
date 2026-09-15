@@ -448,6 +448,18 @@ class BlobMath {
     final double cosRotX = cos(rotationX);
     final double sinRotX = sin(rotationX);
 
+    // Precompute combined 3x3 rotation matrix R = Rx * Ry
+    // Eliminates per-particle matrix calculation and dependency stalls
+    final double m00 = cosRotY;
+    final double m02 = sinRotY;
+    final double m10 = sinRotX * sinRotY;
+    final double m11 = cosRotX;
+    final double m12 = -sinRotX * cosRotY;
+    final double m20 = -cosRotX * sinRotY;
+    final double m21 = sinRotX;
+    final double m22 = cosRotX * cosRotY;
+    final bool isPitchZero = rotationX == 0.0;
+
     // Precalculate time constant for noise functions
     final double time15 = time * 1.5;
     final double f = noiseFrequency;
@@ -483,117 +495,228 @@ class BlobMath {
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
     final _NoiseFunc noise = _selectNoise(noiseType);
     final bool isWave = noiseType == BlobNoiseType.wave;
+    final bool hasInteraction = hasPointers || dispersion > 0.0;
 
-    // Constants for flat square carpet tilt (approx. 50 deg for 3D perspective)
-    const double sinTilt = 0.7660444; // sin(50°)
-    const double cosTilt = 0.6427876; // cos(50°)
-    final int cols = count > 0 ? max(1, sqrt(count).round()) : 1;
-    final int rows = count > 0 ? max(1, (count / cols).ceil()) : 1;
-    final int lastRowPts = count - (rows - 1) * cols;
+    if (isWave) {
+      // Constants for flat square carpet tilt (approx. 50 deg for 3D perspective)
+      const double sinTilt = 0.7660444; // sin(50°)
+      const double cosTilt = 0.6427876; // cos(50°)
+      final int cols = count > 0 ? max(1, sqrt(count).round()) : 1;
+      final int rows = count > 0 ? max(1, (count / cols).ceil()) : 1;
+      final int lastRowPts = count - (rows - 1) * cols;
 
-    for (int i = startIndex; i < count; i += stride) {
-      final int base = i * 3;
+      if (!hasInteraction) {
+        // Fast path for wave (no touch / dispersion)
+        for (int i = startIndex; i < count; i += stride) {
+          final int r = i ~/ cols;
+          final int c = i % cols;
+          final int ptsInRow = (r == rows - 1) ? lastRowPts : cols;
 
-      double px;
-      double py;
-      double pz;
+          final double u = ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
+          final double v = rows > 1 ? (r / (rows - 1)) * 2.0 - 1.0 : 0.0;
 
-      if (isWave) {
-        // ── Flat Square Carpet / Net (Full square grid with wave heights) ───
-        final int r = i ~/ cols;
-        final int c = i % cols;
-        final int ptsInRow = (r == rows - 1) ? lastRowPts : cols;
+          final double phase1 = (u + v) * 3.5 * f + time * 2.5;
+          final double w1 = sin(phase1) + 0.25 * cos(phase1 * 2.0);
+          final double phase2 = (u - v) * 3.0 * f - time * 1.8;
+          final double w2 = cos(phase2) * 0.65;
+          final double rSq = sqrt(u * u + v * v);
+          final double phase3 = rSq * 5.5 * f - time15 * 1.6;
+          final double w3 = sin(phase3) * 0.45;
+          final double phase4 = (u * 2.0 - v * 3.0) * 3.0 * f + time * 3.0;
+          final double w4 = cos(phase4) * 0.2;
 
-        final double u = ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
-        final double v = rows > 1 ? (r / (rows - 1)) * 2.0 - 1.0 : 0.0;
+          final double h = (w1 + w2 + w3 + w4) * 0.18 * blobiness;
 
-        // Multi-directional traveling wave undulations across the square plane
-        final double phase1 = (u + v) * 3.5 * f + time * 2.5;
-        final double w1 =
-            sin(phase1) + 0.25 * cos(phase1 * 2.0); // Stokes crest
-        final double phase2 = (u - v) * 3.0 * f - time * 1.8;
-        final double w2 = cos(phase2) * 0.65;
-        final double rSq = sqrt(u * u + v * v);
-        final double phase3 = rSq * 5.5 * f - time15 * 1.6;
-        final double w3 = sin(phase3) * 0.45;
-        final double phase4 = (u * 2.0 - v * 3.0) * 3.0 * f + time * 3.0;
-        final double w4 = cos(phase4) * 0.2;
+          final double px = u;
+          final double py = v * sinTilt + h * cosTilt;
+          final double pz = v * cosTilt - h * sinTilt;
 
-        final double h = (w1 + w2 + w3 + w4) * 0.18 * blobiness;
+          final double rx = px * m00 + pz * m02;
+          final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
+          final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
 
-        // Orient in 3D space with tilted perspective
-        px = u;
-        py = v * sinTilt + h * cosTilt;
-        pz = v * cosTilt - h * sinTilt;
+          double safeZ = viewDistance + rz;
+          if (safeZ < 0.65) {
+            safeZ = 0.65;
+          } else if (safeZ > 20.0) {
+            safeZ = 20.0;
+          }
+          final double baseScale2 = focalLength / safeZ;
+
+          final int outIndex = i * 2;
+          projectedPoints[outIndex] = centerX + rx * baseScale2;
+          projectedPoints[outIndex + 1] = centerY + ry * baseScale2;
+        }
       } else {
-        px = baseSphere[base];
-        py = baseSphere[base + 1];
-        pz = baseSphere[base + 2];
+        // Interactive path for wave (touch interaction & dispersion)
+        for (int i = startIndex; i < count; i += stride) {
+          final int r = i ~/ cols;
+          final int c = i % cols;
+          final int ptsInRow = (r == rows - 1) ? lastRowPts : cols;
 
-        // Apply procedural noise displacement via the pre-selected function
+          final double u = ptsInRow > 1 ? (c / (ptsInRow - 1)) * 2.0 - 1.0 : 0.0;
+          final double v = rows > 1 ? (r / (rows - 1)) * 2.0 - 1.0 : 0.0;
+
+          final double phase1 = (u + v) * 3.5 * f + time * 2.5;
+          final double w1 = sin(phase1) + 0.25 * cos(phase1 * 2.0);
+          final double phase2 = (u - v) * 3.0 * f - time * 1.8;
+          final double w2 = cos(phase2) * 0.65;
+          final double rSq = sqrt(u * u + v * v);
+          final double phase3 = rSq * 5.5 * f - time15 * 1.6;
+          final double w3 = sin(phase3) * 0.45;
+          final double phase4 = (u * 2.0 - v * 3.0) * 3.0 * f + time * 3.0;
+          final double w4 = cos(phase4) * 0.2;
+
+          final double h = (w1 + w2 + w3 + w4) * 0.18 * blobiness;
+
+          final double px = u;
+          final double py = v * sinTilt + h * cosTilt;
+          final double pz = v * cosTilt - h * sinTilt;
+
+          final double rx = px * m00 + pz * m02;
+          final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
+          final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+
+          double safeZ = viewDistance + rz;
+          if (safeZ < 0.65) {
+            safeZ = 0.65;
+          } else if (safeZ > 20.0) {
+            safeZ = 20.0;
+          }
+          final double baseScale2 = focalLength / safeZ;
+
+          final double screenX = centerX + rx * baseScale2;
+          final double screenY = centerY + ry * baseScale2;
+
+          double extraPush = 0.0;
+          if (hasPointers) {
+            if (screenX >= touchMinX &&
+                screenX <= touchMaxX &&
+                screenY >= touchMinY &&
+                screenY <= touchMaxY) {
+              for (int t = 0; t < touchCount; t++) {
+                final double touchDx = activeTouches[t * 2];
+                final double touchDy = activeTouches[t * 2 + 1];
+                final double dx = screenX - touchDx;
+                final double dy = screenY - touchDy;
+                final double distSq = dx * dx + dy * dy;
+                if (distSq < effectiveTouchRadiusSq) {
+                  final double normDistSq = distSq / effectiveTouchRadiusSq;
+                  final double influence = 1.0 - normDistSq;
+                  final double smoothInfluence = influence * influence;
+                  extraPush += dispersion * smoothInfluence * 2.5;
+                }
+              }
+            }
+          } else if (dispersion > 0.0) {
+            extraPush = dispersion;
+          }
+
+          final int outIndex = i * 2;
+          if (extraPush > 0.0) {
+            final double pushScale = 1.0 + (extraPush > 4.0 ? 4.0 : extraPush);
+            final double scaledBase = baseScale2 * pushScale;
+            projectedPoints[outIndex] = centerX + rx * scaledBase;
+            projectedPoints[outIndex + 1] = centerY + ry * scaledBase;
+          } else {
+            projectedPoints[outIndex] = screenX;
+            projectedPoints[outIndex + 1] = screenY;
+          }
+        }
+      }
+    } else if (!hasInteraction) {
+      // ── Ultra-Fast Path (Zero touch / dispersion branches - 99.9% of frames) ──
+      for (int i = startIndex; i < count; i += stride) {
+        final int base = i * 3;
+        double px = baseSphere[base];
+        double py = baseSphere[base + 1];
+        double pz = baseSphere[base + 2];
+
         final double displacement =
             noise(px, py, pz, f, time, time15, blobiness);
         px *= displacement;
         py *= displacement;
         pz *= displacement;
+
+        final double rx = px * m00 + pz * m02;
+        final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
+        final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+
+        double safeZ = viewDistance + rz;
+        if (safeZ < 0.65) {
+          safeZ = 0.65;
+        } else if (safeZ > 20.0) {
+          safeZ = 20.0;
+        }
+        final double baseScale2 = focalLength / safeZ;
+
+        final int outIndex = i * 2;
+        projectedPoints[outIndex] = centerX + rx * baseScale2;
+        projectedPoints[outIndex + 1] = centerY + ry * baseScale2;
       }
+    } else {
+      // ── Interactive Path (Touch / Dispersion Active) ──
+      for (int i = startIndex; i < count; i += stride) {
+        final int base = i * 3;
+        double px = baseSphere[base];
+        double py = baseSphere[base + 1];
+        double pz = baseSphere[base + 2];
 
-      // Apply rotations (Y-axis first, then X-axis)
-      final double xAfterY = px * cosRotY + pz * sinRotY;
-      final double zAfterY = -px * sinRotY + pz * cosRotY;
-      final double yAfterX = py * cosRotX - zAfterY * sinRotX;
-      final double zAfterX = py * sinRotX + zAfterY * cosRotX;
+        final double displacement =
+            noise(px, py, pz, f, time, time15, blobiness);
+        px *= displacement;
+        py *= displacement;
+        pz *= displacement;
 
-      final double rx = xAfterY;
-      final double ry = yAfterX;
-      final double rz = zAfterX;
+        final double rx = px * m00 + pz * m02;
+        final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
+        final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
 
-      // Perspective projection with safe focal length scaling and clamped Z denominator (prevents near-plane explosion)
-      final double safeZ = (viewDistance + rz).clamp(0.65, 20.0);
-      final double baseScale2 = focalLength / safeZ;
+        double safeZ = viewDistance + rz;
+        if (safeZ < 0.65) {
+          safeZ = 0.65;
+        } else if (safeZ > 20.0) {
+          safeZ = 20.0;
+        }
+        final double baseScale2 = focalLength / safeZ;
 
-      // Projected screen coordinates before dispersion
-      final double screenX = centerX + rx * baseScale2;
-      final double screenY = centerY + ry * baseScale2;
+        final double screenX = centerX + rx * baseScale2;
+        final double screenY = centerY + ry * baseScale2;
 
-      // Direction-aware touch dispersion with strong central peak and smooth edge fade-out
-      double extraPush = 0.0;
-      if (hasPointers) {
-        if (screenX >= touchMinX &&
-            screenX <= touchMaxX &&
-            screenY >= touchMinY &&
-            screenY <= touchMaxY) {
-          for (int t = 0; t < touchCount; t++) {
-            final double touchDx = activeTouches[t * 2];
-            final double touchDy = activeTouches[t * 2 + 1];
-            final double dx = screenX - touchDx;
-            final double dy = screenY - touchDy;
-            final double distSq = dx * dx + dy * dy;
-            if (distSq < effectiveTouchRadiusSq) {
-              // PERF-03: Avoid sqrt by using squared distances for influence calculation
-              final double normDistSq = distSq / effectiveTouchRadiusSq;
-              final double influence = 1.0 - normDistSq;
-              // Smooth quadratic falloff: strong effect at center, vanishing smoothly at the edges
-              final double smoothInfluence = influence * influence;
-              extraPush += dispersion * smoothInfluence * 2.5;
+        double extraPush = 0.0;
+        if (hasPointers) {
+          if (screenX >= touchMinX &&
+              screenX <= touchMaxX &&
+              screenY >= touchMinY &&
+              screenY <= touchMaxY) {
+            for (int t = 0; t < touchCount; t++) {
+              final double touchDx = activeTouches[t * 2];
+              final double touchDy = activeTouches[t * 2 + 1];
+              final double dx = screenX - touchDx;
+              final double dy = screenY - touchDy;
+              final double distSq = dx * dx + dy * dy;
+              if (distSq < effectiveTouchRadiusSq) {
+                final double normDistSq = distSq / effectiveTouchRadiusSq;
+                final double influence = 1.0 - normDistSq;
+                final double smoothInfluence = influence * influence;
+                extraPush += dispersion * smoothInfluence * 2.5;
+              }
             }
           }
+        } else if (dispersion > 0.0) {
+          extraPush = dispersion;
         }
-      } else if (dispersion > 0.0) {
-        // Controller-driven uniform radial dispersion
-        extraPush = dispersion;
-      }
 
-      final int outIndex = i * 2;
-      if (extraPush > 0.0) {
-        // Apply dispersion push with safe ceiling to prevent tearing and distortion
-        final double pushScale = 1.0 + (extraPush > 4.0 ? 4.0 : extraPush);
-        final double scaledBase = baseScale2 * pushScale;
-        projectedPoints[outIndex] = centerX + rx * scaledBase;
-        projectedPoints[outIndex + 1] = centerY + ry * scaledBase;
-      } else {
-        projectedPoints[outIndex] = screenX;
-        projectedPoints[outIndex + 1] = screenY;
+        final int outIndex = i * 2;
+        if (extraPush > 0.0) {
+          final double pushScale = 1.0 + (extraPush > 4.0 ? 4.0 : extraPush);
+          final double scaledBase = baseScale2 * pushScale;
+          projectedPoints[outIndex] = centerX + rx * scaledBase;
+          projectedPoints[outIndex + 1] = centerY + ry * scaledBase;
+        } else {
+          projectedPoints[outIndex] = screenX;
+          projectedPoints[outIndex + 1] = screenY;
+        }
       }
     }
   }
