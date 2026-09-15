@@ -243,7 +243,7 @@ void main() {
 
       expect(canvas.drawRawPointsCallCount, 1);
       expect(canvas.paint?.shader, isNull);
-      expect(canvas.paint?.color, const Color(0xFFFF9800));
+      expect(canvas.paint?.color.toARGB32(), const Color(0xFFFF9800).toARGB32());
     });
 
     test(
@@ -265,9 +265,9 @@ void main() {
       expect(canvas.drawRawPointsCallCount, 2);
       expect(canvas.recordedStrokeWidths.length, 2);
       expect(canvas.recordedStrokeWidths[0], closeTo(4.0 * 2.2, 0.001));
-      expect(canvas.recordedColors[0], const Color(0x33000000));
+      expect(canvas.recordedColors[0].toARGB32(), const Color(0x33000000).toARGB32());
       expect(canvas.recordedStrokeWidths[1], 4.0);
-      expect(canvas.recordedColors[1], const Color(0xFF000000));
+      expect(canvas.recordedColors[1].toARGB32(), const Color(0xFF000000).toARGB32());
     });
 
     test(
