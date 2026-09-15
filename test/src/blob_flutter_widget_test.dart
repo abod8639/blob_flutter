@@ -1543,10 +1543,10 @@ void main() {
         '_onTick periodic checkTickVisibility detects offscreen and calls _syncTickerState (L729)',
         (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
             body: Transform.translate(
-              offset: Offset(0, 5000),
+              offset: const Offset(0, 5000),
               child: SizedBox(
                 width: 200,
                 height: 200,
