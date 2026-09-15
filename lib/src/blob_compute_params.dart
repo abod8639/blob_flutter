@@ -56,26 +56,52 @@ class ProjectParamsFlat {
 
   /// Packs all fields into a [List] that satisfies Dart's isolate message
   /// protocol (primitives + [Float32List]).
-  List<Object?> toMessage() => [
-        count,
-        radius,
-        scale,
-        centerOffsetX,
-        centerOffsetY,
-        blobiness,
-        dispersion,
-        rotationX,
-        rotationY,
-        time,
-        viewportWidth,
-        viewportHeight,
-        autoRotationSpeed,
-        noiseFrequency,
-        viewDistance,
-        noiseTypeIndex,
-        touchRadiusFactor,
-        encodedTouches,
-      ];
+  ///
+  /// Optionally populates and returns [buffer] if provided (must have length >= 18)
+  /// to eliminate per-frame list allocations.
+  List<Object?> toMessage([List<Object?>? buffer]) {
+    if (buffer != null && buffer.length >= 18) {
+      buffer[0] = count;
+      buffer[1] = radius;
+      buffer[2] = scale;
+      buffer[3] = centerOffsetX;
+      buffer[4] = centerOffsetY;
+      buffer[5] = blobiness;
+      buffer[6] = dispersion;
+      buffer[7] = rotationX;
+      buffer[8] = rotationY;
+      buffer[9] = time;
+      buffer[10] = viewportWidth;
+      buffer[11] = viewportHeight;
+      buffer[12] = autoRotationSpeed;
+      buffer[13] = noiseFrequency;
+      buffer[14] = viewDistance;
+      buffer[15] = noiseTypeIndex;
+      buffer[16] = touchRadiusFactor;
+      buffer[17] = encodedTouches;
+      return buffer;
+    }
+    return [
+      count,
+      radius,
+      scale,
+      centerOffsetX,
+      centerOffsetY,
+      blobiness,
+      dispersion,
+      rotationX,
+      rotationY,
+      time,
+      viewportWidth,
+      viewportHeight,
+      autoRotationSpeed,
+      noiseFrequency,
+      viewDistance,
+      noiseTypeIndex,
+      touchRadiusFactor,
+      encodedTouches,
+    ];
+  }
 
   /// Restores a [ProjectParamsFlat] from a message previously produced by
   /// [toMessage].
