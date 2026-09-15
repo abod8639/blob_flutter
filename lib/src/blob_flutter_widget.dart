@@ -1,18 +1,17 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import 'blob_compute_params.dart';
 import 'blob_controller.dart';
 import 'blob_exception.dart';
 import 'blob_input_listener.dart';
 import 'blob_math.dart';
 import 'blob_noise_type.dart';
 import 'blob_painter.dart';
+import 'blob_particle_coordinator.dart';
+import 'blob_shader_coordinator.dart';
 import 'blob_shader_helper.dart';
 import 'blob_touch_manager.dart';
+import 'blob_visibility_manager.dart';
 import 'blob_worker.dart';
 
 /// A high-performance Flutter widget that renders an animated 3D particle blob.
@@ -22,8 +21,8 @@ import 'blob_worker.dart';
 /// projected to 2D via perspective division and rendered in a single GPU draw
 /// call using [Canvas.drawRawPoints].
 ///
-/// All rendering data is managed in flat [Float32List] buffers to eliminate
-/// Garbage Collection pressure. A [ui.FragmentShader] handles per-pixel
+/// All rendering data is managed in flat `Float32List` buffers to eliminate
+/// Garbage Collection pressure. A `FragmentShader` handles per-pixel
 /// coloring on the GPU.
 ///
 /// ## Interaction & Physics
@@ -41,7 +40,7 @@ class BlobFlutter extends StatefulWidget {
   /// Global toggle controlling whether [BlobFlutter] automatically starts
   /// playing when running in a test environment (`flutter_test`).
   ///
-  /// Defaults to `false` so that [WidgetTester.pumpAndSettle] does not time out.
+  /// Defaults to `false` so that `WidgetTester.pumpAndSettle` does not time out.
   /// Set to `true` if your test suite explicitly pumps frames via `tester.pump(duration)`
   /// and expects tickers to run without manual activation.
   static bool enableAutoPlayInTests = false;
@@ -200,7 +199,6 @@ class BlobFlutter extends StatefulWidget {
   /// - [HitTestBehavior.deferToChild]: Only intercepts events if a hit-testable child is tapped.
   final HitTestBehavior hitTestBehavior;
 
-
   /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
     super.key,
@@ -332,7 +330,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ── Animation ──────────────────────────────────────────────────────────────
 
-  late Ticker _ticker;
+  late final Ticker _ticker;
   Duration _lastElapsed = Duration.zero;
 
   /// Continuous animation clock (seconds). Wraps to prevent float precision loss.
@@ -342,23 +340,12 @@ class _ParticleBlobState extends State<BlobFlutter>
   final ValueNotifier<int> _frameNotifier = ValueNotifier<int>(0);
   int _frameCount = 0;
 
-  // ── Lifecycle & Offscreen State ────────────────────────────────────────────
+  // ── Coordinators & Managers ───────────────────────────────────────────────
 
-  bool _isAppInBackground = false;
-  bool _isOffscreen = false;
-  ScrollPosition? _scrollPosition;
-
-  /// Whether the internal animation ticker is currently actively ticking.
-  @visibleForTesting
-  bool get isTickerActive => _ticker.isActive;
-
-  /// Whether the widget has detected that it is currently outside the screen viewport.
-  @visibleForTesting
-  bool get isOffscreen => _isOffscreen;
-
-  /// Whether the widget has detected that the application is in background/inactive state.
-  @visibleForTesting
-  bool get isAppInBackground => _isAppInBackground;
+  late final BlobVisibilityManager _visibilityManager;
+  late final BlobShaderCoordinator _shaderCoordinator;
+  late final BlobParticleCoordinator _particleCoordinator;
+  final BlobTouchManager _touchManager = BlobTouchManager();
 
   // ── Controller ─────────────────────────────────────────────────────────────
 
@@ -366,92 +353,30 @@ class _ParticleBlobState extends State<BlobFlutter>
   bool _ownsController = false;
   int _lastParticleCount = 5000;
 
-  // ── Particle Data & Touch Manager ──────────────────────────────────────────
+  // ── Layout & Paint ─────────────────────────────────────────────────────────
 
-  Float32List _baseSphere = Float32List(0);
-  Float32List _projectedPoints = Float32List(0);
-  Float32List? _recycleBuffer;
+  Size _cachedSize = Size.zero;
+  Offset _cachedCombinedOffset = Offset.zero;
 
   final Paint _paint = Paint()
     ..strokeCap = StrokeCap.round
     ..isAntiAlias = true;
 
-  int _visibilityTickCounter = 0;
-  Offset _cachedCombinedOffset = Offset.zero;
+  BlobFlutterException? _lastError;
 
-  void _updateCombinedOffset() {
-    _cachedCombinedOffset = Offset(
-      _controller.centerOffset.dx +
-          _controller.alignment.x * (_cachedSize.width / 2.0),
-      _controller.centerOffset.dy +
-          _controller.alignment.y * (_cachedSize.height / 2.0),
-    );
-  }
+  // ── Test Introspection Getters ─────────────────────────────────────────────
 
-  final BlobTouchManager _touchManager = BlobTouchManager();
+  /// Whether the internal animation ticker is currently actively ticking.
+  @visibleForTesting
+  bool get isTickerActive => _ticker.isActive;
 
-  // ── Shader & Dirty Tracking ────────────────────────────────────────────────
+  /// Whether the widget has detected that it is currently outside the screen viewport.
+  @visibleForTesting
+  bool get isOffscreen => _visibilityManager.isOffscreen;
 
-  ui.FragmentShader? _shader;
-
-  bool _shaderStaticDirty = true;
-  bool _shaderColorsDirty = true;
-
-  Gradient? _lastPushedGradient;
-
-  // ── Layout & Worker ────────────────────────────────────────────────────────
-
-  Size _cachedSize = Size.zero;
-
-  BlobWorker? _worker;
-  bool _workerReady = false;
-  bool _workerBusy = false;
-
-  // ── Rainbow Color Cache ─────────────────────────────────────────────────────
-
-  final List<Color> _rainbowColors = List<Color>.filled(
-    8,
-    const Color(0xFFFFFFFF),
-  );
-
-  // ── Effective Colour Helpers ───────────────────────────────────────────────
-
-  Gradient get _effectiveGradient => _controller.gradient ?? widget.gradient;
-
-  Gradient get _effectiveFallbackGradient {
-    if (_controller.isRainbowMode) {
-      return SweepGradient(colors: _effectiveColors);
-    }
-    final g = _effectiveGradient;
-    if (g.colors.length >= 2) {
-      return g;
-    } else if (g.colors.length == 1) {
-      return LinearGradient(colors: [g.colors.first, g.colors.first]);
-    }
-    return const LinearGradient(
-      colors: [Colors.blueAccent, Colors.purpleAccent],
-    );
-  }
-
-  List<Color> get _effectiveColors {
-    if (_controller.isRainbowMode) {
-      final double h = (_time * 40.0) % 360.0;
-      for (int i = 0; i < 8; i++) {
-        _rainbowColors[i] =
-            HSVColor.fromAHSV(1.0, (h + i * 45.0) % 360.0, 0.85, 1.0).toColor();
-      }
-      return _rainbowColors;
-    }
-    final g = _effectiveGradient;
-    return g.colors.isNotEmpty
-        ? g.colors
-        : const [Colors.blueAccent, Colors.purpleAccent];
-  }
-
-  Color get _color1 {
-    final colors = _effectiveColors;
-    return colors.isNotEmpty ? colors.first : Colors.pinkAccent;
-  }
+  /// Whether the widget has detected that the application is in background/inactive state.
+  @visibleForTesting
+  bool get isAppInBackground => _visibilityManager.isAppInBackground;
 
   // ── Test & Environment Helpers ────────────────────────────────────────────
 
@@ -461,6 +386,20 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   bool get _effectiveSilentErrorLogging =>
       widget.silentErrorLogging ?? BlobFlutter.isRunningInTest;
+
+  bool get _shouldTickerRun =>
+      !_controller.isPaused &&
+      !(widget.autoPauseOnAppBackground && _visibilityManager.isAppInBackground) &&
+      !(widget.autoPauseOffscreen && _visibilityManager.isOffscreen);
+
+  void _updateCombinedOffset() {
+    _cachedCombinedOffset = Offset(
+      _controller.centerOffset.dx +
+          _controller.alignment.x * (_cachedSize.width / 2.0),
+      _controller.centerOffset.dy +
+          _controller.alignment.y * (_cachedSize.height / 2.0),
+    );
+  }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -475,6 +414,12 @@ class _ParticleBlobState extends State<BlobFlutter>
       throw exception;
     }
     WidgetsBinding.instance.addObserver(this);
+
+    _visibilityManager = BlobVisibilityManager(
+      onStateChanged: _syncTickerState,
+    );
+    _shaderCoordinator = BlobShaderCoordinator();
+    _particleCoordinator = BlobParticleCoordinator();
 
     _ownsController = widget.controller == null;
     _controller = widget.controller ??
@@ -502,7 +447,7 @@ class _ParticleBlobState extends State<BlobFlutter>
     _lastParticleCount = _controller.particleCount;
     _controller.addListener(_onControllerChanged);
 
-    _generateBuffers(_lastParticleCount);
+    _particleCoordinator.generateBuffers(_lastParticleCount);
     _loadShader();
     _startWorker();
 
@@ -512,102 +457,28 @@ class _ParticleBlobState extends State<BlobFlutter>
     }
   }
 
-  bool get _shouldTickerRun =>
-      !_controller.isPaused &&
-      !(widget.autoPauseOnAppBackground && _isAppInBackground) &&
-      !(widget.autoPauseOffscreen && _isOffscreen);
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _updateScrollListener();
-    if (widget.autoPauseOffscreen) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _checkVisibility();
-      });
-    }
-  }
-
-  void _updateScrollListener() {
-    final newPosition = Scrollable.maybeOf(context)?.position;
-    if (newPosition != _scrollPosition) {
-      try {
-        _scrollPosition?.removeListener(_onScrollUpdated);
-      } catch (_) {}
-      _scrollPosition = newPosition;
-      _scrollPosition?.addListener(_onScrollUpdated);
-    }
-  }
-
-  void _onScrollUpdated() {
-    if (!widget.autoPauseOffscreen) return;
-    _checkVisibility();
-  }
-
-  void _checkVisibility() {
-    if (!mounted || !widget.autoPauseOffscreen) return;
-    final visible = _isRenderObjectVisible();
-    final isOff = !visible;
-    if (isOff != _isOffscreen) {
-      _isOffscreen = isOff;
-      _syncTickerState();
-    }
-  }
-
-  bool _isRenderObjectVisible() {
-    if (!mounted) return false;
-    final renderObject = context.findRenderObject();
-    if (renderObject == null || !renderObject.attached) return true;
-    if (renderObject is! RenderBox) return true;
-    if (!renderObject.hasSize || renderObject.size.isEmpty) return true;
-
-    final view = View.maybeOf(context);
-    if (view == null) return true;
-    final physicalSize = view.physicalSize;
-    final pixelRatio = view.devicePixelRatio;
-    if (pixelRatio <= 0.0 || physicalSize.isEmpty) return true;
-    final screenSize = physicalSize / pixelRatio;
-
-    try {
-      final translation = renderObject.getTransformTo(null).getTranslation();
-      final rect = Rect.fromLTWH(
-        translation.x,
-        translation.y,
-        renderObject.size.width,
-        renderObject.size.height,
-      );
-
-      // Pre-wake buffer of 50 logical pixels so animation wakes up slightly before entering viewport
-      final screenBounds = Rect.fromLTWH(
-        -50.0,
-        -50.0,
-        screenSize.width + 100.0,
-        screenSize.height + 100.0,
-      );
-
-      return rect.overlaps(screenBounds);
-    } catch (_) {
-      return true;
-    }
+    _visibilityManager.updateDependencies(
+      context: context,
+      autoPauseOffscreen: widget.autoPauseOffscreen,
+    );
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!widget.autoPauseOnAppBackground) return;
-    final isBackground = state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.hidden;
-    if (isBackground != _isAppInBackground) {
-      _isAppInBackground = isBackground;
-      _syncTickerState();
-    }
+    _visibilityManager.handleAppLifecycleState(
+      state,
+      autoPauseOnAppBackground: widget.autoPauseOnAppBackground,
+    );
   }
 
   void _onControllerChanged() {
     _updateCombinedOffset();
     if (_controller.particleCount != _lastParticleCount) {
       _lastParticleCount = _controller.particleCount;
-      _generateBuffers(_lastParticleCount);
+      _particleCoordinator.generateBuffers(_lastParticleCount);
       _restartWorker();
     }
     _syncTickerState();
@@ -631,37 +502,24 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _renderStaticFrame() {
     if (_cachedSize == Size.zero || !mounted) return;
-    _updateDynamicUniforms();
-    _touchManager.updateLocalTouches(context);
-    final double alignOffsetX =
-        _controller.alignment.x * (_cachedSize.width / 2.0);
-    final double alignOffsetY =
-        _controller.alignment.y * (_cachedSize.height / 2.0);
-
-    BlobMath.projectParticles(
-      count: _controller.particleCount,
-      radius: _controller.radius,
-      scale: _controller.scale,
-      centerOffsetX: _controller.centerOffset.dx + alignOffsetX,
-      centerOffsetY: _controller.centerOffset.dy + alignOffsetY,
-      blobiness: _controller.blobiness,
-      dispersion: _controller.dispersion,
-      rotationX: _controller.rotationX,
-      rotationY: _controller.rotationY,
+    _updateCombinedOffset();
+    _shaderCoordinator.updateDynamicUniforms(
+      controller: _controller,
+      widgetGradient: widget.gradient,
+      cachedSize: _cachedSize,
       time: _time,
-      viewportWidth: _cachedSize.width,
-      viewportHeight: _cachedSize.height,
-      activeTouches: _touchManager.localTouchesFlat,
-      baseSphere: _baseSphere,
-      projectedPoints: _projectedPoints,
-      autoRotationSpeed: _controller.autoRotationSpeed,
-      noiseFrequency: _controller.noiseFrequency,
-      viewDistance: _controller.viewDistance,
-      noiseType: _controller.noiseType,
-      touchRadiusFactor: _controller.touchRadiusFactor,
     );
-    _frameCount++;
-    _frameNotifier.value = _frameCount;
+    _particleCoordinator.renderStaticFrame(
+      controller: _controller,
+      touchManager: _touchManager,
+      cachedSize: _cachedSize,
+      time: _time,
+      context: context,
+      onFrameUpdated: () {
+        _frameCount++;
+        _frameNotifier.value = _frameCount;
+      },
+    );
   }
 
   @override
@@ -707,10 +565,9 @@ class _ParticleBlobState extends State<BlobFlutter>
           );
       _lastParticleCount = _controller.particleCount;
       _controller.addListener(_onControllerChanged);
-      _generateBuffers(_lastParticleCount);
+      _particleCoordinator.generateBuffers(_lastParticleCount);
       _restartWorker();
-      _shaderStaticDirty = true;
-      _shaderColorsDirty = true;
+      _shaderCoordinator.markDirty();
       _syncTickerState();
     } else if (_ownsController) {
       bool staticChanged = false;
@@ -768,68 +625,37 @@ class _ParticleBlobState extends State<BlobFlutter>
       if (oldWidget.gradient != widget.gradient) {
         _controller.setGradient(widget.gradient);
         staticChanged = true;
-        _shaderColorsDirty = true;
+        _shaderCoordinator.markDirty(colorsDirty: true);
       }
-      if (staticChanged) _shaderStaticDirty = true;
+      if (staticChanged) _shaderCoordinator.markDirty(staticDirty: true);
     }
 
-    if (oldWidget.autoPauseOffscreen != widget.autoPauseOffscreen) {
-      if (!widget.autoPauseOffscreen) {
-        _isOffscreen = false;
-      } else {
-        _checkVisibility();
-      }
-      _syncTickerState();
-    }
-
-    if (oldWidget.autoPauseOnAppBackground != widget.autoPauseOnAppBackground) {
-      if (!widget.autoPauseOnAppBackground) {
-        _isAppInBackground = false;
-      }
-      _syncTickerState();
-    }
+    _visibilityManager.handleWidgetUpdated(
+      context: context,
+      oldAutoPauseOffscreen: oldWidget.autoPauseOffscreen,
+      newAutoPauseOffscreen: widget.autoPauseOffscreen,
+      oldAutoPauseOnAppBackground: oldWidget.autoPauseOnAppBackground,
+      newAutoPauseOnAppBackground: widget.autoPauseOnAppBackground,
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    try {
-      _scrollPosition?.removeListener(_onScrollUpdated);
-    } catch (_) {}
-    _scrollPosition = null;
+    _visibilityManager.dispose();
     _controller.removeListener(_onControllerChanged);
     _ticker.dispose();
     _frameNotifier.dispose();
-    _shader?.dispose();
-    _worker?.dispose();
+    _shaderCoordinator.dispose();
+    _particleCoordinator.dispose();
     if (_ownsController) _controller.dispose();
     super.dispose();
   }
 
-  BlobFlutterException? _lastError;
+  // ── Initialization & Subsystem Startup ────────────────────────────────────
 
-  // ── Initialization ─────────────────────────────────────────────────────────
-
-  void _generateBuffers(int count) {
-    _baseSphere = BlobMath.generateFibonacciSphere(count);
-    // Preserve old projected points to avoid a visual flash while the worker
-    // restarts and computes the first result for the new particle count.
-    // The worker will replace _projectedPoints on its first successful result.
-    final newLength = count * 2;
-    if (_projectedPoints.length != newLength) {
-      _recycleBuffer = null;
-      final oldPoints = _projectedPoints;
-      _projectedPoints = Float32List(newLength);
-      final copyLen =
-          oldPoints.length < newLength ? oldPoints.length : newLength;
-      if (copyLen > 0) {
-        _projectedPoints.setRange(0, copyLen, oldPoints);
-      }
-    }
-  }
-
-  Future<void> _loadShader() async {
-    final program = await BlobShaderHelper.loadProgram(
+  void _loadShader() {
+    _shaderCoordinator.loadShader(
       silent: _effectiveSilentErrorLogging,
       overrideAssetPath: widget.testShaderAssetPath,
       onError: (exception) {
@@ -839,49 +665,50 @@ class _ParticleBlobState extends State<BlobFlutter>
         });
         widget.onError?.call(exception, exception.stackTrace);
       },
+      onShaderLoaded: () {
+        if (mounted) setState(() {});
+      },
     );
-    if (program != null && mounted) {
-      setState(() {
-        _shader = program.fragmentShader();
-        _shaderStaticDirty = true;
-        _shaderColorsDirty = true;
-      });
-    }
   }
 
   void _startWorker() {
-    try {
-      final w = widget.workerFactory?.call() ?? BlobWorker();
-      _worker = w;
-      w.init(_baseSphere, _controller.particleCount).then((_) {
-        if (mounted && _worker == w) {
-          _workerReady = true;
-        }
-      }).catchError((Object err, StackTrace st) {
-        final exception =
-            BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
-        if (mounted) {
+    _particleCoordinator.startWorker(
+      particleCount: _controller.particleCount,
+      workerFactory: widget.workerFactory,
+      onError: (exception, st, {required bool isAsync}) {
+        if (isAsync && mounted) {
           setState(() {
             _lastError = exception;
-            _workerReady = false;
           });
+        } else {
+          _lastError = exception;
         }
         widget.onError?.call(exception, st);
-      });
-    } catch (err, st) {
-      final exception =
-          BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
-      _lastError = exception;
-      _workerReady = false;
-      widget.onError?.call(exception, st);
-    }
+      },
+      onWorkerReady: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   void _restartWorker() {
-    _worker?.dispose();
-    _workerReady = false;
-    _workerBusy = false;
-    _startWorker();
+    _particleCoordinator.restartWorker(
+      particleCount: _controller.particleCount,
+      workerFactory: widget.workerFactory,
+      onError: (exception, st, {required bool isAsync}) {
+        if (isAsync && mounted) {
+          setState(() {
+            _lastError = exception;
+          });
+        } else {
+          _lastError = exception;
+        }
+        widget.onError?.call(exception, st);
+      },
+      onWorkerReady: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   // ── Ticker Callback ────────────────────────────────────────────────────────
@@ -889,16 +716,12 @@ class _ParticleBlobState extends State<BlobFlutter>
   void _onTick(Duration elapsed) {
     if (!mounted || _cachedSize == Size.zero) return;
 
-    if (widget.autoPauseOffscreen) {
-      _visibilityTickCounter++;
-      if (_visibilityTickCounter >= 30) {
-        _visibilityTickCounter = 0;
-        if (!_isRenderObjectVisible()) {
-          _isOffscreen = true;
-          _syncTickerState();
-          return;
-        }
-      }
+    if (_visibilityManager.checkTickVisibility(
+      context: context,
+      autoPauseOffscreen: widget.autoPauseOffscreen,
+    )) {
+      _syncTickerState();
+      return;
     }
 
     final double dt =
@@ -908,140 +731,25 @@ class _ParticleBlobState extends State<BlobFlutter>
     _time = BlobMath.wrapTime(_time + dt * _controller.speed);
     _controller.applyDamping();
 
-    _updateDynamicUniforms();
-
-    if (_workerReady && !_workerBusy) {
-      _workerBusy = true;
-      final recycle = _recycleBuffer;
-      _recycleBuffer = null;
-      _worker!.compute(_buildWorkerParams(), recycle).then(_onParticlesReady);
-    } else if (!_workerReady) {
-      _touchManager.updateLocalTouches(context);
-      final double alignOffsetX =
-          _controller.alignment.x * (_cachedSize.width / 2.0);
-      final double alignOffsetY =
-          _controller.alignment.y * (_cachedSize.height / 2.0);
-
-      BlobMath.projectParticles(
-        count: _controller.particleCount,
-        radius: _controller.radius,
-        scale: _controller.scale,
-        centerOffsetX: _controller.centerOffset.dx + alignOffsetX,
-        centerOffsetY: _controller.centerOffset.dy + alignOffsetY,
-        blobiness: _controller.blobiness,
-        dispersion: _controller.dispersion,
-        rotationX: _controller.rotationX,
-        rotationY: _controller.rotationY,
-        time: _time,
-        viewportWidth: _cachedSize.width,
-        viewportHeight: _cachedSize.height,
-        activeTouches: _touchManager.localTouchesFlat,
-        baseSphere: _baseSphere,
-        projectedPoints: _projectedPoints,
-        autoRotationSpeed: _controller.autoRotationSpeed,
-        noiseFrequency: _controller.noiseFrequency,
-        viewDistance: _controller.viewDistance,
-        noiseType: _controller.noiseType,
-        touchRadiusFactor: _controller.touchRadiusFactor,
-      );
-      _frameCount++;
-      _frameNotifier.value = _frameCount;
-    } else if (_controller.isColorAnimated || _controller.isRainbowMode) {
-      // Worker is computing next particle positions; refresh frame for color animation
-      _frameCount++;
-      _frameNotifier.value = _frameCount;
-    }
-  }
-
-  void _onParticlesReady(Float32List? result) {
-    _workerBusy = false;
-    if (!mounted || result == null) return;
-
-    if (_projectedPoints.isNotEmpty) {
-      _recycleBuffer = _projectedPoints;
-    }
-    _projectedPoints = result;
-    _frameCount++;
-    _frameNotifier.value = _frameCount;
-  }
-
-  // ── Worker Param Builder ───────────────────────────────────────────────────
-
-  ProjectParamsFlat _buildWorkerParams() {
-    _touchManager.updateLocalTouches(context);
-    final double alignOffsetX =
-        _controller.alignment.x * (_cachedSize.width / 2.0);
-    final double alignOffsetY =
-        _controller.alignment.y * (_cachedSize.height / 2.0);
-
-    return ProjectParamsFlat(
-      count: _controller.particleCount,
-      radius: _controller.radius,
-      scale: _controller.scale,
-      centerOffsetX: _controller.centerOffset.dx + alignOffsetX,
-      centerOffsetY: _controller.centerOffset.dy + alignOffsetY,
-      blobiness: _controller.blobiness,
-      dispersion: _controller.dispersion,
-      rotationX: _controller.rotationX,
-      rotationY: _controller.rotationY,
+    _shaderCoordinator.updateDynamicUniforms(
+      controller: _controller,
+      widgetGradient: widget.gradient,
+      cachedSize: _cachedSize,
       time: _time,
-      viewportWidth: _cachedSize.width,
-      viewportHeight: _cachedSize.height,
-      encodedTouches: _touchManager.encodedTouches,
-      autoRotationSpeed: _controller.autoRotationSpeed,
-      noiseFrequency: _controller.noiseFrequency,
-      viewDistance: _controller.viewDistance,
-      noiseTypeIndex: _controller.noiseType.index,
-      touchRadiusFactor: _controller.touchRadiusFactor,
     );
-  }
 
-  // ── Shader Uniforms ────────────────────────────────────────────────────────
-
-  void _updateDynamicUniforms() {
-    final s = _shader;
-    if (s == null) return;
-
-    final currentGradient = _effectiveGradient;
-    if (currentGradient != _lastPushedGradient) {
-      _lastPushedGradient = currentGradient;
-      _shaderStaticDirty = true;
-      _shaderColorsDirty = true;
-    }
-
-    if (_shaderStaticDirty) {
-      BlobShaderHelper.pushStaticUniforms(
-        shader: s,
-        size: _cachedSize,
-        gradient: currentGradient,
-        isColorAnimated: _controller.isColorAnimated,
-        colorAnimationSpeed: _controller.colorAnimationSpeed,
-        waveIntensity: _controller.waveIntensity,
-        centerOffset: _controller.centerOffset,
-        radius: _controller.radius * _controller.scale,
-        alignment: _controller.alignment,
-      );
-      _shaderStaticDirty = false;
-    }
-
-    // Index 2: uTime
-    s.setFloat(2, _time);
-
-    if (_controller.isRainbowMode) {
-      BlobShaderHelper.pushColors(
-        shader: s,
-        colors: _effectiveColors,
-        isRainbowMode: true,
-      );
-    } else if (_shaderColorsDirty) {
-      BlobShaderHelper.pushColors(
-        shader: s,
-        colors: _effectiveColors,
-        stops: currentGradient.stops,
-        isRainbowMode: false,
-      );
-      _shaderColorsDirty = false;
-    }
+    _particleCoordinator.processTick(
+      controller: _controller,
+      touchManager: _touchManager,
+      cachedSize: _cachedSize,
+      time: _time,
+      context: context,
+      isStillMounted: mounted,
+      onFrameUpdated: () {
+        _frameCount++;
+        _frameNotifier.value = _frameCount;
+      },
+    );
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -1069,7 +777,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           if (newSize != _cachedSize) {
             _cachedSize = newSize;
             _updateCombinedOffset();
-            _shaderStaticDirty = true;
+            _shaderCoordinator.markDirty(staticDirty: true);
             if (_controller.isPaused) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted && _controller.isPaused) {
@@ -1096,12 +804,21 @@ class _ParticleBlobState extends State<BlobFlutter>
                   return RepaintBoundary(
                     child: CustomPaint(
                       painter: BlobPainter(
-                        positions: _projectedPoints,
+                        positions: _particleCoordinator.projectedPoints,
                         generation: frame,
-                        shader: _shader,
+                        shader: _shaderCoordinator.shader,
                         pointSize: _controller.pointSize,
-                        fallbackColor: _color1,
-                        fallbackGradient: _effectiveFallbackGradient,
+                        fallbackColor: _shaderCoordinator.getFallbackColor(
+                          _controller,
+                          widget.gradient,
+                          _time,
+                        ),
+                        fallbackGradient:
+                            _shaderCoordinator.getEffectiveFallbackGradient(
+                          _controller,
+                          widget.gradient,
+                          _time,
+                        ),
                         centerOffset: _cachedCombinedOffset,
                         radius: _controller.radius * _controller.scale,
                         paint: _paint,
