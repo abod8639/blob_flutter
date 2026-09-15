@@ -79,7 +79,7 @@ void main() {
       worker.dispose();
     });
 
-    test('dispose before handshake completes the readyCompleter with error',
+    test('dispose before handshake completes cleanly without unhandled error',
         () async {
       final worker = BlobWorker();
       const count = 10;
@@ -89,16 +89,9 @@ void main() {
       final initFuture = worker.init(sphere, count);
       worker.dispose();
 
-      // The future should complete with a BlobWorkerException, not hang forever.
-      bool caughtError = false;
-      try {
-        await initFuture;
-      } on BlobWorkerException {
-        caughtError = true;
-      } catch (_) {
-        caughtError = true;
-      }
-      expect(caughtError, isTrue);
+      // The future should complete cleanly, not hang forever.
+      await expectLater(initFuture, completes);
+      expect(worker.isReady, isFalse);
     });
 
     test('init accepts and does not call onError when worker starts normally',
