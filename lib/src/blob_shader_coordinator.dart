@@ -123,23 +123,13 @@ class BlobShaderCoordinator {
     required double time,
     void Function(BlobRenderException error)? onError,
   }) {
-    if (debugOnUpdateDynamicUniforms != null) {
-      try {
-        debugOnUpdateDynamicUniforms!();
-      } catch (err, st) {
-        _shader?.dispose();
-        _shader = null;
-        onError?.call(
-          BlobRenderException.shaderUniformFailed(cause: err, stackTrace: st),
-        );
-        return;
-      }
-    }
-
     final s = _shader;
-    if (s == null) return;
+    if (s == null && debugOnUpdateDynamicUniforms == null) return;
 
     try {
+      debugOnUpdateDynamicUniforms?.call();
+      if (s == null) return;
+
       final currentGradient = getEffectiveGradient(controller, widgetGradient);
       if (currentGradient != _lastPushedGradient) {
         _lastPushedGradient = currentGradient;
