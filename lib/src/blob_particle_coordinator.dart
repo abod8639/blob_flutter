@@ -241,6 +241,10 @@ class BlobParticleCoordinator {
     }
   }
 
+  /// Test hook to simulate unexpected error during static frame render in test environments.
+  @visibleForTesting
+  static void Function()? debugOnRenderStaticFrame;
+
   /// Renders a single static frame (used when paused or resizing).
   void renderStaticFrame({
     required BlobController controller,
@@ -251,6 +255,9 @@ class BlobParticleCoordinator {
     required VoidCallback onFrameUpdated,
   }) {
     if (cachedSize == Size.zero) return;
+    if (debugOnRenderStaticFrame != null) {
+      debugOnRenderStaticFrame!();
+    }
     projectParticlesSync(
       controller: controller,
       touchManager: touchManager,
