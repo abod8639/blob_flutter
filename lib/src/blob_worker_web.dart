@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:blob_flutter/blob_flutter.dart';
+
 import 'blob_compute_params.dart';
 import 'blob_math.dart';
 import 'blob_noise_type.dart';
@@ -23,13 +25,18 @@ class BlobWorker {
   bool _disposed = false;
 
   /// No-op on Web: stores references needed for synchronous computation.
-  Future<void> init(Float32List baseSphere, int count) async {
-    _sphere = baseSphere;
-    _output = Float32List(count * 2);
-    _isFirstFrame = true;
-    _framePhase = 0;
-    _disposed = false;
-  }
+Future<void> init(
+  Float32List baseSphere,
+  int count, {
+  void Function(BlobWorkerException error)? onError,
+}) async {
+  _sphere = baseSphere;
+  _output = Float32List(count * 2);
+  _isFirstFrame = true;
+  _framePhase = 0;
+  _disposed = false;
+}
+
 
   /// Runs [BlobMath.projectParticles] synchronously and returns a completed
   /// [Future] wrapping the result buffer.
