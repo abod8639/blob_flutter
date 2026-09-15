@@ -36,7 +36,6 @@ class BlobWorker {
   final Completer<void> _readyCompleter = Completer<void>();
   final List<Completer<Float32List?>> _pending = [];
   bool _disposed = false;
-  bool _initStarted = false;
 
   /// `true` once the worker isolate has sent its [SendPort] back.
   bool get isReady => _tx != null;
@@ -56,12 +55,12 @@ class BlobWorker {
     int count, {
     void Function(BlobWorkerException error)? onError,
   }) async {
-    _initStarted = true;
     _rx.listen(_onMessage);
 
     // Subscribe to isolate error port before spawning so we never miss an
     // early crash.
     _errorPort.listen((dynamic errorMessage) {
+      if (_disposed) return;
       // Dart sends errors as a two-element list: [errorString, stackString].
       final String errorStr = errorMessage is List && errorMessage.isNotEmpty
           ? errorMessage[0].toString()
@@ -87,13 +86,19 @@ class BlobWorker {
       onError?.call(exception);
     });
 
-    _isolate = await Isolate.spawn(
+    final isolate = await Isolate.spawn(
       _workerEntry,
       [_rx.sendPort, baseSphere, count],
       debugName: 'blob_particle_worker',
       errorsAreFatal: false,
       onError: _errorPort.sendPort,
     );
+
+    if (_disposed) {
+      isolate.kill(priority: Isolate.immediate);
+      return;
+    }
+    _isolate = isolate;
 
     return _readyCompleter.future;
   }
@@ -144,13 +149,8 @@ class BlobWorker {
       if (!c.isCompleted) c.complete(null);
     }
     _pending.clear();
-    // Only complete the ready completer with error if init() was actually
-    // called. If dispose() is called on a worker that was never initialized
-    // (e.g. in a test teardown), we skip this to avoid unexpected exceptions.
-    if (_initStarted && !_readyCompleter.isCompleted) {
-      _readyCompleter.completeError(
-        BlobWorkerException.spawnFailed(cause: 'Worker disposed before ready.'),
-      );
+    if (!_readyCompleter.isCompleted) {
+      _readyCompleter.complete();
     }
   }
 
