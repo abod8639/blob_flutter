@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'blob_compute_params.dart';
+import 'blob_exception.dart';
 import 'blob_math.dart';
 import 'blob_noise_type.dart';
 
@@ -17,17 +18,25 @@ import 'blob_noise_type.dart';
 /// * Only **one** computation is in-flight at any time.  A new [compute] call
 ///   while the previous is still running is queued; results arrive in order.
 ///
+/// ### Error Handling
+/// * Isolate errors are captured via a dedicated error [ReceivePort] and
+///   forwarded through the optional [onError] callback passed to [init].
+/// * If the isolate crashes before the handshake completes, the [Future]
+///   returned by [init] completes with an error rather than hanging forever.
+///
 /// ### Lifecycle
 /// Call [init] once, then [compute] for every frame, then [dispose] on
 /// teardown (e.g., from [State.dispose]).
 class BlobWorker {
   final ReceivePort _rx = ReceivePort();
+  final ReceivePort _errorPort = ReceivePort();
   Isolate? _isolate;
   SendPort? _tx;
 
   final Completer<void> _readyCompleter = Completer<void>();
   final List<Completer<Float32List?>> _pending = [];
   bool _disposed = false;
+  bool _initStarted = false;
 
   /// `true` once the worker isolate has sent its [SendPort] back.
   bool get isReady => _tx != null;
@@ -37,15 +46,53 @@ class BlobWorker {
   /// Spawns the worker [Isolate] and transfers [baseSphere] to it.
   ///
   /// The returned [Future] completes when the worker is ready to accept
-  /// [compute] requests.
-  Future<void> init(Float32List baseSphere, int count) async {
+  /// [compute] requests, or completes with an error if the isolate fails
+  /// to initialise.
+  ///
+  /// [onError] is called with a [BlobWorkerException] whenever the isolate
+  /// reports an unhandled error after the initial handshake.
+  Future<void> init(
+    Float32List baseSphere,
+    int count, {
+    void Function(BlobWorkerException error)? onError,
+  }) async {
+    _initStarted = true;
     _rx.listen(_onMessage);
+
+    // Subscribe to isolate error port before spawning so we never miss an
+    // early crash.
+    _errorPort.listen((dynamic errorMessage) {
+      // Dart sends errors as a two-element list: [errorString, stackString].
+      final String errorStr = errorMessage is List && errorMessage.isNotEmpty
+          ? errorMessage[0].toString()
+          : errorMessage.toString();
+      final String? stackStr =
+          errorMessage is List && errorMessage.length > 1
+              ? errorMessage[1]?.toString()
+              : null;
+      final StackTrace? stackTrace =
+          stackStr != null ? StackTrace.fromString(stackStr) : null;
+
+      final exception = BlobWorkerException.spawnFailed(
+        cause: errorStr,
+        stackTrace: stackTrace,
+      );
+
+      // If the isolate crashed before sending the handshake port, complete
+      // the readyCompleter with an error so the caller is not left hanging.
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.completeError(exception, stackTrace);
+      }
+
+      onError?.call(exception);
+    });
 
     _isolate = await Isolate.spawn(
       _workerEntry,
       [_rx.sendPort, baseSphere, count],
       debugName: 'blob_particle_worker',
       errorsAreFatal: false,
+      onError: _errorPort.sendPort,
     );
 
     return _readyCompleter.future;
@@ -90,12 +137,21 @@ class BlobWorker {
     if (_disposed) return;
     _disposed = true;
     _rx.close();
+    _errorPort.close();
     _isolate?.kill(priority: Isolate.immediate);
     _isolate = null;
     for (final c in _pending) {
       if (!c.isCompleted) c.complete(null);
     }
     _pending.clear();
+    // Only complete the ready completer with error if init() was actually
+    // called. If dispose() is called on a worker that was never initialized
+    // (e.g. in a test teardown), we skip this to avoid unexpected exceptions.
+    if (_initStarted && !_readyCompleter.isCompleted) {
+      _readyCompleter.completeError(
+        BlobWorkerException.spawnFailed(cause: 'Worker disposed before ready.'),
+      );
+    }
   }
 
   // ── Isolate Entry Point ───────────────────────────────────────────────────
