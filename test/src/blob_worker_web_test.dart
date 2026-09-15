@@ -48,5 +48,43 @@ void main() {
       // dispose is safe no-op
       worker.dispose();
     });
+
+    test(
+        'reallocates _output buffer when params.count does not match initial count (L46)',
+        () async {
+      final worker = BlobWorker();
+      const initialCount = 40;
+      final sphere = BlobMath.generateFibonacciSphere(initialCount);
+      await worker.init(sphere, initialCount);
+
+      const newCount = 20;
+      final params = ProjectParamsFlat(
+        count: newCount,
+        radius: 100.0,
+        scale: 1.0,
+        centerOffsetX: 0.0,
+        centerOffsetY: 0.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        encodedTouches: Float32List(0),
+        autoRotationSpeed: 0.5,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseTypeIndex: BlobNoiseType.simplex.index,
+        touchRadiusFactor: 1.0,
+      );
+
+      final result = await worker.compute(params);
+      expect(result, isNotNull);
+      expect(result!.length, newCount * 2);
+
+      worker.dispose();
+      expect(await worker.compute(params), isNull);
+    });
   });
 }
