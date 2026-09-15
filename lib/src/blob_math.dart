@@ -435,6 +435,7 @@ class BlobMath {
     final double centerX = (viewportWidth / 2.0) + centerOffsetX;
     final double centerY = (viewportHeight / 2.0) + centerOffsetY;
     final double effectiveRadius = radius * scale;
+    final double focalLength = effectiveRadius * viewDistance;
 
     // Auto-rotation angle derived from time and autoRotationSpeed.
     // For [BlobNoiseType.wave], disable auto-rotation so the carpet stays stationary
@@ -458,6 +459,26 @@ class BlobMath {
         effectiveRadius * 2.0 * touchRadiusFactor;
     final double effectiveTouchRadiusSq =
         effectiveTouchRadius * effectiveTouchRadius;
+
+    // Precompute touch bounding box (AABB) for early-exit rejection
+    double touchMinX = double.infinity;
+    double touchMaxX = -double.infinity;
+    double touchMinY = double.infinity;
+    double touchMaxY = -double.infinity;
+    if (hasPointers) {
+      for (int t = 0; t < touchCount; t++) {
+        final double tx = activeTouches[t * 2];
+        final double ty = activeTouches[t * 2 + 1];
+        if (tx < touchMinX) touchMinX = tx;
+        if (tx > touchMaxX) touchMaxX = tx;
+        if (ty < touchMinY) touchMinY = ty;
+        if (ty > touchMaxY) touchMaxY = ty;
+      }
+      touchMinX -= effectiveTouchRadius;
+      touchMaxX += effectiveTouchRadius;
+      touchMinY -= effectiveTouchRadius;
+      touchMaxY += effectiveTouchRadius;
+    }
 
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
     final _NoiseFunc noise = _selectNoise(noiseType);
@@ -523,13 +544,13 @@ class BlobMath {
       final double yAfterX = py * cosRotX - zAfterY * sinRotX;
       final double zAfterX = py * sinRotX + zAfterY * cosRotX;
 
-      double rx = xAfterY;
-      double ry = yAfterX;
+      final double rx = xAfterY;
+      final double ry = yAfterX;
       final double rz = zAfterX;
 
       // Perspective projection with safe focal length scaling and clamped Z denominator (prevents near-plane explosion)
       final double safeZ = (viewDistance + rz).clamp(0.65, 20.0);
-      final double baseScale2 = (effectiveRadius / safeZ) * viewDistance;
+      final double baseScale2 = focalLength / safeZ;
 
       // Projected screen coordinates before dispersion
       final double screenX = centerX + rx * baseScale2;
@@ -538,19 +559,24 @@ class BlobMath {
       // Direction-aware touch dispersion with strong central peak and smooth edge fade-out
       double extraPush = 0.0;
       if (hasPointers) {
-        for (int t = 0; t < touchCount; t++) {
-          final double touchDx = activeTouches[t * 2];
-          final double touchDy = activeTouches[t * 2 + 1];
-          final double dx = screenX - touchDx;
-          final double dy = screenY - touchDy;
-          final double distSq = dx * dx + dy * dy;
-          if (distSq < effectiveTouchRadiusSq) {
-            // PERF-03: Avoid sqrt by using squared distances for influence calculation
-            final double normDistSq = distSq / effectiveTouchRadiusSq;
-            final double influence = 1.0 - normDistSq;
-            // Smooth quadratic falloff: strong effect at center, vanishing smoothly at the edges
-            final double smoothInfluence = influence * influence;
-            extraPush += dispersion * smoothInfluence * 2.5;
+        if (screenX >= touchMinX &&
+            screenX <= touchMaxX &&
+            screenY >= touchMinY &&
+            screenY <= touchMaxY) {
+          for (int t = 0; t < touchCount; t++) {
+            final double touchDx = activeTouches[t * 2];
+            final double touchDy = activeTouches[t * 2 + 1];
+            final double dx = screenX - touchDx;
+            final double dy = screenY - touchDy;
+            final double distSq = dx * dx + dy * dy;
+            if (distSq < effectiveTouchRadiusSq) {
+              // PERF-03: Avoid sqrt by using squared distances for influence calculation
+              final double normDistSq = distSq / effectiveTouchRadiusSq;
+              final double influence = 1.0 - normDistSq;
+              // Smooth quadratic falloff: strong effect at center, vanishing smoothly at the edges
+              final double smoothInfluence = influence * influence;
+              extraPush += dispersion * smoothInfluence * 2.5;
+            }
           }
         }
       } else if (dispersion > 0.0) {
@@ -558,14 +584,17 @@ class BlobMath {
         extraPush = dispersion;
       }
 
-      // Apply dispersion push with safe ceiling to prevent tearing and distortion
-      final double pushScale = 1.0 + extraPush.clamp(0.0, 4.0);
-      rx *= pushScale;
-      ry *= pushScale;
-
       final int outIndex = i * 2;
-      projectedPoints[outIndex] = centerX + rx * baseScale2;
-      projectedPoints[outIndex + 1] = centerY + ry * baseScale2;
+      if (extraPush > 0.0) {
+        // Apply dispersion push with safe ceiling to prevent tearing and distortion
+        final double pushScale = 1.0 + (extraPush > 4.0 ? 4.0 : extraPush);
+        final double scaledBase = baseScale2 * pushScale;
+        projectedPoints[outIndex] = centerX + rx * scaledBase;
+        projectedPoints[outIndex + 1] = centerY + ry * scaledBase;
+      } else {
+        projectedPoints[outIndex] = screenX;
+        projectedPoints[outIndex + 1] = screenY;
+      }
     }
   }
 }
