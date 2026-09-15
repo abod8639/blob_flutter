@@ -111,5 +111,79 @@ void main() {
       expect(receivedError, isNull);
       worker.dispose();
     });
+
+    test('errorPort handles isolate error list with message and stack trace',
+        () async {
+      final worker = BlobWorker();
+      const count = 10;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      BlobWorkerException? receivedError;
+      await worker.init(
+        sphere,
+        count,
+        onError: (e) => receivedError = e,
+      );
+
+      worker.errorPortForTesting.send(['Test Isolate Crash', 'Stack frame #1\nStack frame #2']);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(receivedError, isNotNull);
+      expect(receivedError!.code, BlobErrorCode.workerSpawnFailed);
+      expect(receivedError!.cause, 'Test Isolate Crash');
+      expect(receivedError!.stackTrace.toString(), contains('Stack frame #1'));
+
+      worker.dispose();
+    });
+
+    test('errorPort handles isolate error when message is a non-list string',
+        () async {
+      final worker = BlobWorker();
+      const count = 10;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      BlobWorkerException? receivedError;
+      await worker.init(
+        sphere,
+        count,
+        onError: (e) => receivedError = e,
+      );
+
+      worker.errorPortForTesting.send('Single error string');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(receivedError, isNotNull);
+      expect(receivedError!.cause, 'Single error string');
+      expect(receivedError!.stackTrace, isNull);
+
+      // Subsequent messages after dispose are ignored (hits `if (_disposed) return;`)
+      worker.dispose();
+      receivedError = null;
+      worker.errorPortForTesting.send('Ignored error string');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(receivedError, isNull);
+    });
+
+    test('errorPort completes readyCompleter with error if isolate crashes before handshake',
+        () async {
+      final worker = BlobWorker();
+      const count = 10;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      // Simulate isolate crash arriving before handshake
+      worker.errorPortForTesting.send(['Crash before handshake', null]);
+      final initFuture = worker.init(sphere, count);
+
+      await expectLater(
+        initFuture,
+        throwsA(isA<BlobWorkerException>().having(
+          (e) => e.cause,
+          'cause',
+          'Crash before handshake',
+        )),
+      );
+
+      worker.dispose();
+    });
   });
 }
