@@ -181,129 +181,126 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
         ],
       ),
       child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 1. Noise Algorithm Selector
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: BlobNoiseType.values.map((type) {
-                    final isSelected = type == _selectedNoise;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(type.name),
-                        selected: isSelected,
-                        onSelected: (_) => _selectNoise(type),
-                        selectedColor: const Color(0xFF00F5D4),
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.black : Colors.white70,
-                        ),
-                        backgroundColor: const Color(0xFF1F2633),
-                        side: BorderSide(
-                          color: isSelected
-                              ? const Color(0xFF00F5D4)
-                              : Colors.white.withValues(alpha: 0.1),
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // 2. Color Palettes, Rainbow Mode, and Tune Toggle
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                // mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...List.generate(_palettes.length, (i) {
-                    final isSelected = !_isRainbow && _selectedPalette == i;
-                    return GestureDetector(
-                      onTap: () => _selectPalette(i),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(colors: _palettes[i]),
-                          border: Border.all(
-                            color:
-                                isSelected ? Colors.white : Colors.transparent,
-                            width: 2.5,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                  GestureDetector(
-                    onTap: _toggleRainbow,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        color: _isRainbow
-                            ? Colors.purpleAccent
-                            : const Color(0xFF1F2633),
-                        border: Border.all(
-                          color: _isRainbow ? Colors.white : Colors.white24,
-                        ),
-                      ),
-                      child: const Text(
-                        'Rainbow',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 1. Noise Algorithm Selector
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: BlobNoiseType.values.map((type) {
+                final isSelected = type == _selectedNoise;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    label: Text(type.name),
+                    selected: isSelected,
+                    onSelected: (_) => _selectNoise(type),
+                    selectedColor: const Color(0xFF00F5D4),
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.black : Colors.white70,
                     ),
-                  ),
-                  // const Spacer(),
-                  IconButton(
-                    icon: Icon(
-                      _showSliders ? Icons.tune : Icons.tune_outlined,
-                      color: _showSliders
+                    backgroundColor: const Color(0xFF1F2633),
+                    side: BorderSide(
+                      color: isSelected
                           ? const Color(0xFF00F5D4)
-                          : Colors.white60,
-                      size: 20,
+                          : Colors.white.withValues(alpha: 0.1),
                     ),
-                    onPressed: () =>
-                        setState(() => _showSliders = !_showSliders),
-                    tooltip: 'Adjust parameters',
+                    visualDensity: VisualDensity.compact,
                   ),
-                ],
-              ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 10),
 
-              // 3. Expandable Sliders (Speed & Noise)
-              if (_showSliders) ...[
-                const SizedBox(height: 8),
-                _buildSlider(
-                  label: 'Speed',
-                  value: _speed,
-                  min: 0.0,
-                  max: 3.0,
-                  display: '${_speed.toStringAsFixed(1)}x',
-                  onChanged: _updateSpeed,
+          // 2. Color Palettes, Rainbow Mode, and Tune Toggle
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            // mainAxisSize: MainAxisSize.min,
+            children: [
+              ...List.generate(_palettes.length, (i) {
+                final isSelected = !_isRainbow && _selectedPalette == i;
+                return GestureDetector(
+                  onTap: () => _selectPalette(i),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: _palettes[i]),
+                      border: Border.all(
+                        color: isSelected ? Colors.white : Colors.transparent,
+                        width: 2.5,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              GestureDetector(
+                onTap: _toggleRainbow,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: _isRainbow
+                        ? Colors.purpleAccent
+                        : const Color(0xFF1F2633),
+                    border: Border.all(
+                      color: _isRainbow ? Colors.white : Colors.white24,
+                    ),
+                  ),
+                  child: const Text(
+                    'Rainbow',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                _buildSlider(
-                  label: 'Noise',
-                  value: _blobiness,
-                  min: 0.0,
-                  max: 3.0,
-                  display: '${_blobiness.toStringAsFixed(1)}x',
-                  onChanged: _updateBlobiness,
+              ),
+              // const Spacer(),
+              IconButton(
+                icon: Icon(
+                  _showSliders ? Icons.tune : Icons.tune_outlined,
+                  color:
+                      _showSliders ? const Color(0xFF00F5D4) : Colors.white60,
+                  size: 20,
                 ),
-              ],
+                onPressed: () => setState(() => _showSliders = !_showSliders),
+                tooltip: 'Adjust parameters',
+              ),
             ],
           ),
+
+          // 3. Expandable Sliders (Speed & Noise)
+          if (_showSliders) ...[
+            const SizedBox(height: 8),
+            _buildSlider(
+              label: 'Speed',
+              value: _speed,
+              min: 0.0,
+              max: 3.0,
+              display: '${_speed.toStringAsFixed(1)}x',
+              onChanged: _updateSpeed,
+            ),
+            _buildSlider(
+              label: 'Noise',
+              value: _blobiness,
+              min: 0.0,
+              max: 3.0,
+              display: '${_blobiness.toStringAsFixed(1)}x',
+              onChanged: _updateBlobiness,
+            ),
+          ],
+        ],
+      ),
     );
   }
 
