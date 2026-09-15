@@ -38,9 +38,18 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   bool get _isHoverEffective =>
       widget.enableHover || widget.controller.enableHover;
 
+  late bool _cachedCanScale;
+  late bool _cachedCanDragRotate;
+  late bool _cachedEnableHover;
+  late bool _cachedEnableHoverRotation;
+
   @override
   void initState() {
     super.initState();
+    _cachedCanScale = widget.controller.enablePinchToScale;
+    _cachedCanDragRotate = widget.controller.enableDragRotation;
+    _cachedEnableHover = widget.controller.enableHover;
+    _cachedEnableHoverRotation = widget.controller.enableHoverRotation;
     widget.controller.addListener(_onControllerChanged);
   }
 
@@ -51,7 +60,20 @@ class _BlobInputListenerState extends State<BlobInputListener> {
   }
 
   void _onControllerChanged() {
-    if (mounted) {
+    if (!mounted) return;
+    final canScale = widget.controller.enablePinchToScale;
+    final canDragRotate = widget.controller.enableDragRotation;
+    final enableHover = widget.controller.enableHover;
+    final enableHoverRotation = widget.controller.enableHoverRotation;
+
+    if (canScale != _cachedCanScale ||
+        canDragRotate != _cachedCanDragRotate ||
+        enableHover != _cachedEnableHover ||
+        enableHoverRotation != _cachedEnableHoverRotation) {
+      _cachedCanScale = canScale;
+      _cachedCanDragRotate = canDragRotate;
+      _cachedEnableHover = enableHover;
+      _cachedEnableHoverRotation = enableHoverRotation;
       setState(() {});
     }
   }
@@ -126,6 +148,10 @@ class _BlobInputListenerState extends State<BlobInputListener> {
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
+      _cachedCanScale = widget.controller.enablePinchToScale;
+      _cachedCanDragRotate = widget.controller.enableDragRotation;
+      _cachedEnableHover = widget.controller.enableHover;
+      _cachedEnableHoverRotation = widget.controller.enableHoverRotation;
     }
     if ((!_isHoverEffective && _hoverPosition != null) ||
         (!widget.interactive &&
