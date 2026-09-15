@@ -58,17 +58,27 @@ class BlobParticleCoordinator {
     try {
       final w = workerFactory?.call() ?? BlobWorker();
       _worker = w;
-      w.init(_baseSphere, particleCount).then((_) {
-        if (_worker == w) {
-          _workerReady = true;
-          onWorkerReady();
-        }
-      }).catchError((Object err, StackTrace st) {
-        final exception =
-            BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
-        _workerReady = false;
-        onError(exception, st, isAsync: true);
-      });
+      w
+          .init(
+            _baseSphere,
+            particleCount,
+            onError: (exception) {
+              // Isolate unhandled error after successful handshake.
+              onError(exception, exception.stackTrace, isAsync: true);
+            },
+          )
+          .then((_) {
+            if (_worker == w) {
+              _workerReady = true;
+              onWorkerReady();
+            }
+          })
+          .catchError((Object err, StackTrace st) {
+            final exception =
+                BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
+            _workerReady = false;
+            onError(exception, st, isAsync: true);
+          });
     } catch (err, st) {
       final exception =
           BlobWorkerException.spawnFailed(cause: err, stackTrace: st);
@@ -174,6 +184,9 @@ class BlobParticleCoordinator {
   }
 
   /// Processes frame computation on animation tick.
+  ///
+  /// [onComputeError] is called if the background worker raises an exception
+  /// during an active compute call. The frame is skipped gracefully.
   void processTick({
     required BlobController controller,
     required BlobTouchManager touchManager,
@@ -182,6 +195,8 @@ class BlobParticleCoordinator {
     required BuildContext context,
     required bool isStillMounted,
     required VoidCallback onFrameUpdated,
+    void Function(BlobFlutterException error, StackTrace? stackTrace)?
+        onComputeError,
   }) {
     if (_workerReady && !_workerBusy) {
       _workerBusy = true;
@@ -202,6 +217,12 @@ class BlobParticleCoordinator {
         }
         _projectedPoints = result;
         onFrameUpdated();
+      }).catchError((Object err, StackTrace st) {
+        // Compute error: worker stays alive but we skip this frame's result.
+        _workerBusy = false;
+        final exception =
+            BlobWorkerException.computeFailed(cause: err, stackTrace: st);
+        onComputeError?.call(exception, st);
       });
     } else if (!_workerReady) {
       projectParticlesSync(
