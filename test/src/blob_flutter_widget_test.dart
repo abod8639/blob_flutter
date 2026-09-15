@@ -1464,21 +1464,17 @@ void main() {
         ),
       );
 
-      // Now update widget to pass a conflicting parameter (particleCount)
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BlobFlutter(
-              controller: controller,
-              particleCount: 500,
-              onError: (error, st) => capturedError = error,
-            ),
-          ),
-        ),
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      final newWidget = BlobFlutter(
+        controller: controller,
+        particleCount: 500,
+        onError: (error, st) => capturedError = error,
       );
 
-      final dynamic error = tester.takeException();
-      expect(error, isA<BlobControllerConflictException>());
+      expect(
+        () => state.didUpdateWidget(newWidget),
+        throwsA(isA<BlobControllerConflictException>()),
+      );
       expect(capturedError, isA<BlobControllerConflictException>());
       controller.dispose();
     });
@@ -1564,7 +1560,8 @@ void main() {
       );
       await tester.pump();
 
-      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      final state =
+          tester.state(find.byType(BlobFlutter, skipOffstage: false)) as dynamic;
       expect(state.isOffscreen, isFalse);
 
       // Trigger 30 ticks so checkTickVisibility reaches 30th tick
@@ -1639,7 +1636,7 @@ void main() {
       await tester.pump();
 
       expect(capturedError, isA<BlobWorkerException>());
-      expect(capturedError!.message, contains('Worker computation failed'));
+      expect(capturedError!.message, contains('background particle computation'));
     });
 
     testWidgets(
