@@ -1542,26 +1542,34 @@ void main() {
     testWidgets(
         '_onTick periodic checkTickVisibility detects offscreen and calls _syncTickerState (L729)',
         (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Transform.translate(
-              offset: const Offset(0, 5000),
-              child: SizedBox(
-                width: 200,
-                height: 200,
-                child: BlobFlutter(
-                  autoPlay: false,
-                  autoPauseOffscreen: true,
+      double offsetY = 0.0;
+      Widget buildTree() => MaterialApp(
+            home: Scaffold(
+              body: Transform.translate(
+                offset: Offset(0, offsetY),
+                child: const SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: BlobFlutter(
+                    autoPlay: false,
+                    autoPauseOffscreen: true,
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      );
+          );
+
+      await tester.pumpWidget(buildTree());
       await tester.pump();
 
       final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isOffscreen, isFalse);
+
+      // Now move offscreen without scroll notifications
+      offsetY = 5000.0;
+      await tester.pumpWidget(buildTree());
+      await tester.pump();
+
       expect(state.isOffscreen, isFalse);
 
       // Trigger 30 ticks so checkTickVisibility reaches 30th tick
