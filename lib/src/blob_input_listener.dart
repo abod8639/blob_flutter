@@ -26,6 +26,10 @@ class BlobInputListener extends StatefulWidget {
     this.interactive = true,
   });
 
+  /// Test hook to simulate unattached or non-RenderBox objects during mouse pointer up events.
+  @visibleForTesting
+  static RenderObject? Function(BuildContext context)? debugFindRenderObject;
+
   @override
   State<BlobInputListener> createState() => _BlobInputListenerState();
 }
@@ -92,7 +96,9 @@ class _BlobInputListenerState extends State<BlobInputListener> {
     } else {
       _touchPoints.remove(event.pointer);
       if (isMouseOrTrackpad) {
-        final renderObject = context.findRenderObject();
+        final renderObject =
+            BlobInputListener.debugFindRenderObject?.call(context) ??
+                context.findRenderObject();
         if (renderObject is RenderBox &&
             renderObject.attached &&
             renderObject.hasSize) {
@@ -153,11 +159,12 @@ class _BlobInputListenerState extends State<BlobInputListener> {
       _cachedhover = widget.controller.hover;
       _cachedhoverRotation = widget.controller.hoverRotation;
     }
-    if ((!_isHoverEffective && _hoverPosition != null) ||
-        (!widget.interactive &&
-            (_touchPoints.isNotEmpty || _hoverPosition != null))) {
+    if (!_isHoverEffective && _hoverPosition != null) {
       _hoverPosition = null;
-      _touchPoints.clear();
+      _notifyTouches();
+    }
+    if (!widget.interactive &&
+        (_touchPoints.isNotEmpty || _hoverPosition != null)) {
       _notifyTouches();
     }
   }
