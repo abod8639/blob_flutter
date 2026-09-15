@@ -19,6 +19,8 @@ class BlobTouchManager {
     _activeTouches = touches;
   }
 
+  RenderBox? _cachedBox;
+
   /// Recomputes [_localTouches] and [_encodedTouches] only when global touch
   /// positions actually change.
   void updateLocalTouches(BuildContext context) {
@@ -34,25 +36,33 @@ class BlobTouchManager {
     if (_offsetListEquals(_activeTouches, _lastGlobalTouches)) return;
     _lastGlobalTouches = List<Offset>.of(_activeTouches);
 
-    RenderObject? ro;
-    try {
-      ro = context.findRenderObject();
-    } catch (_) {
-      ro = null;
-    }
-    if (ro is RenderBox && ro.attached) {
-      final box = ro;
-      _localTouches = _activeTouches
-          .map((p) => box.globalToLocal(p))
-          .toList(growable: false);
-    } else {
-      _localTouches = List<Offset>.of(_activeTouches);
+    RenderBox? box = _cachedBox;
+    if (box == null || !box.attached) {
+      try {
+        final ro = context.findRenderObject();
+        if (ro is RenderBox && ro.attached) {
+          box = ro;
+          _cachedBox = box;
+        } else {
+          box = null;
+        }
+      } catch (_) {
+        box = null;
+      }
     }
 
-    final buf = Float32List(_localTouches.length * 2);
-    for (int i = 0; i < _localTouches.length; i++) {
-      buf[i * 2] = _localTouches[i].dx;
-      buf[i * 2 + 1] = _localTouches[i].dy;
+    final int count = _activeTouches.length;
+    final List<Offset> localList = List<Offset>.generate(
+      count,
+      (i) => box != null ? box.globalToLocal(_activeTouches[i]) : _activeTouches[i],
+      growable: false,
+    );
+    _localTouches = localList;
+
+    final buf = Float32List(count * 2);
+    for (int i = 0; i < count; i++) {
+      buf[i * 2] = localList[i].dx;
+      buf[i * 2 + 1] = localList[i].dy;
     }
     _encodedTouches = buf;
   }
