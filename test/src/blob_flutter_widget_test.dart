@@ -1682,6 +1682,9 @@ class _SuccessfulMockBlobWorker extends BlobWorker {
     int count, {
     void Function(BlobWorkerException error)? onError,
   }) async {}
+
+  @override
+  bool get isReady => true;
 }
 
 class _FailingComputeBlobWorker extends BlobWorker {
@@ -1693,14 +1696,17 @@ class _FailingComputeBlobWorker extends BlobWorker {
   }) async {}
 
   @override
-  Future<Float32List?> compute(BlobComputeParams params, [Float32List? recycleBuffer]) {
+  bool get isReady => true;
+
+  @override
+  Future<Float32List?> compute(ProjectParamsFlat params, [Float32List? recycleBuffer]) {
     return Future.error(Exception('Simulated compute failure'));
   }
 }
 
 class _ThrowingDampingBlobController extends BlobController {
   @override
-  void applyDamping() {
+  bool applyDamping() {
     throw Exception('Simulated applyDamping failure');
   }
 }
