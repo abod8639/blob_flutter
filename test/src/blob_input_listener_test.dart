@@ -507,5 +507,116 @@ void main() {
       // GestureDetector is unmounted when scale and drag rotation are both disabled
       expect(find.byType(GestureDetector), findsNothing);
     });
+
+    testWidgets(
+        'mouse pointer up falls back to event.position when renderObject is not attached (L106)',
+        (tester) async {
+      final controller = BlobController(hover: true);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobInputListener(
+              controller: controller,
+              hover: true,
+              onTouchesChanged: (t) => touches = t,
+              child: const SizedBox(width: 200, height: 200),
+            ),
+          ),
+        ),
+      );
+
+      final gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(100, 100));
+      await gesture.down(const Offset(100, 100));
+      await tester.pump();
+
+      BlobInputListener.debugFindRenderObject = (_) => null;
+      try {
+        await gesture.up();
+        await tester.pump();
+        expect(touches.length, 1);
+        expect(touches[0], const Offset(100, 100));
+      } finally {
+        BlobInputListener.debugFindRenderObject = null;
+        await gesture.removePointer();
+      }
+    });
+
+    testWidgets(
+        'updating interactive from true to false clears touches and resets dispersion (L118-L125)',
+        (tester) async {
+      final controller = BlobController();
+      List<Offset> touches = [];
+
+      Widget buildTree({required bool interactive}) {
+        return MaterialApp(
+          home: Scaffold(
+            body: BlobInputListener(
+              controller: controller,
+              interactive: interactive,
+              onTouchesChanged: (t) => touches = t,
+              child: const SizedBox(width: 200, height: 200),
+            ),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(buildTree(interactive: true));
+
+      // Start a touch so _touchPoints is not empty
+      final gesture = await tester.startGesture(const Offset(50, 50));
+      await tester.pump();
+      expect(touches.length, 1);
+      expect(controller.dispersion, greaterThan(0.0));
+
+      // Now update widget with interactive: false
+      await tester.pumpWidget(buildTree(interactive: false));
+      await tester.pump();
+
+      expect(touches, isEmpty);
+      expect(controller.dispersion, 0.0);
+
+      await gesture.up();
+    });
+
+    testWidgets(
+        'updating interactive from true to false clears active hover (L118-L125)',
+        (tester) async {
+      final controller = BlobController(hover: true);
+      List<Offset> touches = [];
+
+      Widget buildTree({required bool interactive}) {
+        return MaterialApp(
+          home: Scaffold(
+            body: BlobInputListener(
+              controller: controller,
+              hover: true,
+              interactive: interactive,
+              onTouchesChanged: (t) => touches = t,
+              child: const SizedBox(width: 200, height: 200),
+            ),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(buildTree(interactive: true));
+
+      final gesture =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(50, 50));
+      await tester.pump();
+      expect(touches.length, 1);
+
+      await tester.pumpWidget(buildTree(interactive: false));
+      await tester.pump();
+
+      expect(touches, isEmpty);
+      expect(controller.dispersion, 0.0);
+
+      await gesture.removePointer();
+    });
   });
 }
