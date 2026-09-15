@@ -50,15 +50,10 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
   void initState() {
     super.initState();
     _controller = BlobController(
-      particleCount: 5000,
-      radius: 150.0,
-      pointSize: 1.8,
       speed: _speed,
       blobiness: _blobiness,
       noiseType: _selectedNoise,
-      dragRotation: false,
       pinchToScale: false,
-      hoverRotation: false,
       hover: true,
       gradient: LinearGradient(
         colors: _palettes[_selectedPalette],
