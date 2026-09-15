@@ -647,7 +647,7 @@ class BlobController extends ChangeNotifier {
     }
   }
 
-  /// Alias for [setEnableHover].
+  /// Alias for [setHover].
   void setIsHoverEnabled(bool value) => setHover(value);
 
   /// Sets whether dragging/swiping rotates the blob in 3D.
