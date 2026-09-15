@@ -10,6 +10,8 @@ class _MockCanvas extends Fake implements Canvas {
   ui.PointMode? pointMode;
   Float32List? points;
   Paint? paint;
+  final List<double> recordedStrokeWidths = [];
+  final List<Color> recordedColors = [];
 
   @override
   void drawRawPoints(ui.PointMode pointMode, Float32List points, Paint paint) {
@@ -17,8 +19,18 @@ class _MockCanvas extends Fake implements Canvas {
     this.pointMode = pointMode;
     this.points = points;
     this.paint = paint;
+    recordedStrokeWidths.add(paint.strokeWidth);
+    recordedColors.add(paint.color);
   }
 }
+
+class _ThrowingGradient extends Fake implements Gradient {
+  @override
+  Shader createShader(Rect rect, {TextDirection? textDirection}) {
+    throw Exception('Simulated createShader failure');
+  }
+}
+
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -213,5 +225,120 @@ void main() {
         expect(painterWithShader.shouldRepaint(painterDiffShader), true);
       }
     });
+
+    test(
+        'paint method falls back to solid fallbackColor when fallbackGradient.createShader throws (L83-L84)',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([10.0, 20.0]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 3.0,
+        fallbackGradient: _ThrowingGradient(),
+        fallbackColor: const Color(0xFFFF9800),
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      expect(canvas.drawRawPointsCallCount, 1);
+      expect(canvas.paint?.shader, isNull);
+      expect(canvas.paint?.color, const Color(0xFFFF9800));
+    });
+
+    test(
+        'paint method performs two-pass glow rendering when enableGlow is true and pointSize > 1.0 (L90-L97)',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([10.0, 20.0, 30.0, 40.0]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.green]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 4.0,
+        fallbackGradient: gradient,
+        enableGlow: true,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      expect(canvas.drawRawPointsCallCount, 2);
+      expect(canvas.recordedStrokeWidths.length, 2);
+      expect(canvas.recordedStrokeWidths[0], closeTo(4.0 * 2.2, 0.001));
+      expect(canvas.recordedColors[0], const Color(0x33000000));
+      expect(canvas.recordedStrokeWidths[1], 4.0);
+      expect(canvas.recordedColors[1], const Color(0xFF000000));
+    });
+
+    test(
+        'paint method performs single pass when enableGlow is true but pointSize <= 1.0',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([10.0, 20.0]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.green]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 1.0,
+        fallbackGradient: gradient,
+        enableGlow: true,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      expect(canvas.drawRawPointsCallCount, 1);
+      expect(canvas.recordedStrokeWidths.length, 1);
+      expect(canvas.recordedStrokeWidths[0], 1.0);
+    });
+
+    test(
+        'shouldRepaint detects changes in centerOffset, radius, enableGlow, and blendMode',
+        () {
+      final positions = Float32List(10);
+      const gradient = LinearGradient(colors: [Colors.red, Colors.blue]);
+      final base = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+      );
+
+      final diffOffset = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+        centerOffset: const Offset(10, 10),
+      );
+      expect(base.shouldRepaint(diffOffset), true);
+
+      final diffRadius = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+        radius: 50.0,
+      );
+      expect(base.shouldRepaint(diffRadius), true);
+
+      final diffGlow = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+        enableGlow: true,
+      );
+      expect(base.shouldRepaint(diffGlow), true);
+
+      final diffBlend = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+        blendMode: BlendMode.screen,
+      );
+      expect(base.shouldRepaint(diffBlend), true);
+    });
   });
 }
+
