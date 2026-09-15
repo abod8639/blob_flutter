@@ -144,5 +144,26 @@ void main() {
         FlutterError.onError = oldHandler;
       }
     });
+    test(
+        'BlobControllerConflictException.fromParameters formats message, details, and solutionHint',
+        () {
+      final exception = BlobControllerConflictException.fromParameters(
+        ['radius', 'speed', 'particleCount'],
+      );
+
+      expect(exception.conflictingParameters,
+          ['radius', 'speed', 'particleCount']);
+      expect(exception.message, contains("'radius', 'speed', 'particleCount'"));
+      expect(exception.details, contains('BlobController'));
+      expect(exception.solutionHint, contains('final controller = BlobController('));
+      expect(exception.solutionHint, contains('radius: ...,'));
+      expect(exception.solutionHint, contains('speed: ...,'));
+      expect(exception.solutionHint, contains('particleCount: ...,'));
+
+      final str = exception.toString();
+      expect(str, contains('BlobControllerConflictException'));
+      expect(str, contains('IGNORED'));
+      expect(str, contains('radius: ...,'));
+    });
   });
 }
