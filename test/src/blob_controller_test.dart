@@ -398,5 +398,93 @@ void main() {
       final pausedController = BlobController(isPaused: true);
       expect(pausedController.isPaused, true);
     });
+
+    test('setScaleLimits handles partial limits, clamping, and notifyListeners', () {
+      final controller = BlobController(minScale: 0.5, maxScale: 3.0, scale: 2.0);
+      int notificationCount = 0;
+      controller.addListener(() => notificationCount++);
+
+      // 1. Only minScale (maxScale is null -> hits line 421 `maxScale ?? _maxScale`)
+      controller.setScaleLimits(minScale: 1.0);
+      expect(controller.minScale, 1.0);
+      expect(controller.maxScale, 3.0);
+      expect(notificationCount, 1);
+
+      // 2. Only maxScale (minScale is null -> hits line 420 `minScale ?? _minScale`)
+      controller.setScaleLimits(maxScale: 2.5);
+      expect(controller.minScale, 1.0);
+      expect(controller.maxScale, 2.5);
+      expect(notificationCount, 2);
+
+      // 3. Clamping current scale when scale > new maxScale
+      controller.setScale(2.5);
+      notificationCount = 0;
+      controller.setScaleLimits(maxScale: 1.8);
+      expect(controller.maxScale, 1.8);
+      expect(controller.scale, 1.8); // auto clamped
+      expect(notificationCount, 1);
+
+      // 4. Clamping current scale when scale < new minScale
+      controller.setScaleLimits(minScale: 2.0, maxScale: 4.0);
+      expect(controller.minScale, 2.0);
+      expect(controller.scale, 2.0); // auto clamped
+
+      // 5. Calling with identical limits (changed == false, no notifyListeners)
+      notificationCount = 0;
+      controller.setScaleLimits(minScale: 2.0, maxScale: 4.0);
+      expect(notificationCount, 0);
+
+      // 6. Debug asserts for invalid inputs
+      expect(() => controller.setScaleLimits(minScale: -0.5), throwsAssertionError);
+      expect(() => controller.setScaleLimits(minScale: 5.0, maxScale: 2.0), throwsAssertionError);
+
+      controller.dispose();
+    });
+
+    test('setScaleLimits reports FlutterError when asserts are disabled for invalid inputs', () {
+      final controller = BlobController(minScale: 0.5, maxScale: 3.0);
+      FlutterErrorDetails? reportedDetails;
+      final oldHandler = FlutterError.onError;
+      FlutterError.onError = (details) {
+        reportedDetails = details;
+      };
+
+      try {
+        BlobController.debugEnableAssertsInSetScaleLimits = false;
+
+        // Test effectiveMin <= 0.0
+        controller.setScaleLimits(minScale: -1.0);
+        expect(reportedDetails, isNotNull);
+        expect(reportedDetails!.exception, isA<ArgumentError>());
+        expect(reportedDetails!.context.toString(), contains('setScaleLimits'));
+
+        reportedDetails = null;
+
+        // Test effectiveMin > effectiveMax
+        controller.setScaleLimits(minScale: 5.0, maxScale: 2.0);
+        expect(reportedDetails, isNotNull);
+        expect(reportedDetails!.exception, isA<ArgumentError>());
+      } finally {
+        BlobController.debugEnableAssertsInSetScaleLimits = true;
+        FlutterError.onError = oldHandler;
+        controller.dispose();
+      }
+    });
+
+    test('applyScaleFactor handles factor <= 0 and factor > 0', () {
+      final controller = BlobController(scale: 2.0, minScale: 0.1, maxScale: 5.0);
+
+      // Factor <= 0 returns early without changing scale
+      controller.applyScaleFactor(0.0);
+      expect(controller.scale, 2.0);
+      controller.applyScaleFactor(-1.0);
+      expect(controller.scale, 2.0);
+
+      // Factor > 0 multiplies scale
+      controller.applyScaleFactor(1.5);
+      expect(controller.scale, 3.0);
+
+      controller.dispose();
+    });
   });
 }
