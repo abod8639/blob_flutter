@@ -106,7 +106,13 @@ class BlobShaderCoordinator {
 
   /// Pushes static and dynamic uniforms to the GPU fragment shader.
   ///
-  /// If any uniform push call throws (e.g., invalid uniform index or GPU
+  /// Test hook to simulate shader uniform failure in test environments.
+  @visibleForTesting
+  static void Function()? debugOnUpdateDynamicUniforms;
+
+  /// Uploads per-frame uniforms to the GPU fragment shader.
+  ///
+  /// If uniform submission throws an exception (e.g., driver crash or GPU
   /// context loss), the shader is automatically disabled and [onError] is
   /// called with a [BlobRenderException], causing the widget to fall back
   /// to CPU point rendering for subsequent frames.
@@ -117,6 +123,19 @@ class BlobShaderCoordinator {
     required double time,
     void Function(BlobRenderException error)? onError,
   }) {
+    if (debugOnUpdateDynamicUniforms != null) {
+      try {
+        debugOnUpdateDynamicUniforms!();
+      } catch (err, st) {
+        _shader?.dispose();
+        _shader = null;
+        onError?.call(
+          BlobRenderException.shaderUniformFailed(cause: err, stackTrace: st),
+        );
+        return;
+      }
+    }
+
     final s = _shader;
     if (s == null) return;
 
