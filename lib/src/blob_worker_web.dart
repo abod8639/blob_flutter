@@ -4,7 +4,6 @@ import 'package:blob_flutter/blob_flutter.dart';
 
 import 'blob_compute_params.dart';
 import 'blob_math.dart';
-import 'blob_noise_type.dart';
 
 /// Flutter Web stub for [BlobWorker].
 ///
