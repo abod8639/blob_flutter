@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
 import 'blob_compute_params.dart';
 import 'blob_exception.dart';
 import 'blob_math.dart';
