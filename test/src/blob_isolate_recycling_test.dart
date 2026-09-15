@@ -58,5 +58,44 @@ void main() {
 
       worker.dispose();
     });
+
+    test('reallocates output buffer when recycled buffer length does not match count * 2',
+        () async {
+      final worker = BlobWorker();
+      const count = 30;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      await worker.init(sphere, count);
+      expect(worker.isReady, isTrue);
+
+      final params = ProjectParamsFlat(
+        count: count,
+        radius: 100.0,
+        scale: 1.0,
+        centerOffsetX: 0.0,
+        centerOffsetY: 0.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 0.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        autoRotationSpeed: 0.5,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseTypeIndex: 0,
+        touchRadiusFactor: 1.0,
+        encodedTouches: Float32List(0),
+      );
+
+      // Pass a recycled buffer of mismatched size (e.g. length 10 instead of 60)
+      final mismatchedRecycled = Float32List(10);
+      final frame = await worker.compute(params, mismatchedRecycled);
+      expect(frame, isNotNull);
+      expect(frame!.length, count * 2);
+
+      worker.dispose();
+    });
   });
 }
