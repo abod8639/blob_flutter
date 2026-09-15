@@ -13,6 +13,10 @@ class BlobPainter extends CustomPainter {
   final double pointSize;
   final Gradient fallbackGradient;
   final Color fallbackColor;
+  final Offset centerOffset;
+  final double? radius;
+  final bool enableGlow;
+  final BlendMode blendMode;
 
   /// Snapshot of the frame counter used for efficient [shouldRepaint]
   /// comparison — we repaint only when the generation changes,
@@ -39,6 +43,10 @@ class BlobPainter extends CustomPainter {
     required this.pointSize,
     required this.fallbackGradient,
     this.fallbackColor = const Color(0xFF448AFF),
+    this.centerOffset = Offset.zero,
+    this.radius,
+    this.enableGlow = false,
+    this.blendMode = BlendMode.srcOver,
     Paint? paint,
   })  : _generation = generation,
         _paint = paint ??
@@ -51,6 +59,8 @@ class BlobPainter extends CustomPainter {
     if (positions.isEmpty) return;
 
     _paint.strokeWidth = pointSize;
+    _paint.blendMode = blendMode;
+
     if (shader != null) {
       _paint.shader = shader;
       _paint.color = const Color(0xFF000000);
@@ -58,7 +68,15 @@ class BlobPainter extends CustomPainter {
       // Primary fallback: Render complete native GPU gradient via Canvas engine
       final rect = (size.isEmpty || !size.isFinite)
           ? Rect.fromLTWH(0, 0, pointSize, pointSize)
-          : Offset.zero & size;
+          : (radius != null && radius! > 0
+              ? Rect.fromCircle(
+                  center: Offset(
+                    size.width / 2.0 + centerOffset.dx,
+                    size.height / 2.0 + centerOffset.dy,
+                  ),
+                  radius: radius!,
+                )
+              : Offset.zero & size);
       try {
         _paint.shader = fallbackGradient.createShader(rect);
       } catch (_) {
@@ -67,7 +85,19 @@ class BlobPainter extends CustomPainter {
       }
     }
 
-    canvas.drawRawPoints(ui.PointMode.points, positions, _paint);
+    if (enableGlow && pointSize > 1.0) {
+      // Pass 1: Soft luminous glow aura
+      _paint.strokeWidth = pointSize * 2.2;
+      _paint.color = const Color(0x33000000);
+      canvas.drawRawPoints(ui.PointMode.points, positions, _paint);
+
+      // Pass 2: Crisp brilliant core
+      _paint.strokeWidth = pointSize;
+      _paint.color = const Color(0xFF000000);
+      canvas.drawRawPoints(ui.PointMode.points, positions, _paint);
+    } else {
+      canvas.drawRawPoints(ui.PointMode.points, positions, _paint);
+    }
   }
 
   /// Only request repaint when the frame generation counter has changed,
@@ -78,6 +108,10 @@ class BlobPainter extends CustomPainter {
         shader != oldDelegate.shader ||
         pointSize != oldDelegate.pointSize ||
         fallbackColor != oldDelegate.fallbackColor ||
-        fallbackGradient != oldDelegate.fallbackGradient;
+        fallbackGradient != oldDelegate.fallbackGradient ||
+        centerOffset != oldDelegate.centerOffset ||
+        radius != oldDelegate.radius ||
+        enableGlow != oldDelegate.enableGlow ||
+        blendMode != oldDelegate.blendMode;
   }
 }
