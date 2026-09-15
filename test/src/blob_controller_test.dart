@@ -24,13 +24,13 @@ void main() {
         dispersion: 0.3,
         noiseFrequency: 1.8,
         viewDistance: 2.5,
-        enableHover: true,
+        hover: true,
         isColorAnimated: false,
         colorAnimationSpeed: 2.5,
         waveIntensity: 0.5,
-        enablePinchToScale: true,
-        enableDragRotation: true,
-        enableHoverRotation: true,
+        pinchToScale: true,
+        dragRotation: true,
+        hoverRotation: true,
         noiseType: BlobNoiseType.vortex,
         gradient: const RadialGradient(colors: [Colors.red, Colors.blue]),
       );
@@ -53,13 +53,13 @@ void main() {
       expect(controller.autoRotationSpeed, 1.2);
       expect(controller.noiseFrequency, 1.8);
       expect(controller.viewDistance, 2.5);
-      expect(controller.enableHover, true);
+      expect(controller.hover, true);
       expect(controller.isColorAnimated, false);
       expect(controller.colorAnimationSpeed, 2.5);
       expect(controller.waveIntensity, 0.5);
-      expect(controller.enablePinchToScale, true);
-      expect(controller.enableDragRotation, true);
-      expect(controller.enableHoverRotation, true);
+      expect(controller.pinchToScale, true);
+      expect(controller.dragRotation, true);
+      expect(controller.hoverRotation, true);
       expect(controller.noiseType, BlobNoiseType.vortex);
       expect(controller.gradient, isA<RadialGradient>());
     });
@@ -179,16 +179,16 @@ void main() {
       controller.setViewDistance(0.5); // clamped to 0.8
       expect(controller.viewDistance, 0.8);
 
-      controller.setEnableHover(true);
-      expect(controller.enableHover, true);
+      controller.setHover(true);
+      expect(controller.hover, true);
       controller.setIsHoverEnabled(false);
-      expect(controller.enableHover, false);
+      expect(controller.hover, false);
 
-      controller.setEnableDragRotation(true);
-      expect(controller.enableDragRotation, true);
+      controller.setDragRotation(true);
+      expect(controller.dragRotation, true);
 
-      controller.setEnableHoverRotation(true);
-      expect(controller.enableHoverRotation, true);
+      controller.setHoverRotation(true);
+      expect(controller.hoverRotation, true);
 
       controller.setNoiseType(BlobNoiseType.cellular);
       expect(controller.noiseType, BlobNoiseType.cellular);
@@ -220,8 +220,8 @@ void main() {
       controller.setAlignment(Alignment.bottomLeft);
       expect(controller.alignment, Alignment.bottomLeft);
 
-      controller.setEnablePinchToScale(false);
-      expect(controller.enablePinchToScale, false);
+      controller.setPinchToScale(false);
+      expect(controller.pinchToScale, false);
 
       controller.setScale(2.0);
       controller.setCenterOffset(const Offset(30, 30));
@@ -281,7 +281,7 @@ void main() {
       controller.setAlignment(Alignment.topCenter);
       expect(notifyCount, 6);
 
-      controller.setEnablePinchToScale(false);
+      controller.setPinchToScale(false);
       expect(notifyCount, 7);
 
       controller.setBlobiness(2.0);
