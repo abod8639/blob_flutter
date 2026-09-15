@@ -27,7 +27,7 @@ import 'blob_worker.dart';
 ///
 /// ## Interaction & Physics
 /// - **Drag**: Rotates the blob with realistic inertial damping.
-/// - **Pinch-to-Scale**: Multi-touch zoom in/out (configurable via [BlobController.enablePinchToScale]).
+/// - **Pinch-to-Scale**: Multi-touch zoom in/out (configurable via [BlobController.pinchToScale]).
 /// - **Tap & Hold**: Disperses the particles radially outward.
 /// - **Mouse Hover** (desktop/web): Tracks cursor and applies subtle rotation/dispersion.
 ///
@@ -160,8 +160,8 @@ class BlobFlutter extends StatefulWidget {
   ///
   /// In production apps, defaults to `true`.
   /// In test environments (e.g. `flutter_test`), automatically defaults to `false`
-  /// to prevent [WidgetTester.pumpAndSettle] from timing out, unless explicitly
-  /// set to `true` or enabled via [BlobFlutter.enableAutoPlayInTests].
+  /// to prevent `WidgetTester.pumpAndSettle` from timing out, unless explicitly
+  /// set to `true` or enabled via [autoPlayInTests].
   final bool? autoPlay;
 
   /// Whether to automatically pause the animation ticker and computation
