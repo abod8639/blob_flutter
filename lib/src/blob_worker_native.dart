@@ -64,6 +64,8 @@ class BlobWorker {
     }
   }
 
+  final List<Object?> _paramsBuffer = List<Object?>.filled(18, null);
+
   /// Submits [params] to the worker for parallel computation.
   ///
   /// When [recycleBuffer] is provided (e.g. from a previous frame), its memory
@@ -79,7 +81,7 @@ class BlobWorker {
     final TransferableTypedData? transferableRecycled = recycleBuffer != null
         ? TransferableTypedData.fromList([recycleBuffer])
         : null;
-    _tx!.send([params.toMessage(), transferableRecycled]);
+    _tx!.send([params.toMessage(_paramsBuffer), transferableRecycled]);
     return completer.future;
   }
 
