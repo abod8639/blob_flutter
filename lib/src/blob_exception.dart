@@ -163,3 +163,62 @@ class BlobParameterException extends BlobFlutterException {
     );
   }
 }
+
+/// Thrown or asserted when conflicting parameters are passed to [BlobFlutter]
+/// alongside an external [BlobController].
+///
+/// When a [BlobController] is attached, all geometric, physics, and visual
+/// parameters must be configured directly on the controller, because widget-level
+/// parameters are ignored.
+class BlobControllerConflictException extends BlobFlutterException {
+  /// The names of the conflicting parameters passed to [BlobFlutter].
+  final List<String> conflictingParameters;
+
+  /// Creates a [BlobControllerConflictException].
+  const BlobControllerConflictException({
+    required this.conflictingParameters,
+    required super.message,
+    super.details,
+    super.solutionHint,
+  });
+
+  /// Factory helper providing clear, non-distracting diagnostics and resolution steps.
+  factory BlobControllerConflictException.fromParameters(
+    List<String> conflictingParameters,
+  ) {
+    final paramList = conflictingParameters.map((p) => "'$p'").join(', ');
+    return BlobControllerConflictException(
+      conflictingParameters: conflictingParameters,
+      message:
+          'Settings passed to BlobFlutter ($paramList) are IGNORED because [controller] is attached.',
+      details:
+          'When [controller] is provided, all physics and appearance properties must be configured '
+          'directly on the BlobController instance. Parameters passed to BlobFlutter have no effect.',
+      solutionHint:
+          '1. Configure these properties directly on the controller:\n'
+          '     final controller = BlobController(\n'
+          '${conflictingParameters.map((p) => '       $p: ...,').join('\n')}\n'
+          '     );\n'
+          '2. Remove ($paramList) from BlobFlutter.',
+    );
+  }
+
+  @override
+  String toString() {
+    final paramList = conflictingParameters.map((p) => "'$p'").join(', ');
+    final buffer = StringBuffer();
+    buffer.writeln(
+        'BlobControllerConflictException: Settings passed to BlobFlutter ($paramList) are IGNORED because [controller] is attached.');
+    buffer.writeln('All properties outside the controller have no effect.');
+    buffer.writeln();
+    buffer.writeln('Fix:');
+    buffer.writeln('  1. Move them into BlobController:');
+    buffer.writeln('       final controller = BlobController(');
+    for (final p in conflictingParameters) {
+      buffer.writeln('         $p: ...,');
+    }
+    buffer.writeln('       );');
+    buffer.write('  2. Remove ($paramList) from BlobFlutter(...).');
+    return buffer.toString();
+  }
+}
