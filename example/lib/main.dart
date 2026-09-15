@@ -119,6 +119,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
           Positioned.fill(
             child: BlobFlutter(
               controller: _controller,
+              particleCount: 100,
             ),
           ),
 
