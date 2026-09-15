@@ -607,6 +607,7 @@ void main() {
       final gesture =
           await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await gesture.addPointer(location: const Offset(50, 50));
+      await gesture.moveTo(const Offset(60, 60));
       await tester.pump();
       expect(touches.length, 1);
 
