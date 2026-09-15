@@ -49,25 +49,33 @@ class BlobFlutter extends StatefulWidget {
   /// Whether the current execution context is inside a Flutter test environment.
   static bool get isRunningInTest => BlobShaderHelper.isRunningInTest;
 
+  // ── Controller-managed parameter storage (nullable for conflict detection) ─
+  final int? _particleCount;
+  final double? _radius;
+  final double? _pointSize;
+  final double? _speed;
+  final double? _tapScaleFactor;
+  final double? _touchRadiusFactor;
+  final Gradient? _gradient;
+  final bool? _isColorAnimated;
+  final double? _colorAnimationSpeed;
+  final double? _waveIntensity;
+  final bool? _enableHover;
+  final bool? _enableDragRotation;
+  final bool? _enableHoverRotation;
+  final bool? _enablePinchToScale;
+  final double? _rotationX;
+  final double? _rotationY;
+  final BlobNoiseType? _noiseType;
+
   /// Total number of particles. Default: 5000.
-  final int particleCount;
+  int get particleCount => _particleCount ?? 5000;
 
   /// Base unscaled radius of the 3D particle sphere or planar surface in logical pixels.
-  ///
-  /// Determines the fundamental visual dimensions of the object on the canvas
-  /// prior to interactive scaling, perspective division, or dynamic noise displacement.
-  ///
-  /// Default: `150.0`. Must be greater than 0.0.
-  final double radius;
+  double get radius => _radius ?? 150.0;
 
   /// Visual diameter of each rendered particle point in logical pixels.
-  ///
-  /// - **Smaller values (1.0 – 2.0):** Creates fine cosmic dust, starlight, or smooth
-  ///   flowing liquid droplet aesthetics.
-  /// - **Larger values (3.0 – 6.0+):** Creates bold, glowing orbs and vibrant nodes.
-  ///
-  /// Default: `2.0`. Must be greater than 0.0.
-  final double pointSize;
+  double get pointSize => _pointSize ?? 2.0;
 
   /// Optional external [BlobController] to inspect and dynamically modify blob
   /// properties (radius, rotation, speed, noise type, colors, dispersion) at runtime.
@@ -77,123 +85,50 @@ class BlobFlutter extends StatefulWidget {
   final BlobController? controller;
 
   /// Impulse intensity multiplier applied to particle dispersion upon touch, tap, or click.
-  ///
-  /// - **Higher values (0.5 – 2.0+):** Creates a dramatic, explosive shockwave
-  ///   that forcefully scatters particles outward from the touch point.
-  /// - **`0.0`:** Completely disables touch dispersion impulses.
-  ///
-  /// Default: `0.40`. Range: `[0.0, 5.0]`.
-  final double tapScaleFactor;
+  double get tapScaleFactor => _tapScaleFactor ?? 0.40;
 
   /// Area of influence multiplier for interactive pointer touches relative to [radius].
-  ///
-  /// - **Higher values (0.5 – 2.0+):** Broadens the interactive zone, repelling particles
-  ///   across a wide perimeter around the finger or cursor.
-  /// - **Lower values (0.1 – 0.3):** Restricts the interaction tightly beneath the pointer.
-  ///
-  /// Default: `0.30`. Range: `[0.1, 5.0]`.
-  final double touchRadiusFactor;
+  double get touchRadiusFactor => _touchRadiusFactor ?? 0.30;
 
   /// The color gradient applied to particles via the GPU fragment shader.
-  ///
-  /// Supports [LinearGradient], [RadialGradient], and [SweepGradient] with up to
-  /// 8 color stops (or more, automatically downsampled). When [isColorAnimated] is `true`,
-  /// colors smoothly shift and undulate across the particle coordinates. If runtime shaders
-  /// are unavailable, automatically falls back to native canvas gradient rendering.
-  ///
-  /// Default: Linear gradient from [Colors.blueAccent] to [Colors.purpleAccent].
-  final Gradient gradient;
+  Gradient get gradient =>
+      _gradient ??
+      const LinearGradient(
+        colors: [Colors.blueAccent, Colors.purpleAccent],
+      );
 
   /// Playback speed multiplier for procedural noise deformations and wave undulations.
-  ///
-  /// - **Higher values (1.5 – 5.0+):** Produces energetic, rapid fluid ripples or turbulent motion.
-  /// - **Lower values (0.2 – 0.8):** Produces calm, meditative, slow-motion breathing motion.
-  /// - **`0.0`:** Pauses all procedural deformation, freezing the geometry in its current state.
-  ///
-  /// Default: `1.0`. Must be non-negative.
-  final double speed;
+  double get speed => _speed ?? 1.0;
 
   /// Whether the shader gradient dynamically flows and shifts across particles over time.
-  ///
-  /// - **`true`:** Colors continuously drift and cycle through the particles, creating a
-  ///   mesmerizing chromatic liquid shimmer.
-  /// - **`false`:** Colors stay statically pinned to their UV coordinates.
-  ///
-  /// Default: `true`.
-  final bool isColorAnimated;
+  bool get isColorAnimated => _isColorAnimated ?? true;
 
   /// Speed multiplier for the GPU color gradient flow animation.
-  ///
-  /// Controls how fast color bands migrate across the particles. Only active
-  /// when [isColorAnimated] is `true`.
-  ///
-  /// Default: `1.0`. Set to `0.0` for static colors.
-  final double colorAnimationSpeed;
+  double get colorAnimationSpeed => _colorAnimationSpeed ?? 1.0;
 
   /// Intensity of wave distortion and refraction shimmer applied to the color shader.
-  ///
-  /// - **`0.0`:** Pure, clean geometric gradient transitions.
-  /// - **`1.0`:** Organic fluid shimmer with natural wave interference ripples.
-  /// - **`2.0+`:** Vivid liquid refraction and intense prismatic light distortion.
-  ///
-  /// Default: `1.0`. Range: `[0.0, 5.0]`.
-  final double waveIntensity;
+  double get waveIntensity => _waveIntensity ?? 1.0;
 
   /// Whether particles disperse and react to mouse cursor hovering without clicking.
-  ///
-  /// Specially designed for desktop (macOS, Windows, Linux) and Web platforms to
-  /// make the blob feel alive and interactive under a moving mouse pointer.
-  ///
-  /// Default: `false`.
-  final bool enableHover;
+  bool get enableHover => _enableHover ?? false;
 
   /// Whether mouse/touch drag gestures rotate and spin the 3D object on the canvas.
-  ///
-  /// When enabled, dragging applies rotational velocity with realistic inertial damping,
-  /// smoothly gliding back to the base orientation angle when released.
-  ///
-  /// Default: `false`.
-  final bool enableDragRotation;
+  bool get enableDragRotation => _enableDragRotation ?? false;
 
   /// Whether moving the mouse cursor without clicking applies subtle 3D tilt towards the cursor.
-  ///
-  /// Creates an engaging 3D parallax card tilt effect on Desktop and Web browsers.
-  ///
-  /// Default: `false`.
-  final bool enableHoverRotation;
+  bool get enableHoverRotation => _enableHoverRotation ?? false;
+
+  /// Whether multi-touch pinch-to-scale zooming is enabled.
+  bool get enablePinchToScale => _enablePinchToScale ?? false;
 
   /// Initial persistent 3D orientation angle around the horizontal X-axis (pitch/tilt) in radians.
-  ///
-  /// - **Positive values (e.g. `0.5` to `1.57` rad):** Tilts the top of the object backward/upward,
-  ///   ideal for viewing planar surfaces like [BlobNoiseType.wave] from an elevated 3D angle.
-  /// - **Negative values:** Tilts the object forward/downward.
-  ///
-  /// Unlike dynamic drag momentum, this base angle is persistent and is not erased by damping.
-  ///
-  /// Default: `0.0`.
-  final double rotationX;
+  double get rotationX => _rotationX ?? 0.0;
 
   /// Initial persistent 3D orientation angle around the vertical Y-axis (yaw/turn) in radians.
-  ///
-  /// Rotates the object horizontally around its vertical axis to showcase different faces.
-  ///
-  /// Default: `0.0`.
-  final double rotationY;
+  double get rotationY => _rotationY ?? 0.0;
 
   /// The procedural mathematical deformation algorithm used to sculpt the particle mesh.
-  ///
-  /// Choose between 8 unique algorithms:
-  /// - [BlobNoiseType.harmonic]: Organic, calm fluid liquid blob motion.
-  /// - [BlobNoiseType.spiky]: Sharp crystalline ridges, peaks, and audio-reactive spikes.
-  /// - [BlobNoiseType.fractal]: Multi-octave fBm turbulence and cloud/terrain textures.
-  /// - [BlobNoiseType.cellular]: Segmented Voronoi clusters, biological cells, and bubbles.
-  /// - [BlobNoiseType.vortex]: Swirling galactic spiral vortex and tornado funnel.
-  /// - [BlobNoiseType.sphericalHarmonics]: Acoustic cymatics and quantum orbital standing waves.
-  /// - [BlobNoiseType.simplex]: Omni-directional, artifact-free smooth 3D flow.
-  /// - [BlobNoiseType.wave]: Flat full square carpet/net with undulating ocean ripples.
-  ///
-  /// Default: [BlobNoiseType.harmonic].
-  final BlobNoiseType noiseType;
+  BlobNoiseType get noiseType => _noiseType ?? BlobNoiseType.harmonic;
 
   /// Optional callback invoked when an error occurs during shader compilation,
   /// asset loading, or background worker isolate execution.
@@ -265,40 +200,30 @@ class BlobFlutter extends StatefulWidget {
   /// - [HitTestBehavior.deferToChild]: Only intercepts events if a hit-testable child is tapped.
   final HitTestBehavior hitTestBehavior;
 
-  /// Whether multi-touch pinch-to-scale zooming is enabled.
-  ///
-  /// When `false` (default on [BlobFlutter]), prevents [GestureDetector] from
-  /// registering a `ScaleGestureRecognizer` into the Flutter Gesture Arena, ensuring
-  /// zero competition and butter-smooth scrolling inside parent [ListView] or [PageView] widgets.
-  ///
-  /// Default: `false`.
-  final bool enablePinchToScale;
 
   /// Creates a [BlobFlutter] widget.
   const BlobFlutter({
     super.key,
-    this.particleCount = 5000,
-    this.radius = 150.0,
-    this.pointSize = 2.0,
-    this.speed = 1.0,
-    this.tapScaleFactor = 0.40,
-    this.touchRadiusFactor = 0.30,
+    int? particleCount,
+    double? radius,
+    double? pointSize,
+    double? speed,
+    double? tapScaleFactor,
+    double? touchRadiusFactor,
     this.controller,
-    this.gradient = const LinearGradient(
-      colors: [Colors.blueAccent, Colors.purpleAccent],
-    ),
-    this.isColorAnimated = true,
-    this.colorAnimationSpeed = 1.0,
-    this.waveIntensity = 1.0,
-    this.enableHover = false,
-    this.enableDragRotation = false,
-    this.enableHoverRotation = false,
-    this.enablePinchToScale = false,
+    Gradient? gradient,
+    bool? isColorAnimated,
+    double? colorAnimationSpeed,
+    double? waveIntensity,
+    bool? enableHover,
+    bool? enableDragRotation,
+    bool? enableHoverRotation,
+    bool? enablePinchToScale,
     this.interactive = true,
     this.hitTestBehavior = HitTestBehavior.translucent,
-    this.rotationX = 0.0,
-    this.rotationY = 0.0,
-    this.noiseType = BlobNoiseType.harmonic,
+    double? rotationX,
+    double? rotationY,
+    BlobNoiseType? noiseType,
     this.onError,
     this.errorBuilder,
     this.silentErrorLogging,
@@ -307,49 +232,100 @@ class BlobFlutter extends StatefulWidget {
     this.autoPlay,
     this.autoPauseOffscreen = true,
     this.autoPauseOnAppBackground = true,
-  })  : assert(
-          particleCount > 0,
+  })  : _particleCount = particleCount,
+        _radius = radius,
+        _pointSize = pointSize,
+        _speed = speed,
+        _tapScaleFactor = tapScaleFactor,
+        _touchRadiusFactor = touchRadiusFactor,
+        _gradient = gradient,
+        _isColorAnimated = isColorAnimated,
+        _colorAnimationSpeed = colorAnimationSpeed,
+        _waveIntensity = waveIntensity,
+        _enableHover = enableHover,
+        _enableDragRotation = enableDragRotation,
+        _enableHoverRotation = enableHoverRotation,
+        _enablePinchToScale = enablePinchToScale,
+        _rotationX = rotationX,
+        _rotationY = rotationY,
+        _noiseType = noiseType,
+        assert(
+          particleCount == null || particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
           'Example fix: BlobFlutter(particleCount: 5000).',
         ),
         assert(
-          radius > 0.0,
+          radius == null || radius > 0.0,
           "BlobFlutter: 'radius' must be greater than 0.0 (received $radius). "
           'Example fix: BlobFlutter(radius: 150.0).',
         ),
         assert(
-          pointSize > 0.0,
+          pointSize == null || pointSize > 0.0,
           "BlobFlutter: 'pointSize' must be greater than 0.0 (received $pointSize). "
           'Example fix: BlobFlutter(pointSize: 2.0).',
         ),
         assert(
-          speed >= 0.0,
+          speed == null || speed >= 0.0,
           "BlobFlutter: 'speed' must be non-negative (received $speed). "
           'Example fix: BlobFlutter(speed: 1.0).',
         ),
         assert(
-          tapScaleFactor >= 0.0,
+          tapScaleFactor == null || tapScaleFactor >= 0.0,
           "BlobFlutter: 'tapScaleFactor' must be non-negative (received $tapScaleFactor). "
           'Example fix: BlobFlutter(tapScaleFactor: 0.40).',
         ),
         assert(
-          touchRadiusFactor >= 0.0,
+          touchRadiusFactor == null || touchRadiusFactor >= 0.0,
           "BlobFlutter: 'touchRadiusFactor' must be non-negative (received $touchRadiusFactor). "
           'Example fix: BlobFlutter(touchRadiusFactor: 0.30).',
         ),
         assert(
-          colorAnimationSpeed >= 0.0,
+          colorAnimationSpeed == null || colorAnimationSpeed >= 0.0,
           "BlobFlutter: 'colorAnimationSpeed' must be non-negative (received $colorAnimationSpeed). "
           'Example fix: BlobFlutter(colorAnimationSpeed: 1.0).',
         ),
         assert(
-          waveIntensity >= 0.0,
+          waveIntensity == null || waveIntensity >= 0.0,
           "BlobFlutter: 'waveIntensity' must be non-negative (received $waveIntensity). "
           'Example fix: BlobFlutter(waveIntensity: 1.0).',
         );
 
+  /// Returns a list of parameter names passed directly to [BlobFlutter] that
+  /// conflict with an attached [controller].
+  static List<String> findConflictingParameters(BlobFlutter w) {
+    if (w.controller == null) return const [];
+    final list = <String>[];
+    if (w._particleCount != null) list.add('particleCount');
+    if (w._radius != null) list.add('radius');
+    if (w._pointSize != null) list.add('pointSize');
+    if (w._speed != null) list.add('speed');
+    if (w._tapScaleFactor != null) list.add('tapScaleFactor');
+    if (w._touchRadiusFactor != null) list.add('touchRadiusFactor');
+    if (w._gradient != null) list.add('gradient');
+    if (w._isColorAnimated != null) list.add('isColorAnimated');
+    if (w._colorAnimationSpeed != null) list.add('colorAnimationSpeed');
+    if (w._waveIntensity != null) list.add('waveIntensity');
+    if (w._enableHover != null) list.add('enableHover');
+    if (w._enableDragRotation != null) list.add('enableDragRotation');
+    if (w._enableHoverRotation != null) list.add('enableHoverRotation');
+    if (w._enablePinchToScale != null) list.add('enablePinchToScale');
+    if (w._rotationX != null) list.add('rotationX');
+    if (w._rotationY != null) list.add('rotationY');
+    if (w._noiseType != null) list.add('noiseType');
+    return list;
+  }
+
   @override
-  State<BlobFlutter> createState() => _ParticleBlobState();
+  State<BlobFlutter> createState() {
+    final conflicts = findConflictingParameters(this);
+    if (controller != null && conflicts.isNotEmpty) {
+      final exception =
+          BlobControllerConflictException.fromParameters(conflicts);
+      onError?.call(exception, StackTrace.current);
+      throw exception;
+    }
+    return _ParticleBlobState();
+  }
 }
 
 class _ParticleBlobState extends State<BlobFlutter>
@@ -491,6 +467,13 @@ class _ParticleBlobState extends State<BlobFlutter>
   @override
   void initState() {
     super.initState();
+    final conflicts = BlobFlutter.findConflictingParameters(widget);
+    if (widget.controller != null && conflicts.isNotEmpty) {
+      final exception =
+          BlobControllerConflictException.fromParameters(conflicts);
+      widget.onError?.call(exception, StackTrace.current);
+      throw exception;
+    }
     WidgetsBinding.instance.addObserver(this);
 
     _ownsController = widget.controller == null;
@@ -684,6 +667,14 @@ class _ParticleBlobState extends State<BlobFlutter>
   @override
   void didUpdateWidget(BlobFlutter oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    final conflicts = BlobFlutter.findConflictingParameters(widget);
+    if (widget.controller != null && conflicts.isNotEmpty) {
+      final exception =
+          BlobControllerConflictException.fromParameters(conflicts);
+      widget.onError?.call(exception, StackTrace.current);
+      throw exception;
+    }
 
     if (oldWidget.particleCount != widget.particleCount && _ownsController) {
       _controller.setParticleCount(widget.particleCount);
