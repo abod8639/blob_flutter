@@ -98,13 +98,23 @@ class BlobShaderHelper {
     required bool isColorAnimated,
     required double colorAnimationSpeed,
     required double waveIntensity,
+    Offset? centerOffset,
+    double? radius,
+    Alignment? alignment,
   }) {
     // 0-1: uResolution
     shader.setFloat(0, size.width);
     shader.setFloat(1, size.height);
 
     // 35-38, 40: Gradient geometry
-    pushGradientParams(shader: shader, gradient: gradient);
+    pushGradientParams(
+      shader: shader,
+      gradient: gradient,
+      size: size,
+      centerOffset: centerOffset,
+      radius: radius,
+      alignment: alignment,
+    );
 
     // 39: uColorAnimationSpeed
     shader.setFloat(39, isColorAnimated ? colorAnimationSpeed : 0.0);
@@ -212,33 +222,76 @@ class BlobShaderHelper {
   static void pushGradientParams({
     required ui.FragmentShader shader,
     required Gradient gradient,
+    Size? size,
+    Offset? centerOffset,
+    double? radius,
+    Alignment? alignment,
   }) {
     double startX = 0.5, startY = 0.0;
     double endX = 0.5, endY = 1.0;
     double gradType = 0.0; // 0 = Linear, 1 = Radial, 2 = Sweep
 
+    final bool hasBlobBounds = size != null &&
+        size.width > 0 &&
+        size.height > 0 &&
+        radius != null &&
+        radius > 0;
+
+    final double cx = hasBlobBounds
+        ? size.width / 2.0 +
+            (centerOffset?.dx ?? 0.0) +
+            (alignment != null ? alignment.x * (size.width / 2.0) : 0.0)
+        : 0.0;
+    final double cy = hasBlobBounds
+        ? size.height / 2.0 +
+            (centerOffset?.dy ?? 0.0) +
+            (alignment != null ? alignment.y * (size.height / 2.0) : 0.0)
+        : 0.0;
+    final double r = hasBlobBounds ? radius : 0.0;
+
     if (gradient is LinearGradient) {
       gradType = 0.0;
       final begin = gradient.begin.resolve(TextDirection.ltr);
       final end = gradient.end.resolve(TextDirection.ltr);
-      startX = (begin.x + 1.0) / 2.0;
-      startY = (begin.y + 1.0) / 2.0;
-      endX = (end.x + 1.0) / 2.0;
-      endY = (end.y + 1.0) / 2.0;
+      if (hasBlobBounds) {
+        startX = (cx + begin.x * r) / size.width;
+        startY = (cy + begin.y * r) / size.height;
+        endX = (cx + end.x * r) / size.width;
+        endY = (cy + end.y * r) / size.height;
+      } else {
+        startX = (begin.x + 1.0) / 2.0;
+        startY = (begin.y + 1.0) / 2.0;
+        endX = (end.x + 1.0) / 2.0;
+        endY = (end.y + 1.0) / 2.0;
+      }
     } else if (gradient is RadialGradient) {
       gradType = 1.0;
       final center = gradient.center.resolve(TextDirection.ltr);
-      startX = (center.x + 1.0) / 2.0;
-      startY = (center.y + 1.0) / 2.0;
-      endX = gradient.radius;
-      endY = 0.0;
+      if (hasBlobBounds) {
+        startX = (cx + center.x * r) / size.width;
+        startY = (cy + center.y * r) / size.height;
+        endX = (r * gradient.radius) / size.width;
+        endY = 0.0;
+      } else {
+        startX = (center.x + 1.0) / 2.0;
+        startY = (center.y + 1.0) / 2.0;
+        endX = gradient.radius;
+        endY = 0.0;
+      }
     } else if (gradient is SweepGradient) {
       gradType = 2.0;
       final center = gradient.center.resolve(TextDirection.ltr);
-      startX = (center.x + 1.0) / 2.0;
-      startY = (center.y + 1.0) / 2.0;
-      endX = 0.0;
-      endY = 0.0;
+      if (hasBlobBounds) {
+        startX = (cx + center.x * r) / size.width;
+        startY = (cy + center.y * r) / size.height;
+        endX = 0.0;
+        endY = 0.0;
+      } else {
+        startX = (center.x + 1.0) / 2.0;
+        startY = (center.y + 1.0) / 2.0;
+        endX = 0.0;
+        endY = 0.0;
+      }
     }
 
     // 35-36: uGradientStart
