@@ -1445,7 +1445,264 @@ void main() {
 
       expect(find.byType(BlobFlutter), findsOneWidget);
     });
+
+    testWidgets(
+        'didUpdateWidget detects conflicting parameters alongside controller and invokes onError (L538-L539)',
+        (tester) async {
+      final controller = BlobController();
+      BlobFlutterException? capturedError;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              onError: (error, st) => capturedError = error,
+            ),
+          ),
+        ),
+      );
+
+      // Now update widget to pass a conflicting parameter (particleCount)
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              particleCount: 500,
+              onError: (error, st) => capturedError = error,
+            ),
+          ),
+        ),
+      );
+
+      final dynamic error = tester.takeException();
+      expect(error, isA<BlobControllerConflictException>());
+      expect(capturedError, isA<BlobControllerConflictException>());
+      controller.dispose();
+    });
+
+    testWidgets(
+        '_restartWorker handles sync error, async error, and successful worker readiness (L704-L715)',
+        (tester) async {
+      final controller = BlobController(particleCount: 200);
+
+      // 1. Successful restart worker -> calls onWorkerReady (L714-L715)
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              workerFactory: () => _SuccessfulMockBlobWorker(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      controller.setParticleCount(300); // Triggers _restartWorker
+      await tester.pump();
+
+      // 2. Sync error in workerFactory -> calls onError with isAsync: false (L710-L712)
+      BlobFlutterException? syncError;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              workerFactory: () => throw Exception('Sync factory restart failure'),
+              onError: (err, st) => syncError = err,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      controller.setParticleCount(400); // Triggers _restartWorker
+      await tester.pump();
+      expect(syncError, isA<BlobWorkerException>());
+
+      // 3. Async error in worker.init -> calls onError with isAsync: true (L705-L707)
+      BlobFlutterException? asyncError;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              workerFactory: () => _FailingInitBlobWorker(),
+              onError: (err, st) => asyncError = err,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      controller.setParticleCount(500); // Triggers _restartWorker
+      await tester.pump();
+      expect(asyncError, isA<BlobWorkerException>());
+
+      controller.dispose();
+    });
+
+    testWidgets(
+        '_onTick periodic checkTickVisibility detects offscreen and calls _syncTickerState (L729)',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Offstage(
+              offstage: true,
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: BlobFlutter(
+                  autoPlay: false,
+                  autoPauseOffscreen: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isOffscreen, isFalse);
+
+      // Trigger 30 ticks so checkTickVisibility reaches 30th tick
+      for (int i = 1; i <= 30; i++) {
+        state.onTickForTesting(Duration(milliseconds: 16 * i));
+      }
+
+      expect(state.isOffscreen, isTrue);
+    });
+
+    testWidgets(
+        '_onTick updateDynamicUniforms error invokes onError and sets _lastError (L746-L751)',
+        (tester) async {
+      BlobFlutterException? capturedError;
+      BlobShaderCoordinator.debugOnUpdateDynamicUniforms = () {
+        throw Exception('Simulated dynamic uniform error');
+      };
+
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 200,
+                height: 200,
+                child: BlobFlutter(
+                  autoPlay: false,
+                  onError: (err, st) => capturedError = err,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+        state.onTickForTesting(const Duration(milliseconds: 16));
+        await tester.pump();
+
+        expect(capturedError, isA<BlobRenderException>());
+      } finally {
+        BlobShaderCoordinator.debugOnUpdateDynamicUniforms = null;
+      }
+    });
+
+    testWidgets(
+        '_onTick processTick onComputeError invokes widget.onError (L765-L767)',
+        (tester) async {
+      BlobFlutterException? capturedError;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              height: 200,
+              child: BlobFlutter(
+                autoPlay: false,
+                workerFactory: () => _FailingComputeBlobWorker(),
+                onError: (err, st) => capturedError = err,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      // Wait for worker to be ready
+      await tester.pump();
+      state.onTickForTesting(const Duration(milliseconds: 16));
+      await tester.pump();
+
+      expect(capturedError, isA<BlobWorkerException>());
+      expect(capturedError!.message, contains('Worker computation failed'));
+    });
+
+    testWidgets(
+        '_onTick unexpected error in try block catches BlobFlutterException and calls onError (L770, L775)',
+        (tester) async {
+      final controller = _ThrowingDampingBlobController();
+      BlobFlutterException? capturedError;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              height: 200,
+              child: BlobFlutter(
+                controller: controller,
+                autoPlay: false,
+                onError: (err, st) => capturedError = err,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      state.onTickForTesting(const Duration(milliseconds: 16));
+      await tester.pump();
+
+      expect(capturedError, isNotNull);
+      expect(capturedError!.message, 'Unexpected error during animation tick.');
+      controller.dispose();
+    });
   });
+}
+
+class _SuccessfulMockBlobWorker extends BlobWorker {
+  @override
+  Future<void> init(
+    Float32List baseSphere,
+    int count, {
+    void Function(BlobWorkerException error)? onError,
+  }) async {}
+}
+
+class _FailingComputeBlobWorker extends BlobWorker {
+  @override
+  Future<void> init(
+    Float32List baseSphere,
+    int count, {
+    void Function(BlobWorkerException error)? onError,
+  }) async {}
+
+  @override
+  Future<Float32List?> compute(BlobComputeParams params, [Float32List? recycleBuffer]) {
+    return Future.error(Exception('Simulated compute failure'));
+  }
+}
+
+class _ThrowingDampingBlobController extends BlobController {
+  @override
+  void applyDamping() {
+    throw Exception('Simulated applyDamping failure');
+  }
 }
 
 class _FailingInitBlobWorker extends BlobWorker {
@@ -1458,7 +1715,6 @@ class _FailingInitBlobWorker extends BlobWorker {
     return Future.error(Exception('Simulated worker init failure'));
   }
 }
-
 
 class _EmptyGradient extends Gradient {
   const _EmptyGradient() : super(colors: const []);
@@ -1475,3 +1731,4 @@ class _EmptyGradient extends Gradient {
   @override
   Gradient withOpacity(double opacity) => this;
 }
+
