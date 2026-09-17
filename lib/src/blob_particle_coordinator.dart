@@ -153,6 +153,9 @@ class BlobParticleCoordinator {
     required double time,
     required BuildContext context,
   }) {
+    if (_baseSphere.length ~/ 3 != controller.particleCount) {
+      generateBuffers(controller.particleCount);
+    }
     touchManager.updateLocalTouches(context);
     final double alignOffsetX =
         controller.alignment.x * (cachedSize.width / 2.0);
