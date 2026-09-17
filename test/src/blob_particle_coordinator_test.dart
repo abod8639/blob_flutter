@@ -133,7 +133,7 @@ void main() {
       await tester.pump();
       expect(coordinator.isWorkerReady, isTrue);
 
-      final controller = BlobController();
+      final controller = BlobController(particleCount: 20);
       final touchManager = BlobTouchManager();
       BlobFlutterException? capturedComputeError;
 
@@ -194,6 +194,7 @@ void main() {
 
       bool customNoiseCalled = false;
       final controller = BlobController(
+        particleCount: 30,
         noiseType: BlobNoiseType.custom,
         customNoise: (px, py, pz, f, time, blobiness) {
           customNoiseCalled = true;
