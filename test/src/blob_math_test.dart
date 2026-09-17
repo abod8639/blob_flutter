@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -301,8 +302,101 @@ void main() {
         noiseType: BlobNoiseType.wave,
       );
 
-      for (int i = 0; i < projected1.length; i++) {
-        expect(projected1[i], closeTo(projected2[i], 1e-5));
+        for (int i = 0; i < projected1.length; i++) {
+          expect(projected1[i], closeTo(projected2[i], 1e-5));
+        }
+      });
+
+    test('BlobMath helper methods compute coordinates and interpolations safely', () {
+      // azimuth
+      expect(BlobMath.azimuth(1.0, 0.0), closeTo(0.0, 1e-5));
+      expect(BlobMath.azimuth(0.0, 1.0), closeTo(BlobMath.twoPi / 4.0, 1e-5));
+
+      // elevation
+      expect(BlobMath.elevation(0.0), closeTo(0.0, 1e-5));
+      expect(BlobMath.elevation(1.0), closeTo(pi / 2.0, 1e-5));
+      // Out of bounds safety clamp
+      expect(BlobMath.elevation(1.5), closeTo(pi / 2.0, 1e-5));
+      expect(BlobMath.elevation(-2.0), closeTo(-pi / 2.0, 1e-5));
+
+      // distance2D
+      expect(BlobMath.distance2D(3.0, 4.0), closeTo(5.0, 1e-5));
+
+      // smoothstep
+      expect(BlobMath.smoothstep(0.0, 1.0, -0.5), 0.0);
+      expect(BlobMath.smoothstep(0.0, 1.0, 1.5), 1.0);
+      expect(BlobMath.smoothstep(0.0, 1.0, 0.5), 0.5);
+      expect(BlobMath.smoothstep(1.0, 1.0, 0.5), 0.0);
+
+      // clampDisplacement
+      expect(BlobMath.clampDisplacement(1.5), 1.5);
+      expect(BlobMath.clampDisplacement(double.nan), 1.0);
+      expect(BlobMath.clampDisplacement(double.infinity), 1.0);
+      expect(BlobMath.clampDisplacement(double.negativeInfinity), 1.0);
+      expect(BlobMath.clampDisplacement(-0.5), 0.05);
+      expect(BlobMath.clampDisplacement(10.0), 5.0);
+    });
+
+    test('projectParticles applies customNoise deformation and guards against NaN', () {
+      final sphere = BlobMath.generateFibonacciSphere(50);
+      final projected = Float32List(50 * 2);
+
+      // 1. Valid custom noise
+      BlobMath.projectParticles(
+        count: 50,
+        radius: 100.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projected,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.custom,
+        customNoise: (px, py, pz, f, time, blobiness) {
+          final phi = BlobMath.azimuth(px, pz);
+          return 1.0 + sin(phi * 3.0 + time) * 0.3 * blobiness;
+        },
+      );
+
+      for (int i = 0; i < projected.length; i++) {
+        expect(projected[i].isNaN, false);
+        expect(projected[i].isInfinite, false);
+      }
+
+      // 2. Custom noise returning NaN and Infinity is safely handled
+      BlobMath.projectParticles(
+        count: 50,
+        radius: 100.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projected,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.custom,
+        customNoise: (px, py, pz, f, time, blobiness) {
+          if (px > 0) return double.nan;
+          return double.infinity;
+        },
+      );
+
+      for (int i = 0; i < projected.length; i++) {
+        expect(projected[i].isNaN, false);
+        expect(projected[i].isInfinite, false);
       }
     });
   });
