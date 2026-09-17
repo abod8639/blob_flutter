@@ -16,7 +16,24 @@ void main() {
             BlobNoiseType.sphericalHarmonics,
             BlobNoiseType.simplex,
             BlobNoiseType.wave,
+            BlobNoiseType.custom,
           ]));
+    });
+
+    test('exports BlobMath and BlobCustomNoiseFunction correctly', () {
+      double customNoise(double px, double py, double pz, double f, double time,
+          double blobiness) {
+        return 1.0 + BlobMath.fastSimplex3D(px, py, pz) * 0.2;
+      }
+
+      final controller = BlobController(
+        noiseType: BlobNoiseType.custom,
+        customNoise: customNoise,
+      );
+
+      expect(controller.noiseType, BlobNoiseType.custom);
+      expect(controller.customNoise, isNotNull);
+      controller.dispose();
     });
 
     test('exports BlobController with standard constructor and control methods',
