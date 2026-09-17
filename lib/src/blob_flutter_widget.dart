@@ -66,6 +66,7 @@ class BlobFlutter extends StatefulWidget {
   final double? _rotationX;
   final double? _rotationY;
   final BlobNoiseType? _noiseType;
+  final BlobCustomNoiseFunction? _customNoise;
 
   /// Total number of particles. Default: 5000.
   int get particleCount => _particleCount ?? 5000;
@@ -128,6 +129,9 @@ class BlobFlutter extends StatefulWidget {
 
   /// The procedural mathematical deformation algorithm used to sculpt the particle mesh.
   BlobNoiseType get noiseType => _noiseType ?? BlobNoiseType.harmonic;
+
+  /// User-defined procedural noise algorithm when [noiseType] is [BlobNoiseType.custom].
+  BlobCustomNoiseFunction? get customNoise => _customNoise;
 
   /// Optional callback invoked when an error occurs during shader compilation,
   /// asset loading, or background worker isolate execution.
@@ -222,6 +226,7 @@ class BlobFlutter extends StatefulWidget {
     double? rotationX,
     double? rotationY,
     BlobNoiseType? noiseType,
+    BlobCustomNoiseFunction? customNoise,
     this.onError,
     this.errorBuilder,
     this.silentErrorLogging,
@@ -247,6 +252,7 @@ class BlobFlutter extends StatefulWidget {
         _rotationX = rotationX,
         _rotationY = rotationY,
         _noiseType = noiseType,
+        _customNoise = customNoise,
         assert(
           particleCount == null || particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
@@ -310,6 +316,7 @@ class BlobFlutter extends StatefulWidget {
     if (w._rotationX != null) list.add('rotationX');
     if (w._rotationY != null) list.add('rotationY');
     if (w._noiseType != null) list.add('noiseType');
+    if (w._customNoise != null) list.add('customNoise');
     return list;
   }
 
@@ -436,6 +443,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           colorAnimationSpeed: widget.colorAnimationSpeed,
           waveIntensity: widget.waveIntensity,
           noiseType: widget.noiseType,
+          customNoise: widget.customNoise,
           gradient: widget.gradient,
           isPaused: !_effectiveAutoPlay,
         );
@@ -632,6 +640,9 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.noiseType != widget.noiseType) {
         _controller.setNoiseType(widget.noiseType);
+      }
+      if (oldWidget.customNoise != widget.customNoise) {
+        _controller.setCustomNoise(widget.customNoise, switchToCustom: false);
       }
       if (oldWidget.gradient != widget.gradient) {
         _controller.setGradient(widget.gradient);
