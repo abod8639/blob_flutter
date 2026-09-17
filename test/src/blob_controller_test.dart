@@ -194,6 +194,32 @@ void main() {
       expect(controller.noiseType, BlobNoiseType.cellular);
     });
 
+    test('customNoise getter and setCustomNoise method work and notify listeners', () {
+      final controller = BlobController();
+      expect(controller.customNoise, isNull);
+      expect(controller.noiseType, BlobNoiseType.harmonic);
+
+      int notified = 0;
+      controller.addListener(() => notified++);
+
+      double myNoise(double px, double py, double pz, double f, double time, double blobiness) {
+        return 1.0 + px * 0.1;
+      }
+
+      controller.setCustomNoise(myNoise);
+      expect(controller.customNoise, equals(myNoise));
+      expect(controller.noiseType, BlobNoiseType.custom);
+      expect(notified, 1);
+
+      // Switching with switchToCustom: false
+      controller.setNoiseType(BlobNoiseType.spiky);
+      controller.setCustomNoise(null, switchToCustom: false);
+      expect(controller.customNoise, isNull);
+      expect(controller.noiseType, BlobNoiseType.spiky);
+      expect(notified, 3);
+      controller.dispose();
+    });
+
     test(
         'geometry helper methods zoomIn, zoomOut, applyScaleFactor, and resets',
         () {
