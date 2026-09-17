@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_compute_params.dart';
 import 'package:blob_flutter/src/blob_controller.dart';
 import 'package:blob_flutter/src/blob_exception.dart';
+import 'package:blob_flutter/src/blob_noise_type.dart';
 import 'package:blob_flutter/src/blob_particle_coordinator.dart';
 import 'package:blob_flutter/src/blob_touch_manager.dart';
 import 'package:blob_flutter/src/blob_worker_native.dart';
@@ -158,6 +159,64 @@ void main() {
           BlobErrorCode.workerComputeFailed);
       expect(capturedComputeError!.cause.toString(),
           contains('Compute failed simulated'));
+
+      coordinator.dispose();
+      controller.dispose();
+    });
+
+    testWidgets('processTick executes synchronously on main thread when customNoise is provided',
+        (tester) async {
+      final coordinator = BlobParticleCoordinator();
+      coordinator.generateBuffers(30);
+      final mockWorker = MockBlobWorker();
+
+      late BuildContext savedContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              savedContext = context;
+              return const SizedBox(width: 200, height: 200);
+            },
+          ),
+        ),
+      );
+
+      coordinator.startWorker(
+        workerFactory: () => mockWorker,
+        particleCount: 30,
+        onError: (_, __, {required bool isAsync}) {},
+        onWorkerReady: () {},
+      );
+
+      await tester.pump();
+      expect(coordinator.isWorkerReady, isTrue);
+
+      bool customNoiseCalled = false;
+      final controller = BlobController(
+        noiseType: BlobNoiseType.custom,
+        customNoise: (px, py, pz, f, time, blobiness) {
+          customNoiseCalled = true;
+          return 1.2;
+        },
+      );
+      final touchManager = BlobTouchManager();
+
+      bool frameUpdated = false;
+      coordinator.processTick(
+        controller: controller,
+        touchManager: touchManager,
+        cachedSize: const Size(200, 200),
+        time: 1.0,
+        context: savedContext,
+        isStillMounted: true,
+        onFrameUpdated: () {
+          frameUpdated = true;
+        },
+      );
+
+      expect(customNoiseCalled, isTrue);
+      expect(frameUpdated, isTrue);
 
       coordinator.dispose();
       controller.dispose();
