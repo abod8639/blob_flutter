@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'blob_math.dart';
 import 'blob_noise_type.dart';
 
 /// A controller for the [BlobFlutter] widget that provides programmatic
@@ -44,6 +45,7 @@ class BlobController extends ChangeNotifier {
   double _autoRotationSpeed = 0.5;
   double _noiseFrequency = 1.0;
   BlobNoiseType _noiseType = BlobNoiseType.harmonic;
+  BlobCustomNoiseFunction? _customNoise;
   double _viewDistance = 2.0;
 
   // ── Touch & Interaction ───────────────────────────────────────────────────
@@ -99,6 +101,7 @@ class BlobController extends ChangeNotifier {
     bool dragRotation = false,
     bool hoverRotation = false,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
+    BlobCustomNoiseFunction? customNoise,
     Gradient? gradient,
     bool isPaused = false,
   })  : _radius = radius,
@@ -128,6 +131,7 @@ class BlobController extends ChangeNotifier {
         _dragRotation = dragRotation,
         _hoverRotation = hoverRotation,
         _noiseType = noiseType,
+        _customNoise = customNoise,
         _gradient = gradient,
         _isPaused = isPaused,
         assert(
@@ -267,6 +271,9 @@ class BlobController extends ChangeNotifier {
 
   /// The procedural noise deformation algorithm used to shape the blob.
   BlobNoiseType get noiseType => _noiseType;
+
+  /// User-defined procedural noise algorithm when [noiseType] is [BlobNoiseType.custom].
+  BlobCustomNoiseFunction? get customNoise => _customNoise;
 
   /// Perspective/3D depth camera distance.
   double get viewDistance => _viewDistance;
@@ -584,6 +591,20 @@ class BlobController extends ChangeNotifier {
   void setNoiseType(BlobNoiseType value) {
     if (_noiseType != value) {
       _noiseType = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the custom procedural noise function and optionally switches [noiseType]
+  /// to [BlobNoiseType.custom].
+  void setCustomNoise(BlobCustomNoiseFunction? value,
+      {bool switchToCustom = true}) {
+    if (_customNoise != value ||
+        (switchToCustom && _noiseType != BlobNoiseType.custom)) {
+      _customNoise = value;
+      if (switchToCustom && value != null) {
+        _noiseType = BlobNoiseType.custom;
+      }
       notifyListeners();
     }
   }
