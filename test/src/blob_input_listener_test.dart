@@ -619,5 +619,87 @@ void main() {
 
       await gesture.removePointer();
     });
+
+    testWidgets(
+        'touch release followed immediately by synthetic hover does not leave ghost hover points',
+        (tester) async {
+      final controller = BlobController(tapScaleFactor: 1.0);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                hover: true,
+                onTouchesChanged: (t) => touches = List.of(t),
+                child: Container(width: 200, height: 200, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 1. Touch down and move
+      final touch = await tester.startGesture(const Offset(50, 50), kind: ui.PointerDeviceKind.touch);
+      await tester.pump();
+      expect(touches.single, const Offset(50, 50));
+      expect(controller.dispersion, greaterThan(0.0));
+
+      // 2. Touch release
+      await touch.up();
+      await tester.pump();
+      expect(touches, isEmpty);
+      expect(controller.dispersion, 0.0);
+
+      // 3. Browser fires synthetic mouse hover at the touch position immediately after touch release
+      final mouse = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await mouse.addPointer(location: const Offset(50, 50));
+      await mouse.moveTo(const Offset(50, 50));
+      await tester.pump();
+
+      // Synthetic hover MUST be ignored; touches remain empty and dispersion stays 0
+      expect(touches, isEmpty);
+      expect(controller.dispersion, 0.0);
+
+      await mouse.removePointer();
+    });
+
+    testWidgets(
+        'direct touch hover events are ignored to prevent touchscreen ghosting',
+        (tester) async {
+      final controller = BlobController(tapScaleFactor: 1.0);
+      List<Offset> touches = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: BlobInputListener(
+                controller: controller,
+                hover: true,
+                onTouchesChanged: (t) => touches = List.of(t),
+                child: Container(width: 200, height: 200, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Attempt to send a hover event with kind == touch
+      final touchHover = await tester.createGesture(kind: ui.PointerDeviceKind.touch);
+      await touchHover.addPointer(location: const Offset(80, 80));
+      await touchHover.moveTo(const Offset(80, 80));
+      await tester.pump();
+
+      expect(touches, isEmpty);
+      expect(controller.dispersion, 0.0);
+
+      await touchHover.removePointer();
+    });
   });
 }
+
