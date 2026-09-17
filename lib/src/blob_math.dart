@@ -17,6 +17,23 @@ typedef _NoiseFunc = double Function(
   double blobiness,
 );
 
+/// Function signature for a user-defined 3D procedural noise algorithm.
+///
+/// Evaluates the radial displacement of a particle located at ([px], [py], [pz])
+/// on the unit sphere, given the noise [frequency], elapsed animation [time],
+/// and global deformation factor [blobiness].
+///
+/// The returned double is the displacement multiplier (centered around 1.0).
+/// Displacements > 1.0 push the particle outward; values < 1.0 pull it inward.
+typedef BlobCustomNoiseFunction = double Function(
+  double px,
+  double py,
+  double pz,
+  double frequency,
+  double time,
+  double blobiness,
+);
+
 /// Utility class for all 3D particle mathematics.
 ///
 /// Uses a flat [Float32List] for the base sphere (BUG-07 fix):
@@ -28,6 +45,41 @@ class BlobMath {
 
   /// Constant: golden angle in radians for Fibonacci lattice.
   static const double _goldenAngle = pi * (3.0 - 2.2360679774997896);
+
+  /// Computes the azimuthal angle $\phi = \text{atan2}(pz, px)$ in radians,
+  /// bounded within $[-\pi, \pi]$.
+  ///
+  /// Useful for cylindrical, vortex, or longitude-dependent deformation.
+  static double azimuth(double px, double pz) => atan2(pz, px);
+
+  /// Computes the elevation (polar) angle $\theta = \text{asin}(py)$ in radians,
+  /// safely clamped within $[-\pi / 2, \pi / 2]$.
+  ///
+  /// Prevents `NaN` by clamping [py] to `[-1.0, 1.0]`. Useful for latitude-dependent
+  /// deformation (such as ring compression or polar flattening).
+  static double elevation(double py) => asin(py.clamp(-1.0, 1.0));
+
+  /// Computes the 2D planar distance $\sqrt{x^2 + z^2}$ from the vertical Y-axis.
+  static double distance2D(double x, double z) => sqrt(x * x + z * z);
+
+  /// Smooth Hermite interpolation between [edge0] and [edge1].
+  ///
+  /// Returns 0.0 when [x] <= [edge0] and 1.0 when [x] >= [edge1].
+  static double smoothstep(double edge0, double edge1, double x) {
+    if (edge0 == edge1) return x < edge0 ? 0.0 : 1.0;
+    final double t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+  }
+
+  /// Guards a displacement value against `NaN` and `Infinity`, clamping it to
+  /// the safe range `[min, max]`. Defaults to `[0.05, 5.0]`.
+  static double clampDisplacement(double value,
+      [double min = 0.05, double max = 5.0]) {
+    if (value.isNaN || value.isInfinite) return 1.0;
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+  }
 
   // Simplex 3D gradients and static permutation table
   static final Float32List _grad3 = Float32List.fromList([
@@ -334,7 +386,8 @@ class BlobMath {
   ///
   /// Called **once per frame**, before the particle loop, so that the inner
   /// loop body contains only a direct function call with no branching.
-  static _NoiseFunc _selectNoise(BlobNoiseType type) {
+  static _NoiseFunc _selectNoise(BlobNoiseType type,
+      [BlobCustomNoiseFunction? customNoise]) {
     switch (type) {
       case BlobNoiseType.harmonic:
         return _harmonicNoise;
@@ -352,6 +405,15 @@ class BlobMath {
         return _simplexNoise;
       case BlobNoiseType.wave:
         return _waveNoise;
+      case BlobNoiseType.custom:
+        if (customNoise != null) {
+          return (px, py, pz, f, time, time15, blobiness) {
+            final double val = customNoise(px, py, pz, f, time, blobiness);
+            if (val.isNaN || val.isInfinite) return 1.0;
+            return val < 0.05 ? 0.05 : (val > 5.0 ? 5.0 : val);
+          };
+        }
+        return _harmonicNoise;
     }
   }
 
@@ -428,6 +490,7 @@ class BlobMath {
     required double noiseFrequency,
     required double viewDistance,
     BlobNoiseType noiseType = BlobNoiseType.harmonic,
+    BlobCustomNoiseFunction? customNoise,
     double touchRadiusFactor = 1.0,
     int startIndex = 0,
     int stride = 1,
@@ -493,7 +556,7 @@ class BlobMath {
     }
 
     // ── Select noise function ONCE per frame (O(1)) ──────────────────────────
-    final _NoiseFunc noise = _selectNoise(noiseType);
+    final _NoiseFunc noise = _selectNoise(noiseType, customNoise);
     final bool isWave = noiseType == BlobNoiseType.wave;
     final bool hasInteraction = hasPointers || dispersion > 0.0;
 
