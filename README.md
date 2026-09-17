@@ -141,7 +141,7 @@ class _MyBlobState extends State<MyBlob> {
 
 ## Procedural Noise Algorithms
 
-Choose from 8 distinct mathematical displacement models using the `BlobNoiseType` enum:
+Choose from 9 distinct mathematical displacement models using the `BlobNoiseType` enum:
 
 | Algorithm | Visual Characteristics | Best For |
 | :--- | :--- | :--- |
@@ -153,6 +153,93 @@ Choose from 8 distinct mathematical displacement models using the `BlobNoiseType
 | `sphericalHarmonics`| Acoustic cymatics, nodal patterns, quantum fields. | High-tech, futuristic UI |
 | `simplex` | Omni-directional, artifact-free smooth flow. | Clean, continuous deformation |
 | `wave` | Flat full square carpet/net with undulating wave ripples. | Floating wave nets, square carpets, audio grids |
+| `custom` | User-defined mathematical procedural noise algorithm. | Custom 3D shapes, stars, toruses, hearts, custom math |
+
+---
+
+## Custom Procedural Noise & 3D Math Engine
+
+With `BlobNoiseType.custom`, you have complete creative freedom to sculpt custom 3D geometries, pulsating crystals, hollow toruses, swirling spirals, or bespoke mathematical motions.
+
+### 1. Custom Noise Function Signature
+A custom noise function evaluates per-particle displacement in 3D space:
+
+```dart
+typedef BlobCustomNoiseFunction = double Function(
+  double px,        // Particle X on unit sphere (-1.0 to 1.0)
+  double py,        // Particle Y on unit sphere (-1.0 to 1.0)
+  double pz,        // Particle Z on unit sphere (-1.0 to 1.0)
+  double frequency, // noiseFrequency parameter
+  double time,      // Animation time in seconds
+  double blobiness, // Global deformation multiplier
+);
+```
+
+### 2. Built-in Math Helpers in `BlobMath`
+`BlobMath` provides high-performance, allocation-free static utilities for sculpting 3D particles:
+
+* **`BlobMath.azimuth(px, pz)`**: Azimuthal angle $\phi = \text{atan2}(pz, px) \in [-\pi, \pi]$ (ideal for longitude/spiral twisting).
+* **`BlobMath.elevation(py)`**: Elevation angle $\theta = \text{asin}(py) \in [-\pi/2, \pi/2]$ with safe clamping against `NaN`.
+* **`BlobMath.distance2D(x, z)`**: Planar radial distance $\sqrt{x^2 + z^2}$ from the Y-axis.
+* **`BlobMath.fastSimplex3D(x, y, z)`**: High-speed Simplex 3D noise for organic, terrain-like surfaces.
+* **`BlobMath.smoothstep(edge0, edge1, x)`**: Hermite interpolation for smooth borders and transitions.
+* **`BlobMath.clampDisplacement(val)`**: Automatic safeguard against `NaN` or `Infinity`, clamping values safely to `[0.05, 5.0]`.
+
+### 3. Usage Examples
+
+#### Via `BlobController`:
+```dart
+final controller = BlobController(
+  noiseType: BlobNoiseType.custom,
+  customNoise: (px, py, pz, f, time, blobiness) {
+    final double phi = BlobMath.azimuth(px, pz);
+    return 1.0 + sin(phi * 4.0 + time) * 0.3 * blobiness;
+  },
+);
+
+// Switch or update dynamically at runtime:
+controller.setCustomNoise((px, py, pz, f, time, blobiness) {
+  return 1.0 + BlobMath.fastSimplex3D(px * f, py * f, pz * f + time) * 0.35 * blobiness;
+});
+```
+
+#### Via `BlobFlutter` Widget:
+```dart
+BlobFlutter(
+  noiseType: BlobNoiseType.custom,
+  customNoise: (px, py, pz, f, time, blobiness) {
+    final double r = BlobMath.distance2D(px, pz);
+    return 1.0 + cos(r * 8.0 * f - time * 3.0) * 0.25 * blobiness;
+  },
+)
+```
+
+### 4. Golden Rules for Glitch-Free Shapes
+1. **The 1.0 Anchor:** Displacements scale the unit sphere. Always write equations relative to `1.0` (e.g. `1.0 + (wave * blobiness)`).
+2. **Safe from NaN & Isolate Closures:** Custom noise closures run synchronously on the main thread (<0.5ms for 3,000 particles), allowing you to write any lambda or closure without Isolate serialization errors. All returns are automatically protected from `NaN` and `Infinity`.
+3. **Zero Heap Allocations:** The function is invoked per-particle every frame. Keep all calculations on `double` primitives without instantiating objects or collections.
+
+### 5. Practical Shape Recipes
+
+```dart
+// 1. Classic 5-Point 3D Star
+controller.setCustomNoise((px, py, pz, f, time, blobiness) {
+  final double angle = atan2(py, px) + time * 0.4;
+  final double star2D = max(0.0, cos(5.0 * angle));
+  final double sharpPoints = pow(star2D, 2.5).toDouble();
+  final double zProfile = max(0.0, 1.0 - pz.abs() * 2.0);
+  return (0.45 + sharpPoints * zProfile * 1.5) * blobiness;
+});
+
+
+// 2. Saturn Planet & Glowing Equatorial Ring
+controller.setCustomNoise((px, py, pz, f, time, blobiness) {
+  final double yDist = py.abs();
+  final double ring = yDist < 0.15 ? pow(0.9 - yDist / 0.35, 5.0).toDouble() * 1.5 : 0.0;
+  return (0.55 + ring) * blobiness;
+});
+
+```
 
 ---
 
@@ -168,6 +255,7 @@ Configure the initial state of your blob directly in the widget.
 | `pointSize` | `double` | `2.0` | Diameter of each rendered particle. |
 | `rotationX` / `rotationY` | `double` | `0.0` | Initial base 3D orientation angles (pitch & yaw) in radians. |
 | `noiseType` | `Enum` | `harmonic` | Procedural 3D noise algorithm used. |
+| `customNoise` | `BlobCustomNoiseFunction?` | `null` | Custom procedural displacement function used when `noiseType` is `BlobNoiseType.custom`. |
 | `controller` | `BlobController?` | `null` | External controller for runtime manipulation. |
 | `gradient` | `Gradient` | `Linear` | Color gradient (Linear, Radial, or Sweep). |
 | `autoPlay` | `bool` | `true` | Whether the animation loop starts automatically. Set to `false` for battery savings on static views or widget tests. |
@@ -197,6 +285,7 @@ Manipulate the blob dynamically at runtime using the controller methods.
 | `setDispersion(val)` | `0.0` - `3.0` | Outward radial displacement. |
 | `setNoiseFrequency(val)`| `0.1` - `5.0` | Density of the noise ripples. |
 | `setNoiseType(type)` | `Enum` | Changes the deformation algorithm. |
+| `setCustomNoise(fn, {switchToCustom})` | `Function?` | Sets custom procedural noise callback and optionally sets noiseType to `custom`. |
 | `setIsRainbowMode(bool)`| `true`/`false` | Cycles colors through the HSV spectrum. |
 | `zoomIn(val)` / `zoomOut` | - | Scales the blob size dynamically. |
 
