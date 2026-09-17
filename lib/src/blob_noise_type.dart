@@ -31,4 +31,10 @@ enum BlobNoiseType {
   /// Flat full square carpet/net with multi-directional undulating wave heights.
   /// Produces a floating planar square water/grid mesh rippling like a wave carpet.
   wave,
+
+  /// User-defined procedural noise algorithm.
+  ///
+  /// Evaluates custom displacement using a provided `BlobCustomNoiseFunction`,
+  /// giving full freedom to define custom mathematical 3D deformations.
+  custom,
 }
