@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:blob_flutter/blob_flutter.dart';
 
 import 'blob_compute_params.dart';
-import 'blob_math.dart';
 
 /// Flutter Web stub for [BlobWorker].
 ///
