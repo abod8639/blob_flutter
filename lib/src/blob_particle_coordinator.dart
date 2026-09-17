@@ -5,6 +5,7 @@ import 'blob_compute_params.dart';
 import 'blob_controller.dart';
 import 'blob_exception.dart';
 import 'blob_math.dart';
+import 'blob_noise_type.dart';
 import 'blob_touch_manager.dart';
 import 'blob_worker.dart';
 
