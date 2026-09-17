@@ -37,6 +37,7 @@ class BlobInputListener extends StatefulWidget {
 class _BlobInputListenerState extends State<BlobInputListener> {
   final Map<int, Offset> _touchPoints = {};
   Offset? _hoverPosition;
+  DateTime? _lastTouchEndTime;
   double _baseScale = 1.0;
 
   bool get _isHoverEffective => widget.hover || widget.controller.hover;
@@ -88,11 +89,17 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         event.kind == PointerDeviceKind.trackpad;
 
     if (isDown) {
+      if (event.kind == PointerDeviceKind.touch) {
+        _lastTouchEndTime = null;
+      }
       _touchPoints[event.pointer] = event.position;
       if (isMouseOrTrackpad) {
         _hoverPosition = event.position;
       }
     } else {
+      if (event.kind == PointerDeviceKind.touch) {
+        _lastTouchEndTime = DateTime.now();
+      }
       _touchPoints.remove(event.pointer);
       if (isMouseOrTrackpad) {
         final renderObject = BlobInputListener.debugFindRenderObject != null
@@ -205,6 +212,15 @@ class _BlobInputListenerState extends State<BlobInputListener> {
     return MouseRegion(
       opaque: widget.hitTestBehavior == HitTestBehavior.opaque,
       onHover: (event) {
+        // Direct touch events never have hover; ignore to avoid ghost touches.
+        if (event.kind == PointerDeviceKind.touch) return;
+
+        // Ignore synthetic mouse events emitted by browsers right after touch release.
+        if (_lastTouchEndTime != null &&
+            DateTime.now().difference(_lastTouchEndTime!).inMilliseconds < 500) {
+          return;
+        }
+
         if (_touchPoints.isEmpty) {
           // Suppress rotation on hover unless explicitly enabled in controller
           if (widget.controller.hoverRotation &&
@@ -230,6 +246,9 @@ class _BlobInputListenerState extends State<BlobInputListener> {
         onPointerMove: (event) => _updateTouchState(event, true),
         onPointerUp: (event) => _updateTouchState(event, false),
         onPointerCancel: (event) {
+          if (event.kind == PointerDeviceKind.touch) {
+            _lastTouchEndTime = DateTime.now();
+          }
           _touchPoints.remove(event.pointer);
           _hoverPosition = null;
           _notifyTouches();
