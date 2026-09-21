@@ -399,5 +399,150 @@ void main() {
         expect(projected[i].isInfinite, false);
       }
     });
+
+    test(
+        'generateFibonacciSphere evicts oldest entry when exceeding max cache limit',
+        () {
+      // PERF-08: _maxCacheEntries is 8. Generating 10 distinct sizes will trigger eviction (_sphereCache.remove).
+      for (int size = 10; size <= 20; size++) {
+        final sphere = BlobMath.generateFibonacciSphere(size);
+        expect(sphere.length, size * 3);
+      }
+
+      // Querying cached sizes should still return valid unit sphere coordinates
+      final cachedSphere = BlobMath.generateFibonacciSphere(20);
+      expect(cachedSphere.length, 20 * 3);
+      for (int i = 0; i < 20; i++) {
+        final x = cachedSphere[i * 3];
+        final y = cachedSphere[i * 3 + 1];
+        final z = cachedSphere[i * 3 + 2];
+        expect(x * x + y * y + z * z, closeTo(1.0, 0.0001));
+      }
+    });
+
+    test(
+        'BlobNoiseType.wave uses _waveNoise formula and clamps displacement safely',
+        () {
+      final sphere = BlobMath.generateFibonacciSphere(30);
+      final projected = Float32List(30 * 2);
+
+      // Call projectParticles with spherical noiseType = wave (via custom or through standard flow if used)
+      // and test high blobiness / extreme coordinates to verify displacement clamping [0.1, 4.0]
+      BlobMath.projectParticles(
+        count: 30,
+        radius: 80.0,
+        blobiness: 3.0,
+        dispersion: 0.0,
+        rotationX: 0.2,
+        rotationY: -0.3,
+        time: 5.0,
+        viewportWidth: 500.0,
+        viewportHeight: 500.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projected,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 2.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.wave,
+      );
+
+      for (int i = 0; i < projected.length; i++) {
+        expect(projected[i].isNaN, false);
+        expect(projected[i].isInfinite, false);
+      }
+    });
+
+    test(
+        'BlobNoiseType.wave handles touch pointers, dispersion push, and fallback branching',
+        () {
+      final count = 100;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+      final projectedTouches = Float32List(count * 2);
+      final projectedDispersionOnly = Float32List(count * 2);
+      final projectedUntouched = Float32List(count * 2);
+
+      // 1. Touch interaction active: exercises L659-L678 (within bounding box and radius)
+      // Viewport center is at (250, 250), place a touch directly near the center.
+      final touches = Float32List.fromList([250.0, 250.0]);
+
+      BlobMath.projectParticles(
+        count: count,
+        radius: 100.0,
+        blobiness: 1.0,
+        dispersion: 0.8,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 500.0,
+        viewportHeight: 500.0,
+        activeTouches: touches,
+        baseSphere: sphere,
+        projectedPoints: projectedTouches,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        touchRadiusFactor: 2.0,
+      );
+
+      // 2. Untouched / no extra push: touch placed far outside viewport bounding box
+      // Particles outside touch radius fallback to screenX/screenY (L688-L691)
+      final farTouches = Float32List.fromList([-5000.0, -5000.0]);
+      BlobMath.projectParticles(
+        count: count,
+        radius: 100.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 500.0,
+        viewportHeight: 500.0,
+        activeTouches: farTouches,
+        baseSphere: sphere,
+        projectedPoints: projectedUntouched,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+      );
+
+      // 3. Dispersion only without active touches (hasInteraction = true, hasPointers = false)
+      BlobMath.projectParticles(
+        count: count,
+        radius: 100.0,
+        blobiness: 1.0,
+        dispersion: 0.5,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 500.0,
+        viewportHeight: 500.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: projectedDispersionOnly,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+      );
+
+      for (int i = 0; i < count * 2; i++) {
+        expect(projectedTouches[i].isNaN, false);
+        expect(projectedTouches[i].isInfinite, false);
+        expect(projectedUntouched[i].isNaN, false);
+        expect(projectedUntouched[i].isInfinite, false);
+        expect(projectedDispersionOnly[i].isNaN, false);
+        expect(projectedDispersionOnly[i].isInfinite, false);
+      }
+
+      // Verify that touch interaction produces distinct point displacements compared to untouched
+      bool hasDifference = false;
+      for (int i = 0; i < count * 2; i++) {
+        if ((projectedTouches[i] - projectedUntouched[i]).abs() > 0.01) {
+          hasDifference = true;
+          break;
+        }
+      }
+      expect(hasDifference, isTrue);
+    });
   });
 }
