@@ -18,6 +18,19 @@ class BlobExampleApp extends StatelessWidget {
     );
   }
 }
+//*   ___________________________________________
+//*  /                                           \
+//* |    ✨ THANK YOU FOR USING PARTICLES ✨      |
+//* |                                             |
+//* |   If this library helped you build          |
+//* |   something amazing, please consider        |
+//* |   giving it a star! It means a lot.         |
+//* |                                             |
+//* |        ⭐ [ star ]  particles_network       |
+//*  \___________________________________________/
+//*           !  !
+//*           !  !
+//*           L_ !
 
 class BlobShowcasePage extends StatefulWidget {
   const BlobShowcasePage({super.key});
