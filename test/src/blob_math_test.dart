@@ -302,12 +302,14 @@ void main() {
         noiseType: BlobNoiseType.wave,
       );
 
-        for (int i = 0; i < projected1.length; i++) {
-          expect(projected1[i], closeTo(projected2[i], 1e-5));
-        }
-      });
+      for (int i = 0; i < projected1.length; i++) {
+        expect(projected1[i], closeTo(projected2[i], 1e-5));
+      }
+    });
 
-    test('BlobMath helper methods compute coordinates and interpolations safely', () {
+    test(
+        'BlobMath helper methods compute coordinates and interpolations safely',
+        () {
       // azimuth
       expect(BlobMath.azimuth(1.0, 0.0), closeTo(0.0, 1e-5));
       expect(BlobMath.azimuth(0.0, 1.0), closeTo(BlobMath.twoPi / 4.0, 1e-5));
@@ -337,7 +339,9 @@ void main() {
       expect(BlobMath.clampDisplacement(10.0), 5.0);
     });
 
-    test('projectParticles applies customNoise deformation and guards against NaN', () {
+    test(
+        'projectParticles applies customNoise deformation and guards against NaN',
+        () {
       final sphere = BlobMath.generateFibonacciSphere(50);
       final projected = Float32List(50 * 2);
 
@@ -435,7 +439,13 @@ void main() {
       ];
 
       for (final s in samples) {
-        final px = s[0], py = s[1], pz = s[2], f = s[3], time = s[4], time15 = s[5], blobiness = s[6];
+        final px = s[0],
+            py = s[1],
+            pz = s[2],
+            f = s[3],
+            time = s[4],
+            time15 = s[5],
+            blobiness = s[6];
 
         // Mirror _waveNoise formula to verify exact arithmetic behavior
         final double flatFactor = (blobiness * 0.7 + 0.3).clamp(0.2, 1.5);
@@ -651,6 +661,63 @@ void main() {
         }
       }
       expect(hasDifference, isTrue);
+    });
+    test(
+        'BlobNoiseType.wave interactive fallback assigns exact screen coordinates (L688-L690)',
+        () {
+      final count = 25;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+      final fastPathPoints = Float32List(count * 2);
+      final fallbackPoints = Float32List(count * 2);
+      // 1. Fast-path calculation (hasInteraction = false) produces base (screenX, screenY)
+      BlobMath.projectParticles(
+        count: count,
+        radius: 120.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.1,
+        rotationY: 0.2,
+        time: 1.5,
+        viewportWidth: 600.0,
+        viewportHeight: 600.0,
+        activeTouches: Float32List(0),
+        baseSphere: sphere,
+        projectedPoints: fastPathPoints,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.wave,
+      );
+      // 2. Interactive path with hasInteraction = true (hasPointers = true), but touches located
+      // far away outside the bounding box, forcing extraPush = 0.0 for every point.
+      // Every point must execute the exact fallback branch:
+      // projectedPoints[outIndex] = screenX;
+      // projectedPoints[outIndex + 1] = screenY;
+      final farTouch = Float32List.fromList([-99999.0, -99999.0]);
+      BlobMath.projectParticles(
+        count: count,
+        radius: 120.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.1,
+        rotationY: 0.2,
+        time: 1.5,
+        viewportWidth: 600.0,
+        viewportHeight: 600.0,
+        activeTouches: farTouch,
+        baseSphere: sphere,
+        projectedPoints: fallbackPoints,
+        autoRotationSpeed: 0.0,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseType: BlobNoiseType.wave,
+      );
+      // Verify that every point in the fallback branch is numerically identical to the unperturbed base screen coordinate
+      for (int i = 0; i < count * 2; i++) {
+        expect(fallbackPoints[i], closeTo(fastPathPoints[i], 1e-5),
+            reason:
+                'Mismatch at index $i between fallback branch and base screen coordinates');
+      }
     });
   });
 }
