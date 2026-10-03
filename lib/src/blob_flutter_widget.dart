@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -67,6 +68,21 @@ class BlobFlutter extends StatefulWidget {
   final double? _rotationY;
   final BlobNoiseType? _noiseType;
   final BlobCustomNoiseFunction? _customNoise;
+  final bool? _autoFit;
+  final double? _radiusFactor;
+
+  /// Whether the blob automatically resizes its radius to fit the parent container bounds.
+  ///
+  /// When `true` and the container has bounded dimensions, the radius is calculated
+  /// dynamically as `(min(width, height) / 2.0) * radiusFactor`.
+  ///
+  /// Default: `false`.
+  bool get autoFit => _autoFit ?? false;
+
+  /// Multiplier applied to half the minimum container dimension when [autoFit] is enabled.
+  ///
+  /// Default: 0.85 (leaves 15% breathing room for wave undulations and particle displacement).
+  double get radiusFactor => _radiusFactor ?? 0.85;
 
   /// Total number of particles. Default: 5000.
   int get particleCount => _particleCount ?? 5000;
@@ -235,6 +251,8 @@ class BlobFlutter extends StatefulWidget {
     this.autoPlay,
     this.autoPauseOffscreen = true,
     this.autoPauseOnAppBackground = true,
+    bool? autoFit,
+    double? radiusFactor,
   })  : _particleCount = particleCount,
         _radius = radius,
         _pointSize = pointSize,
@@ -253,6 +271,13 @@ class BlobFlutter extends StatefulWidget {
         _rotationY = rotationY,
         _noiseType = noiseType,
         _customNoise = customNoise,
+        _autoFit = autoFit,
+        _radiusFactor = radiusFactor,
+        assert(
+          radiusFactor == null || (radiusFactor > 0.0 && radiusFactor <= 2.0),
+          "BlobFlutter: 'radiusFactor' must be between 0.0 and 2.0 (received $radiusFactor). "
+          'Example fix: BlobFlutter(radiusFactor: 0.85).',
+        ),
         assert(
           particleCount == null || particleCount > 0,
           "BlobFlutter: 'particleCount' must be greater than 0 (received $particleCount). "
@@ -481,6 +506,8 @@ class _ParticleBlobState extends State<BlobFlutter>
           customNoise: widget.customNoise,
           gradient: widget.gradient,
           isPaused: !_effectiveAutoPlay,
+          autoFit: widget.autoFit,
+          radiusFactor: widget.radiusFactor,
         );
 
     _lastParticleCount = _controller.particleCount;
@@ -616,6 +643,8 @@ class _ParticleBlobState extends State<BlobFlutter>
             noiseType: widget.noiseType,
             gradient: widget.gradient,
             isPaused: !_effectiveAutoPlay,
+            autoFit: widget.autoFit,
+            radiusFactor: widget.radiusFactor,
           );
       _lastParticleCount = _controller.particleCount;
       _controller.addListener(_onControllerChanged);
@@ -663,6 +692,12 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.hoverRotation != widget.hoverRotation) {
         _controller.setHoverRotation(widget.hoverRotation);
+      }
+      if (oldWidget.autoFit != widget.autoFit) {
+        _controller.setAutoFit(widget.autoFit);
+      }
+      if (oldWidget.radiusFactor != widget.radiusFactor) {
+        _controller.setRadiusFactor(widget.radiusFactor);
       }
       if (oldWidget.pinchToScale != widget.pinchToScale) {
         _controller.setPinchToScale(widget.pinchToScale);
@@ -841,12 +876,35 @@ class _ParticleBlobState extends State<BlobFlutter>
       excludeSemantics: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final double width = constraints.hasBoundedWidth
+          final bool hasBoundedWidth = constraints.hasBoundedWidth;
+          final bool hasBoundedHeight = constraints.hasBoundedHeight;
+          final bool effectiveAutoFit = widget.autoFit || _controller.autoFit;
+          final double effectiveRadiusFactor =
+              widget._radiusFactor ?? _controller.radiusFactor;
+
+          double responsiveRadius = _controller.radius;
+          if (effectiveAutoFit && hasBoundedWidth && hasBoundedHeight) {
+            final double minDim =
+                math.min(constraints.maxWidth, constraints.maxHeight);
+            if (minDim > 0.0) {
+              responsiveRadius = (minDim / 2.0) * effectiveRadiusFactor;
+              if ((_controller.radius - responsiveRadius).abs() > 0.5) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted &&
+                      (_controller.radius - responsiveRadius).abs() > 0.5) {
+                    _controller.setRadius(responsiveRadius);
+                  }
+                });
+              }
+            }
+          }
+
+          final double width = hasBoundedWidth
               ? constraints.maxWidth
-              : _controller.radius * 2.0;
-          final double height = constraints.hasBoundedHeight
+              : responsiveRadius * 2.0;
+          final double height = hasBoundedHeight
               ? constraints.maxHeight
-              : _controller.radius * 2.0;
+              : responsiveRadius * 2.0;
 
           final newSize = Size(width, height);
           if (newSize != _cachedSize) {
