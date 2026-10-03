@@ -68,11 +68,8 @@ _Powered by procedural noise algorithms, multi-threaded Isolate computation, and
 
 ### 1. Install
 
-Add `blob_flutter` to your `pubspec.yaml` dependencies:
-
-```yaml
-dependencies:
-  blob_flutter: ^1.0.0
+```
+flutter pub add blob_flutter
 ```
 
 ### 2. Import
@@ -80,6 +77,7 @@ dependencies:
 ```dart
 import 'package:blob_flutter/blob_flutter.dart';
 ```
+
 
 ### 3. Use
 

@@ -1,4 +1,4 @@
-## 1.0.0
+## 1.1.0
 
 - Initial release of `blob_flutter`.
 - High-performance interactive 3D particle blob powered by custom GPU fragment shaders (`blob.frag`).
