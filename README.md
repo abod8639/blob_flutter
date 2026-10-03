@@ -132,10 +132,9 @@ class _MyBlobState extends State<MyBlob> {
 }
 ```
 
-> [!WARNING]
-> **Avoid Parameter Conflicts (`BlobControllerConflictException`):**
-> When an external `BlobController` is provided to `BlobFlutter`, passing any widget-level configuration properties (`particleCount`, `radius`, `pointSize`, `speed`, `noiseType`, `gradient`, etc.) alongside `controller` will throw a **`BlobControllerConflictException`**.
-> Always configure those properties directly inside `BlobController(...)` — never define them on both.
+> [!TIP]
+> **Controller Precedence & Single Source of Truth:**
+> When an external `BlobController` is provided to `BlobFlutter`, the controller serves as the single source of truth. Passing widget-level configuration properties (`particleCount`, `radius`, `pointSize`, `speed`, `noiseType`, `gradient`, etc.) alongside `controller` will be safely ignored with a debug-mode warning. Always configure those properties directly inside `BlobController(...)`.
 
 ---
 
