@@ -340,6 +340,77 @@ void main() {
         blendMode: BlendMode.screen,
       );
       expect(base.shouldRepaint(diffBlend), true);
+
+      final diffDepthCueing = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+        enableDepthCueing: false,
+      );
+      expect(base.shouldRepaint(diffDepthCueing), true);
+
+      final diffDepthCueingFactor = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 2.0,
+        fallbackGradient: gradient,
+        depthCueingFactor: 0.8,
+      );
+      expect(base.shouldRepaint(diffDepthCueingFactor), true);
+    });
+
+    test(
+        'paint method performs 4-slice depth-cueing rendering when enableDepthCueing is true',
+        () {
+      final canvas = _MockCanvas();
+      // 8 points = 16 floats (>= 8 floats required for depth slicing)
+      final positions = Float32List.fromList([
+        10.0, 10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0,
+        50.0, 50.0, 60.0, 60.0, 70.0, 70.0, 80.0, 80.0,
+      ]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.green]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 4.0,
+        fallbackGradient: gradient,
+        enableDepthCueing: true,
+        depthCueingFactor: 0.5,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      // 4 slices rendered
+      expect(canvas.drawRawPointsCallCount, 4);
+      expect(canvas.recordedStrokeWidths.length, 4);
+
+      // Farthest slice stroke width should be smaller than nearest slice stroke width
+      expect(canvas.recordedStrokeWidths[0] < canvas.recordedStrokeWidths[3],
+          true);
+    });
+
+    test(
+        'paint method performs single pass when enableDepthCueing is false',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([
+        10.0, 10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0,
+        50.0, 50.0, 60.0, 60.0, 70.0, 70.0, 80.0, 80.0,
+      ]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.green]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 4.0,
+        fallbackGradient: gradient,
+        enableDepthCueing: false,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      expect(canvas.drawRawPointsCallCount, 1);
+      expect(canvas.recordedStrokeWidths[0], 4.0);
     });
   });
 }
