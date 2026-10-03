@@ -55,7 +55,7 @@ class BlobWorker {
       _frameIndex = 0;
     }
 
-    final bool shouldInterleave = p.webTemporalInterleaving && p.count >= 1000;
+    final bool shouldInterleave = p.isComplex;
     int startIndex = 0;
     int stride = 1;
 

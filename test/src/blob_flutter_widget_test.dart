@@ -1740,6 +1740,38 @@ void main() {
       expect(blobWidget.webTemporalInterleaving, isFalse);
       expect(blobWidget.maxWebParticles, 2500);
     });
+
+    testWidgets('BlobFlutter passes isComplex to controller and CustomPaint',
+        (tester) async {
+      final controller = BlobController(isComplex: true);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 100,
+              height: 100,
+              child: BlobFlutter(
+                controller: controller,
+                autoPlay: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(controller.isComplex, isTrue);
+
+      final customPaintFinder = find.byType(CustomPaint);
+      expect(customPaintFinder, findsWidgets);
+      final customPaintWidget = tester
+          .widgetList<CustomPaint>(customPaintFinder)
+          .firstWhere((cp) => cp.painter is BlobPainter);
+      expect(customPaintWidget.isComplex, isTrue);
+
+      controller.dispose();
+    });
   });
 }
 

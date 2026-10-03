@@ -643,5 +643,27 @@ void main() {
       );
       controller.dispose();
     });
+
+    test('isComplex getter and setIsComplex work as expected', () {
+      final controller = BlobController(isComplex: true);
+      expect(controller.isComplex, isTrue);
+
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.setIsComplex(false);
+      expect(controller.isComplex, isFalse);
+      expect(notifyCount, 1);
+
+      // Same value should not notify
+      controller.setIsComplex(false);
+      expect(notifyCount, 1);
+
+      controller.setIsComplex(true);
+      expect(controller.isComplex, isTrue);
+      expect(notifyCount, 2);
+
+      controller.dispose();
+    });
   });
 }

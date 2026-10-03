@@ -161,6 +161,7 @@ void main() {
           touchRadiusFactor: 1.0,
           encodedTouches: Float32List(0),
           webTemporalInterleaving: interleave,
+          isComplex: interleave,
         );
       }
 
@@ -194,6 +195,54 @@ void main() {
       // Odd particle 1 should NOT have changed between Frame 1 and Frame 2
       expect(f2[2], equals(f1Copy[2]));
       expect(f2[3], equals(f1Copy[3]));
+
+      worker.dispose();
+    });
+
+    test(
+        'BlobWorker computes all particles every frame when isComplex is false',
+        () async {
+      final worker = BlobWorker();
+      const count = 1000;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+      await worker.init(sphere, count);
+
+      ProjectParamsFlat createParams(double time) {
+        return ProjectParamsFlat(
+          count: count,
+          radius: 100.0,
+          scale: 1.0,
+          centerOffsetX: 0.0,
+          centerOffsetY: 0.0,
+          blobiness: 1.0,
+          dispersion: 0.0,
+          rotationX: 0.0,
+          rotationY: 0.0,
+          time: time,
+          viewportWidth: 400.0,
+          viewportHeight: 400.0,
+          autoRotationSpeed: 0.5,
+          noiseFrequency: 1.0,
+          viewDistance: 2.0,
+          noiseTypeIndex: 0,
+          touchRadiusFactor: 1.0,
+          encodedTouches: Float32List(0),
+          isComplex: false,
+        );
+      }
+
+      final f0 = await worker.compute(createParams(0.0));
+      expect(f0, isNotNull);
+      final f0Copy = Float32List.fromList(f0!);
+
+      final f1 = await worker.compute(createParams(1.0));
+      expect(f1, isNotNull);
+
+      // When isComplex is false, both even (index 0) and odd (index 1) particles are updated
+      expect(f1![0], isNot(equals(f0Copy[0])));
+      expect(f1[1], isNot(equals(f0Copy[1])));
+      expect(f1[2], isNot(equals(f0Copy[2])));
+      expect(f1[3], isNot(equals(f0Copy[3])));
 
       worker.dispose();
     });

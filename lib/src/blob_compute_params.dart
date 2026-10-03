@@ -36,6 +36,9 @@ class ProjectParamsFlat {
   /// Whether temporal interleaving (subsampling particles across frames) is enabled on web.
   final bool webTemporalInterleaving;
 
+  /// Whether the computation is considered complex, enabling temporal interleaving / striding across frames.
+  final bool isComplex;
+
   const ProjectParamsFlat({
     required this.count,
     required this.radius,
@@ -56,15 +59,16 @@ class ProjectParamsFlat {
     required this.noiseTypeIndex,
     this.touchRadiusFactor = 1.0,
     this.webTemporalInterleaving = true,
+    this.isComplex = false,
   });
 
   /// Packs all fields into a [List] that satisfies Dart's isolate message
   /// protocol (primitives + [Float32List]).
   ///
-  /// Optionally populates and returns [buffer] if provided (must have length >= 19)
+  /// Optionally populates and returns [buffer] if provided (must have length >= 20)
   /// to eliminate per-frame list allocations.
   List<Object?> toMessage([List<Object?>? buffer]) {
-    if (buffer != null && buffer.length >= 19) {
+    if (buffer != null && buffer.length >= 20) {
       buffer[0] = count;
       buffer[1] = radius;
       buffer[2] = scale;
@@ -84,6 +88,7 @@ class ProjectParamsFlat {
       buffer[16] = touchRadiusFactor;
       buffer[17] = encodedTouches;
       buffer[18] = webTemporalInterleaving;
+      buffer[19] = isComplex;
       return buffer;
     }
     return [
@@ -106,6 +111,7 @@ class ProjectParamsFlat {
       touchRadiusFactor,
       encodedTouches,
       webTemporalInterleaving,
+      isComplex,
     ];
   }
 
@@ -132,5 +138,6 @@ class ProjectParamsFlat {
         encodedTouches: m[17] as Float32List,
         webTemporalInterleaving:
             m.length > 18 ? (m[18] as bool? ?? true) : true,
+        isComplex: m.length > 19 ? (m[19] as bool? ?? false) : false,
       );
 }

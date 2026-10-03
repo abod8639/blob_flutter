@@ -136,7 +136,7 @@ class BlobWorker {
     }
   }
 
-  final List<Object?> _paramsBuffer = List<Object?>.filled(19, null);
+  final List<Object?> _paramsBuffer = List<Object?>.filled(20, null);
 
   /// Submits [params] to the worker for parallel computation.
   ///
@@ -191,6 +191,8 @@ class BlobWorker {
     final rx = ReceivePort();
     mainPort.send(rx.sendPort);
 
+    int frameIndex = 0;
+
     await for (final msg in rx) {
       if (msg is! List) continue;
 
@@ -215,9 +217,25 @@ class BlobWorker {
         output = recycledTransferable.materialize().asFloat32List();
         if (output.length != count * 2) {
           output = Float32List(count * 2);
+          frameIndex = 0;
         }
       } else {
         output = Float32List(count * 2);
+        frameIndex = 0;
+      }
+
+      final bool shouldInterleave = p.isComplex;
+      int startIndex = 0;
+      int stride = 1;
+
+      if (shouldInterleave) {
+        if (frameIndex > 0) {
+          startIndex = frameIndex % 2;
+          stride = 2;
+        }
+        frameIndex++;
+      } else {
+        frameIndex = 0;
       }
 
       BlobMath.projectParticles(
@@ -241,6 +259,8 @@ class BlobWorker {
         viewDistance: p.viewDistance,
         noiseType: BlobNoiseType.values[p.noiseTypeIndex],
         touchRadiusFactor: p.touchRadiusFactor,
+        startIndex: startIndex,
+        stride: stride,
       );
 
       // Transfer ownership back to main isolate — zero-copy on native.

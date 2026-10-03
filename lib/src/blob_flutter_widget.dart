@@ -72,6 +72,7 @@ class BlobFlutter extends StatefulWidget {
   final double? _radiusFactor;
   final bool? _webTemporalInterleaving;
   final int? _maxWebParticles;
+  final bool? _isComplex;
 
   /// Whether the blob automatically resizes its radius to fit the parent container bounds.
   ///
@@ -98,6 +99,13 @@ class BlobFlutter extends StatefulWidget {
   /// (e.g. 5,000 to 10,000) are configured for native platforms.
   /// Default: `3000`. Set to `null` to disable capping.
   int? get maxWebParticles => _maxWebParticles;
+
+  /// Whether temporal interleaving / striding across frames is enabled.
+  ///
+  /// When `true`, particle projection is interleaved across alternating frames
+  /// (even and odd strides) to cut CPU computation time in half.
+  /// When `false` (default), all particles are computed fully on every frame.
+  bool get isComplex => _isComplex ?? false;
 
   /// Total number of particles. Default: 5000.
   int get particleCount => _particleCount ?? 5000;
@@ -270,6 +278,7 @@ class BlobFlutter extends StatefulWidget {
     double? radiusFactor,
     bool? webTemporalInterleaving,
     int? maxWebParticles,
+    bool? isComplex,
   })  : _particleCount = particleCount,
         _radius = radius,
         _pointSize = pointSize,
@@ -292,6 +301,7 @@ class BlobFlutter extends StatefulWidget {
         _radiusFactor = radiusFactor,
         _webTemporalInterleaving = webTemporalInterleaving,
         _maxWebParticles = maxWebParticles,
+        _isComplex = isComplex,
         assert(
           maxWebParticles == null || maxWebParticles > 0,
           "BlobFlutter: 'maxWebParticles' must be positive or null (received $maxWebParticles). "
@@ -370,6 +380,7 @@ class BlobFlutter extends StatefulWidget {
     if (w._radiusFactor != null) list.add('radiusFactor');
     if (w._webTemporalInterleaving != null) list.add('webTemporalInterleaving');
     if (w._maxWebParticles != null) list.add('maxWebParticles');
+    if (w._isComplex != null) list.add('isComplex');
     return list;
   }
 
@@ -538,6 +549,7 @@ class _ParticleBlobState extends State<BlobFlutter>
           radiusFactor: widget.radiusFactor,
           webTemporalInterleaving: widget.webTemporalInterleaving,
           maxWebParticles: widget._maxWebParticles ?? 3000,
+          isComplex: widget.isComplex,
         );
 
     _lastParticleCount = _controller.effectiveParticleCount;
@@ -677,6 +689,7 @@ class _ParticleBlobState extends State<BlobFlutter>
             radiusFactor: widget.radiusFactor,
             webTemporalInterleaving: widget.webTemporalInterleaving,
             maxWebParticles: widget._maxWebParticles ?? 3000,
+            isComplex: widget.isComplex,
           );
       _lastParticleCount = _controller.effectiveParticleCount;
       _controller.addListener(_onControllerChanged);
@@ -736,6 +749,9 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.maxWebParticles != widget.maxWebParticles) {
         _controller.setMaxWebParticles(widget.maxWebParticles);
+      }
+      if (oldWidget.isComplex != widget.isComplex) {
+        _controller.setIsComplex(widget.isComplex);
       }
       if (oldWidget.pinchToScale != widget.pinchToScale) {
         _controller.setPinchToScale(widget.pinchToScale);
@@ -995,7 +1011,7 @@ class _ParticleBlobState extends State<BlobFlutter>
                         paint: _paint,
                       ),
                       size: Size.infinite,
-                      isComplex: false,
+                      isComplex: _controller.isComplex,
                       willChange: true,
                     ),
                   );

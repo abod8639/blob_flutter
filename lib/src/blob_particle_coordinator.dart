@@ -143,6 +143,7 @@ class BlobParticleCoordinator {
       noiseTypeIndex: controller.noiseType.index,
       touchRadiusFactor: controller.touchRadiusFactor,
       webTemporalInterleaving: controller.webTemporalInterleaving,
+      isComplex: controller.isComplex,
     );
   }
 

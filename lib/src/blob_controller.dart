@@ -42,6 +42,7 @@ class BlobController extends ChangeNotifier {
   double _radiusFactor;
   bool _webTemporalInterleaving;
   int? _maxWebParticles;
+  bool _isComplex;
 
   /// Test hook to simulate Flutter Web environment in unit tests.
   @visibleForTesting
@@ -118,6 +119,7 @@ class BlobController extends ChangeNotifier {
     double radiusFactor = 0.85,
     bool webTemporalInterleaving = true,
     int? maxWebParticles = 3000,
+    bool isComplex = false,
   })  : _radius = radius,
         _pointSize = pointSize,
         _particleCount = particleCount,
@@ -131,6 +133,7 @@ class BlobController extends ChangeNotifier {
         _radiusFactor = radiusFactor,
         _webTemporalInterleaving = webTemporalInterleaving,
         _maxWebParticles = maxWebParticles,
+        _isComplex = isComplex,
         _dampingFactor = dampingFactor,
         _tapScaleFactor = tapScaleFactor,
         _touchRadiusFactor = touchRadiusFactor,
@@ -271,6 +274,13 @@ class BlobController extends ChangeNotifier {
   /// Prevents single-threaded JavaScript main event loop lockups when high particle counts
   /// (e.g. 5,000 to 10,000) are configured for native platforms. Set to `null` to disable capping.
   int? get maxWebParticles => _maxWebParticles;
+
+  /// Whether temporal interleaving / striding across frames is enabled.
+  ///
+  /// When `true`, particle projection is interleaved across alternating frames
+  /// (even and odd strides) to cut CPU computation time in half.
+  /// When `false` (default), all particles are computed fully on every frame.
+  bool get isComplex => _isComplex;
 
   /// Current zoom/scale multiplier applied to the blob radius. Default: 1.0.
   double get scale => _scale;
@@ -484,6 +494,14 @@ class BlobController extends ChangeNotifier {
     );
     if (_maxWebParticles != value) {
       _maxWebParticles = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets whether temporal interleaving / striding across frames is enabled.
+  void setIsComplex(bool value) {
+    if (_isComplex != value) {
+      _isComplex = value;
       notifyListeners();
     }
   }
