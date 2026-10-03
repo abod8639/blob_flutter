@@ -404,6 +404,41 @@ class _ParticleBlobState extends State<BlobFlutter>
     );
   }
 
+  void _reportControllerConflicts(
+    List<String> conflicts,
+    String contextDescription,
+  ) {
+    final exception =
+        BlobControllerConflictException.fromParameters(conflicts);
+    widget.onError?.call(exception, StackTrace.current);
+    assert(() {
+      if (!_effectiveSilentErrorLogging) {
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: exception,
+            stack: StackTrace.current,
+            library: 'blob_flutter',
+            context: ErrorDescription(contextDescription),
+            informationCollector: () => [
+              ErrorSummary(
+                'Parameters (${conflicts.join(', ')}) were passed alongside an external [controller].',
+              ),
+              ErrorDescription(
+                'When [controller] is provided, it serves as the single source of truth. '
+                'Widget-level parameters are ignored.',
+              ),
+              ErrorHint(
+                'Configure these properties directly on the BlobController instance, '
+                'or remove them from BlobFlutter.',
+              ),
+            ],
+          ),
+        );
+      }
+      return true;
+    }());
+  }
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -411,10 +446,10 @@ class _ParticleBlobState extends State<BlobFlutter>
     super.initState();
     final conflicts = BlobFlutter.findConflictingParameters(widget);
     if (widget.controller != null && conflicts.isNotEmpty) {
-      final exception =
-          BlobControllerConflictException.fromParameters(conflicts);
-      widget.onError?.call(exception, StackTrace.current);
-      throw exception;
+      _reportControllerConflicts(
+        conflicts,
+        'while initializing BlobFlutter with conflicting parameters',
+      );
     }
     WidgetsBinding.instance.addObserver(this);
 
@@ -547,10 +582,10 @@ class _ParticleBlobState extends State<BlobFlutter>
 
     final conflicts = BlobFlutter.findConflictingParameters(widget);
     if (widget.controller != null && conflicts.isNotEmpty) {
-      final exception =
-          BlobControllerConflictException.fromParameters(conflicts);
-      widget.onError?.call(exception, StackTrace.current);
-      throw exception;
+      _reportControllerConflicts(
+        conflicts,
+        'while updating BlobFlutter with conflicting parameters',
+      );
     }
 
     if (oldWidget.particleCount != widget.particleCount && _ownsController) {
