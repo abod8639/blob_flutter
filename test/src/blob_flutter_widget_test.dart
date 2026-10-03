@@ -1713,6 +1713,33 @@ void main() {
       expect(controller.radius, closeTo(40.0, 0.5));
       controller.dispose();
     });
+
+    testWidgets(
+        'BlobFlutter initializes and updates webTemporalInterleaving and maxWebParticles',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 100,
+              height: 100,
+              child: BlobFlutter(
+                webTemporalInterleaving: false,
+                maxWebParticles: 2500,
+                autoPlay: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final blobFinder = find.byType(BlobFlutter);
+      expect(blobFinder, findsOneWidget);
+      final blobWidget = tester.widget<BlobFlutter>(blobFinder);
+      expect(blobWidget.webTemporalInterleaving, isFalse);
+      expect(blobWidget.maxWebParticles, 2500);
+    });
   });
 }
 

@@ -70,6 +70,8 @@ class BlobFlutter extends StatefulWidget {
   final BlobCustomNoiseFunction? _customNoise;
   final bool? _autoFit;
   final double? _radiusFactor;
+  final bool? _webTemporalInterleaving;
+  final int? _maxWebParticles;
 
   /// Whether the blob automatically resizes its radius to fit the parent container bounds.
   ///
@@ -83,6 +85,19 @@ class BlobFlutter extends StatefulWidget {
   ///
   /// Default: 0.85 (leaves 15% breathing room for wave undulations and particle displacement).
   double get radiusFactor => _radiusFactor ?? 0.85;
+
+  /// Whether temporal interleaving is enabled on Flutter Web to alternate particle updates
+  /// across successive frames for smooth 60 FPS performance on single-threaded JavaScript.
+  ///
+  /// Default: `true`.
+  bool get webTemporalInterleaving => _webTemporalInterleaving ?? true;
+
+  /// Maximum particle cap automatically enforced when running on Flutter Web.
+  ///
+  /// Prevents single-threaded JavaScript main event loop lockups when high particle counts
+  /// (e.g. 5,000 to 10,000) are configured for native platforms.
+  /// Default: `3000`. Set to `null` to disable capping.
+  int? get maxWebParticles => _maxWebParticles;
 
   /// Total number of particles. Default: 5000.
   int get particleCount => _particleCount ?? 5000;
@@ -253,6 +268,8 @@ class BlobFlutter extends StatefulWidget {
     this.autoPauseOnAppBackground = true,
     bool? autoFit,
     double? radiusFactor,
+    bool? webTemporalInterleaving,
+    int? maxWebParticles,
   })  : _particleCount = particleCount,
         _radius = radius,
         _pointSize = pointSize,
@@ -273,6 +290,13 @@ class BlobFlutter extends StatefulWidget {
         _customNoise = customNoise,
         _autoFit = autoFit,
         _radiusFactor = radiusFactor,
+        _webTemporalInterleaving = webTemporalInterleaving,
+        _maxWebParticles = maxWebParticles,
+        assert(
+          maxWebParticles == null || maxWebParticles > 0,
+          "BlobFlutter: 'maxWebParticles' must be positive or null (received $maxWebParticles). "
+          'Example fix: BlobFlutter(maxWebParticles: 3000).',
+        ),
         assert(
           radiusFactor == null || (radiusFactor > 0.0 && radiusFactor <= 2.0),
           "BlobFlutter: 'radiusFactor' must be between 0.0 and 2.0 (received $radiusFactor). "
@@ -342,6 +366,10 @@ class BlobFlutter extends StatefulWidget {
     if (w._rotationY != null) list.add('rotationY');
     if (w._noiseType != null) list.add('noiseType');
     if (w._customNoise != null) list.add('customNoise');
+    if (w._autoFit != null) list.add('autoFit');
+    if (w._radiusFactor != null) list.add('radiusFactor');
+    if (w._webTemporalInterleaving != null) list.add('webTemporalInterleaving');
+    if (w._maxWebParticles != null) list.add('maxWebParticles');
     return list;
   }
 
@@ -508,9 +536,11 @@ class _ParticleBlobState extends State<BlobFlutter>
           isPaused: !_effectiveAutoPlay,
           autoFit: widget.autoFit,
           radiusFactor: widget.radiusFactor,
+          webTemporalInterleaving: widget.webTemporalInterleaving,
+          maxWebParticles: widget._maxWebParticles ?? 3000,
         );
 
-    _lastParticleCount = _controller.particleCount;
+    _lastParticleCount = _controller.effectiveParticleCount;
     _controller.addListener(_onControllerChanged);
 
     _particleCoordinator.generateBuffers(_lastParticleCount);
@@ -542,8 +572,8 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _onControllerChanged() {
     _updateCombinedOffset();
-    if (_controller.particleCount != _lastParticleCount) {
-      _lastParticleCount = _controller.particleCount;
+    if (_controller.effectiveParticleCount != _lastParticleCount) {
+      _lastParticleCount = _controller.effectiveParticleCount;
       _particleCoordinator.generateBuffers(_lastParticleCount);
       _restartWorker();
     }
@@ -645,8 +675,10 @@ class _ParticleBlobState extends State<BlobFlutter>
             isPaused: !_effectiveAutoPlay,
             autoFit: widget.autoFit,
             radiusFactor: widget.radiusFactor,
+            webTemporalInterleaving: widget.webTemporalInterleaving,
+            maxWebParticles: widget._maxWebParticles ?? 3000,
           );
-      _lastParticleCount = _controller.particleCount;
+      _lastParticleCount = _controller.effectiveParticleCount;
       _controller.addListener(_onControllerChanged);
       _particleCoordinator.generateBuffers(_lastParticleCount);
       _restartWorker();
@@ -698,6 +730,12 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.radiusFactor != widget.radiusFactor) {
         _controller.setRadiusFactor(widget.radiusFactor);
+      }
+      if (oldWidget.webTemporalInterleaving != widget.webTemporalInterleaving) {
+        _controller.setWebTemporalInterleaving(widget.webTemporalInterleaving);
+      }
+      if (oldWidget.maxWebParticles != widget.maxWebParticles) {
+        _controller.setMaxWebParticles(widget.maxWebParticles);
       }
       if (oldWidget.pinchToScale != widget.pinchToScale) {
         _controller.setPinchToScale(widget.pinchToScale);
@@ -765,7 +803,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _startWorker() {
     _particleCoordinator.startWorker(
-      particleCount: _controller.particleCount,
+      particleCount: _controller.effectiveParticleCount,
       workerFactory: widget.workerFactory,
       onError: (exception, st, {required bool isAsync}) {
         if (isAsync && mounted) {
@@ -785,7 +823,7 @@ class _ParticleBlobState extends State<BlobFlutter>
 
   void _restartWorker() {
     _particleCoordinator.restartWorker(
-      particleCount: _controller.particleCount,
+      particleCount: _controller.effectiveParticleCount,
       workerFactory: widget.workerFactory,
       onError: (exception, st, {required bool isAsync}) {
         if (isAsync && mounted) {

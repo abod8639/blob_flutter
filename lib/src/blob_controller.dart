@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'blob_math.dart';
@@ -38,6 +40,12 @@ class BlobController extends ChangeNotifier {
   Alignment _alignment = Alignment.center;
   bool _autoFit;
   double _radiusFactor;
+  bool _webTemporalInterleaving;
+  int? _maxWebParticles;
+
+  /// Test hook to simulate Flutter Web environment in unit tests.
+  @visibleForTesting
+  static bool debugOverrideIsWeb = false;
 
   // ── Dynamics & Noise ──────────────────────────────────────────────────────
   double _blobiness = 1.0;
@@ -108,6 +116,8 @@ class BlobController extends ChangeNotifier {
     bool isPaused = false,
     bool autoFit = false,
     double radiusFactor = 0.85,
+    bool webTemporalInterleaving = true,
+    int? maxWebParticles = 3000,
   })  : _radius = radius,
         _pointSize = pointSize,
         _particleCount = particleCount,
@@ -119,6 +129,8 @@ class BlobController extends ChangeNotifier {
         _alignment = alignment,
         _autoFit = autoFit,
         _radiusFactor = radiusFactor,
+        _webTemporalInterleaving = webTemporalInterleaving,
+        _maxWebParticles = maxWebParticles,
         _dampingFactor = dampingFactor,
         _tapScaleFactor = tapScaleFactor,
         _touchRadiusFactor = touchRadiusFactor,
@@ -140,6 +152,11 @@ class BlobController extends ChangeNotifier {
         _customNoise = customNoise,
         _gradient = gradient,
         _isPaused = isPaused,
+        assert(
+          maxWebParticles == null || maxWebParticles > 0,
+          "BlobController: 'maxWebParticles' must be positive or null (received $maxWebParticles). "
+          'Example fix: BlobController(maxWebParticles: 3000).',
+        ),
         assert(
           radiusFactor > 0.0 && radiusFactor <= 2.0,
           "BlobController: 'radiusFactor' must be between 0.0 and 2.0 (received $radiusFactor). "
@@ -231,6 +248,29 @@ class BlobController extends ChangeNotifier {
 
   /// Total number of 3D particles distributed on the sphere.
   int get particleCount => _particleCount;
+
+  /// Effective particle count taking into account web budget constraints.
+  ///
+  /// On Flutter Web (`kIsWeb`), returns `min(particleCount, maxWebParticles)`
+  /// if [maxWebParticles] is non-null. On Native platforms, returns [particleCount].
+  int get effectiveParticleCount {
+    if ((kIsWeb || debugOverrideIsWeb) &&
+        _maxWebParticles != null &&
+        _maxWebParticles! > 0) {
+      return math.min(_particleCount, _maxWebParticles!);
+    }
+    return _particleCount;
+  }
+
+  /// Whether temporal interleaving is enabled on Flutter Web to alternate particle updates
+  /// across successive frames for smooth 60 FPS performance on single-threaded JavaScript.
+  bool get webTemporalInterleaving => _webTemporalInterleaving;
+
+  /// Maximum particle cap automatically enforced when running on Flutter Web.
+  ///
+  /// Prevents single-threaded JavaScript main event loop lockups when high particle counts
+  /// (e.g. 5,000 to 10,000) are configured for native platforms. Set to `null` to disable capping.
+  int? get maxWebParticles => _maxWebParticles;
 
   /// Current zoom/scale multiplier applied to the blob radius. Default: 1.0.
   double get scale => _scale;
@@ -423,6 +463,27 @@ class BlobController extends ChangeNotifier {
     final clamped = value.clamp(10, 100000);
     if (_particleCount != clamped) {
       _particleCount = clamped;
+      notifyListeners();
+    }
+  }
+
+  /// Sets whether temporal interleaving is enabled on Flutter Web.
+  void setWebTemporalInterleaving(bool value) {
+    if (_webTemporalInterleaving != value) {
+      _webTemporalInterleaving = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the maximum particle cap for Flutter Web.
+  void setMaxWebParticles(int? value) {
+    assert(
+      value == null || value > 0,
+      "BlobController: 'maxWebParticles' must be positive or null (received $value). "
+      'Example fix: controller.setMaxWebParticles(3000).',
+    );
+    if (_maxWebParticles != value) {
+      _maxWebParticles = value;
       notifyListeners();
     }
   }

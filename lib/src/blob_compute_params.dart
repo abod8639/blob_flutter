@@ -33,6 +33,9 @@ class ProjectParamsFlat {
   /// [BlobNoiseType.index] — avoids sending a Dart enum across the boundary.
   final int noiseTypeIndex;
 
+  /// Whether temporal interleaving (subsampling particles across frames) is enabled on web.
+  final bool webTemporalInterleaving;
+
   const ProjectParamsFlat({
     required this.count,
     required this.radius,
@@ -52,15 +55,16 @@ class ProjectParamsFlat {
     required this.viewDistance,
     required this.noiseTypeIndex,
     this.touchRadiusFactor = 1.0,
+    this.webTemporalInterleaving = true,
   });
 
   /// Packs all fields into a [List] that satisfies Dart's isolate message
   /// protocol (primitives + [Float32List]).
   ///
-  /// Optionally populates and returns [buffer] if provided (must have length >= 18)
+  /// Optionally populates and returns [buffer] if provided (must have length >= 19)
   /// to eliminate per-frame list allocations.
   List<Object?> toMessage([List<Object?>? buffer]) {
-    if (buffer != null && buffer.length >= 18) {
+    if (buffer != null && buffer.length >= 19) {
       buffer[0] = count;
       buffer[1] = radius;
       buffer[2] = scale;
@@ -79,6 +83,7 @@ class ProjectParamsFlat {
       buffer[15] = noiseTypeIndex;
       buffer[16] = touchRadiusFactor;
       buffer[17] = encodedTouches;
+      buffer[18] = webTemporalInterleaving;
       return buffer;
     }
     return [
@@ -100,6 +105,7 @@ class ProjectParamsFlat {
       noiseTypeIndex,
       touchRadiusFactor,
       encodedTouches,
+      webTemporalInterleaving,
     ];
   }
 
@@ -124,5 +130,7 @@ class ProjectParamsFlat {
         noiseTypeIndex: m[15] as int,
         touchRadiusFactor: m[16] as double,
         encodedTouches: m[17] as Float32List,
+        webTemporalInterleaving:
+            m.length > 18 ? (m[18] as bool? ?? true) : true,
       );
 }

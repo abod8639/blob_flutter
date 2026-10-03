@@ -567,5 +567,81 @@ void main() {
 
       controller.dispose();
     });
+
+    test(
+        'webTemporalInterleaving, maxWebParticles, and effectiveParticleCount work as expected',
+        () {
+      final controller = BlobController(
+        particleCount: 5000,
+        webTemporalInterleaving: true,
+        maxWebParticles: 3000,
+      );
+
+      expect(controller.webTemporalInterleaving, isTrue);
+      expect(controller.maxWebParticles, 3000);
+
+      // On native (by default), effectiveParticleCount should be particleCount (5000)
+      BlobController.debugOverrideIsWeb = false;
+      expect(controller.effectiveParticleCount, 5000);
+
+      // When web is simulated, effectiveParticleCount is capped to maxWebParticles (3000)
+      BlobController.debugOverrideIsWeb = true;
+      expect(controller.effectiveParticleCount, 3000);
+
+      // If particle count is lower than maxWebParticles, it is not artificially inflated
+      controller.setParticleCount(1500);
+      expect(controller.effectiveParticleCount, 1500);
+
+      // Reset to 5000
+      controller.setParticleCount(5000);
+
+      // Setters and notification
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.setWebTemporalInterleaving(false);
+      expect(controller.webTemporalInterleaving, isFalse);
+      expect(notifyCount, 1);
+
+      controller.setWebTemporalInterleaving(false);
+      expect(notifyCount, 1); // unchanged, no notification
+
+      controller.setMaxWebParticles(2000);
+      expect(controller.maxWebParticles, 2000);
+      expect(controller.effectiveParticleCount, 2000);
+      expect(notifyCount, 2);
+
+      // Disable capping with null
+      controller.setMaxWebParticles(null);
+      expect(controller.maxWebParticles, isNull);
+      expect(controller.effectiveParticleCount, 5000);
+      expect(notifyCount, 3);
+
+      // Reset test hook
+      BlobController.debugOverrideIsWeb = false;
+      controller.dispose();
+    });
+
+    test('BlobController asserts invalid maxWebParticles <= 0', () {
+      expect(
+        () => BlobController(maxWebParticles: 0),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => BlobController(maxWebParticles: -10),
+        throwsA(isA<AssertionError>()),
+      );
+
+      final controller = BlobController();
+      expect(
+        () => controller.setMaxWebParticles(0),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => controller.setMaxWebParticles(-50),
+        throwsA(isA<AssertionError>()),
+      );
+      controller.dispose();
+    });
   });
 }

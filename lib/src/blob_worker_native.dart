@@ -136,7 +136,7 @@ class BlobWorker {
     }
   }
 
-  final List<Object?> _paramsBuffer = List<Object?>.filled(18, null);
+  final List<Object?> _paramsBuffer = List<Object?>.filled(19, null);
 
   /// Submits [params] to the worker for parallel computation.
   ///

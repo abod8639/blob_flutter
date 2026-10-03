@@ -124,7 +124,7 @@ class BlobParticleCoordinator {
         controller.alignment.y * (cachedSize.height / 2.0);
 
     return ProjectParamsFlat(
-      count: controller.particleCount,
+      count: controller.effectiveParticleCount,
       radius: controller.radius,
       scale: controller.scale,
       centerOffsetX: controller.centerOffset.dx + alignOffsetX,
@@ -142,6 +142,7 @@ class BlobParticleCoordinator {
       viewDistance: controller.viewDistance,
       noiseTypeIndex: controller.noiseType.index,
       touchRadiusFactor: controller.touchRadiusFactor,
+      webTemporalInterleaving: controller.webTemporalInterleaving,
     );
   }
 
@@ -153,8 +154,9 @@ class BlobParticleCoordinator {
     required double time,
     required BuildContext context,
   }) {
-    if (_baseSphere.length ~/ 3 != controller.particleCount) {
-      generateBuffers(controller.particleCount);
+    final int effectiveCount = controller.effectiveParticleCount;
+    if (_baseSphere.length ~/ 3 != effectiveCount) {
+      generateBuffers(effectiveCount);
     }
     touchManager.updateLocalTouches(context);
     final double alignOffsetX =
@@ -163,7 +165,7 @@ class BlobParticleCoordinator {
         controller.alignment.y * (cachedSize.height / 2.0);
 
     BlobMath.projectParticles(
-      count: controller.particleCount,
+      count: effectiveCount,
       radius: controller.radius,
       scale: controller.scale,
       centerOffsetX: controller.centerOffset.dx + alignOffsetX,
