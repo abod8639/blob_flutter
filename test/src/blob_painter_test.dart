@@ -412,5 +412,163 @@ void main() {
       expect(canvas.drawRawPointsCallCount, 1);
       expect(canvas.recordedStrokeWidths[0], 4.0);
     });
+
+    test(
+        'paint method performs depth-cueing two-pass glow rendering when activeShader is not null (L128-L134, L136, L143-L145)',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([
+        10.0, 10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0,
+        50.0, 50.0, 60.0, 60.0, 70.0, 70.0, 80.0, 80.0,
+      ]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.green]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 4.0,
+        fallbackGradient: gradient,
+        enableDepthCueing: true,
+        depthCueingFactor: 0.5,
+        enableGlow: true,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      // 4 slices * 2 passes = 8 calls
+      expect(canvas.drawRawPointsCallCount, 8);
+      expect(canvas.recordedStrokeWidths.length, 8);
+      expect(canvas.recordedColors.length, 8);
+
+      for (int s = 0; s < 4; s++) {
+        final int auraIndex = s * 2;
+        final int coreIndex = s * 2 + 1;
+
+        // Aura pass
+        expect(canvas.recordedColors[auraIndex].toARGB32(),
+            const Color(0x33000000).toARGB32());
+        // Core pass
+        expect(canvas.recordedColors[coreIndex].toARGB32(),
+            const Color(0xFF000000).toARGB32());
+
+        // Aura stroke width is 2.2x core stroke width
+        expect(
+          canvas.recordedStrokeWidths[auraIndex],
+          closeTo(canvas.recordedStrokeWidths[coreIndex] * 2.2, 0.001),
+        );
+      }
+
+      // Slices increase in stroke width from farthest to nearest
+      expect(
+          canvas.recordedStrokeWidths[1] < canvas.recordedStrokeWidths[7], true);
+    });
+
+    test(
+        'paint method performs depth-cueing two-pass glow with slice alpha factors when activeShader is null (L121-L125, L128-L130, L134, L136-L142, L145)',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([
+        10.0, 10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0,
+        50.0, 50.0, 60.0, 60.0, 70.0, 70.0, 80.0, 80.0,
+      ]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 4.0,
+        fallbackGradient: _ThrowingGradient(),
+        fallbackColor: const Color(0xFF112233),
+        enableDepthCueing: true,
+        depthCueingFactor: 0.5,
+        enableGlow: true,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      // 4 slices * 2 passes = 8 calls
+      expect(canvas.drawRawPointsCallCount, 8);
+      expect(canvas.recordedStrokeWidths.length, 8);
+      expect(canvas.recordedColors.length, 8);
+
+      for (int s = 0; s < 4; s++) {
+        final int auraIndex = s * 2;
+        final int coreIndex = s * 2 + 1;
+
+        // Aura pass alpha should be 0.2
+        expect(canvas.recordedColors[auraIndex].a, closeTo(0.2, 0.001));
+
+        // Core pass alpha factor: 0.7 + 0.3 * (s / 3)
+        final double expectedAlpha = 0.7 + 0.3 * (s / 3.0);
+        expect(canvas.recordedColors[coreIndex].a, closeTo(expectedAlpha, 0.001));
+
+        // Aura stroke width is 2.2x core stroke width
+        expect(
+          canvas.recordedStrokeWidths[auraIndex],
+          closeTo(canvas.recordedStrokeWidths[coreIndex] * 2.2, 0.001),
+        );
+      }
+
+      // Check progression of core alpha from farthest slice to nearest slice
+      expect(canvas.recordedColors[1].a, closeTo(0.7, 0.001));
+      expect(canvas.recordedColors[7].a, closeTo(1.0, 0.001));
+    });
+
+    test(
+        'paint method performs depth-cueing single-pass with slice alpha when activeShader is null and enableGlow is false (L121-L125)',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([
+        10.0, 10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0,
+        50.0, 50.0, 60.0, 60.0, 70.0, 70.0, 80.0, 80.0,
+      ]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 4.0,
+        fallbackGradient: _ThrowingGradient(),
+        fallbackColor: const Color(0xFF112233),
+        enableDepthCueing: true,
+        depthCueingFactor: 0.5,
+        enableGlow: false,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      expect(canvas.drawRawPointsCallCount, 4);
+      expect(canvas.recordedColors.length, 4);
+
+      for (int s = 0; s < 4; s++) {
+        final double expectedAlpha = 0.7 + 0.3 * (s / 3.0);
+        expect(canvas.recordedColors[s].a, closeTo(expectedAlpha, 0.001));
+      }
+    });
+
+    test(
+        'paint method performs depth-cueing single-pass when enableGlow is true but slicePointSize <= 1.0',
+        () {
+      final canvas = _MockCanvas();
+      final positions = Float32List.fromList([
+        10.0, 10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0,
+        50.0, 50.0, 60.0, 60.0, 70.0, 70.0, 80.0, 80.0,
+      ]);
+      const gradient = LinearGradient(colors: [Colors.blue, Colors.green]);
+      final painter = BlobPainter(
+        positions: positions,
+        generation: 1,
+        pointSize: 0.5,
+        fallbackGradient: gradient,
+        enableDepthCueing: true,
+        depthCueingFactor: 0.5,
+        enableGlow: true,
+      );
+
+      painter.paint(canvas, const Size(100.0, 100.0));
+
+      // Slice point size clamped to <= 1.0, so single pass per slice
+      expect(canvas.drawRawPointsCallCount, 4);
+      expect(canvas.recordedStrokeWidths.length, 4);
+      for (final width in canvas.recordedStrokeWidths) {
+        expect(width <= 1.0, true);
+      }
+    });
   });
 }
+
