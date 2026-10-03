@@ -494,6 +494,7 @@ class BlobMath {
     double touchRadiusFactor = 1.0,
     int startIndex = 0,
     int stride = 1,
+    Float32List? depths,
   }) {
     final double centerX = (viewportWidth / 2.0) + centerOffsetX;
     final double centerY = (viewportHeight / 2.0) + centerOffsetY;
@@ -599,6 +600,9 @@ class BlobMath {
           final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
           final double rz =
               px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+          if (depths != null) {
+            depths[i] = rz;
+          }
 
           double safeZ = viewDistance + rz;
           if (safeZ < 0.65) {
@@ -643,6 +647,9 @@ class BlobMath {
           final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
           final double rz =
               px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+          if (depths != null) {
+            depths[i] = rz;
+          }
 
           double safeZ = viewDistance + rz;
           if (safeZ < 0.65) {
@@ -708,6 +715,9 @@ class BlobMath {
         final double rx = px * m00 + pz * m02;
         final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
         final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+        if (depths != null) {
+          depths[i] = rz;
+        }
 
         double safeZ = viewDistance + rz;
         if (safeZ < 0.65) {
@@ -738,6 +748,9 @@ class BlobMath {
         final double rx = px * m00 + pz * m02;
         final double ry = isPitchZero ? py : (px * m10 + py * m11 + pz * m12);
         final double rz = px * m20 + (isPitchZero ? 0.0 : py * m21) + pz * m22;
+        if (depths != null) {
+          depths[i] = rz;
+        }
 
         double safeZ = viewDistance + rz;
         if (safeZ < 0.65) {
@@ -787,4 +800,85 @@ class BlobMath {
       }
     }
   }
+
+  /// Performs an O(N) Depth Binning / Bucket Sort on 2D projected particles
+  /// based on their depth (rz) values, ordering them from farthest to nearest
+  /// (Painter's Algorithm order) with zero heap allocations.
+  ///
+  /// [sourcePoints]: Input 2D coordinates [x0, y0, x1, y1, ...].
+  /// [depths]: Input depth values [z0, z1, ...] where larger rz is farther from camera.
+  /// [sortedPoints]: Output 2D coordinates sorted from back to front.
+  /// [scratchBinCounts], [scratchBinOffsets], [scratchParticleBins]: Optional pre-allocated
+  /// typed buffers to guarantee zero per-frame garbage collection.
+  static void sortParticlesByDepth({
+    required int count,
+    required Float32List sourcePoints,
+    required Float32List depths,
+    required Float32List sortedPoints,
+    Int32List? scratchBinCounts,
+    Int32List? scratchBinOffsets,
+    Uint8List? scratchParticleBins,
+    int numBins = 64,
+  }) {
+    if (count <= 1) {
+      if (count == 1 && !identical(sourcePoints, sortedPoints)) {
+        sortedPoints[0] = sourcePoints[0];
+        sortedPoints[1] = sourcePoints[1];
+      }
+      return;
+    }
+
+    double minZ = depths[0];
+    double maxZ = depths[0];
+    for (int i = 1; i < count; i++) {
+      final double z = depths[i];
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+
+    if (maxZ.isNaN ||
+        minZ.isNaN ||
+        maxZ.isInfinite ||
+        minZ.isInfinite ||
+        maxZ - minZ < 1e-6) {
+      if (!identical(sourcePoints, sortedPoints)) {
+        sortedPoints.setRange(0, count * 2, sourcePoints);
+      }
+      return;
+    }
+
+    final Int32List binCounts = scratchBinCounts ?? Int32List(numBins);
+    final Int32List binOffsets = scratchBinOffsets ?? Int32List(numBins);
+    final Uint8List particleBins = scratchParticleBins ?? Uint8List(count);
+
+    binCounts.fillRange(0, numBins, 0);
+    final double invRange = (numBins - 1) / (maxZ - minZ);
+
+    for (int i = 0; i < count; i++) {
+      final double z = depths[i];
+      int bin = ((maxZ - z) * invRange).toInt();
+      if (bin < 0) {
+        bin = 0;
+      } else if (bin >= numBins) {
+        bin = numBins - 1;
+      }
+      particleBins[i] = bin;
+      binCounts[bin]++;
+    }
+
+    binOffsets[0] = 0;
+    for (int b = 1; b < numBins; b++) {
+      binOffsets[b] = binOffsets[b - 1] + binCounts[b - 1];
+    }
+
+    for (int i = 0; i < count; i++) {
+      final int bin = particleBins[i];
+      final int destIndex = binOffsets[bin]++;
+      final int srcPos = i * 2;
+      final int dstPos = destIndex * 2;
+      sortedPoints[dstPos] = sourcePoints[srcPos];
+      sortedPoints[dstPos + 1] = sourcePoints[srcPos + 1];
+    }
+  }
 }
+
