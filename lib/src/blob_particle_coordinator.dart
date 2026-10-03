@@ -15,6 +15,11 @@ class BlobParticleCoordinator {
   Float32List _baseSphere = Float32List(0);
   Float32List _projectedPoints = Float32List(0);
   Float32List? _recycleBuffer;
+  Float32List _rawPoints = Float32List(0);
+  Float32List _depths = Float32List(0);
+  final Int32List _binCounts = Int32List(64);
+  final Int32List _binOffsets = Int32List(64);
+  Uint8List _particleBins = Uint8List(0);
 
   BlobWorker? _worker;
   bool _workerReady = false;
@@ -42,6 +47,11 @@ class BlobParticleCoordinator {
       if (copyLen > 0) {
         _projectedPoints.setRange(0, copyLen, oldPoints);
       }
+    }
+    if (_rawPoints.length != newLength) {
+      _rawPoints = Float32List(newLength);
+      _depths = Float32List(count);
+      _particleBins = Uint8List(count);
     }
   }
 
@@ -144,6 +154,7 @@ class BlobParticleCoordinator {
       touchRadiusFactor: controller.touchRadiusFactor,
       webTemporalInterleaving: controller.webTemporalInterleaving,
       isComplex: controller.isComplex,
+      enableDepthSort: controller.enableDepthSort,
     );
   }
 
@@ -165,6 +176,10 @@ class BlobParticleCoordinator {
     final double alignOffsetY =
         controller.alignment.y * (cachedSize.height / 2.0);
 
+    final bool enableDepthSort = controller.enableDepthSort;
+    final Float32List targetBuffer =
+        enableDepthSort ? _rawPoints : _projectedPoints;
+
     BlobMath.projectParticles(
       count: effectiveCount,
       radius: controller.radius,
@@ -180,14 +195,28 @@ class BlobParticleCoordinator {
       viewportHeight: cachedSize.height,
       activeTouches: touchManager.localTouchesFlat,
       baseSphere: _baseSphere,
-      projectedPoints: _projectedPoints,
+      projectedPoints: targetBuffer,
       autoRotationSpeed: controller.autoRotationSpeed,
       noiseFrequency: controller.noiseFrequency,
       viewDistance: controller.viewDistance,
       noiseType: controller.noiseType,
       customNoise: controller.customNoise,
       touchRadiusFactor: controller.touchRadiusFactor,
+      depths: enableDepthSort ? _depths : null,
     );
+
+    if (enableDepthSort) {
+      BlobMath.sortParticlesByDepth(
+        count: effectiveCount,
+        sourcePoints: _rawPoints,
+        depths: _depths,
+        sortedPoints: _projectedPoints,
+        scratchBinCounts: _binCounts,
+        scratchBinOffsets: _binOffsets,
+        scratchParticleBins: _particleBins,
+        numBins: 64,
+      );
+    }
   }
 
   /// Processes frame computation on animation tick.
