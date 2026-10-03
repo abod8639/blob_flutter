@@ -103,6 +103,11 @@ class _CustomRenderObjectContext extends Fake implements BuildContext {
   InheritedElement? getElementForInheritedWidgetOfExactType<
           T extends InheritedWidget>() =>
       _inner.getElementForInheritedWidgetOfExactType<T>();
+
+  @override
+  InheritedWidget dependOnInheritedElement(InheritedElement ancestor,
+          {Object? aspect}) =>
+      _inner.dependOnInheritedElement(ancestor, aspect: aspect);
 }
 
 void main() {
@@ -355,7 +360,7 @@ void main() {
 
       manager.updateDependencies(
         context: context1,
-        autoPauseOffscreen: true,
+        autoPauseOffscreen: false,
       );
 
       // Enable throwing specifically when removing the listener on oldPosition
@@ -365,7 +370,7 @@ void main() {
       expect(
         () => manager.updateDependencies(
           context: context2,
-          autoPauseOffscreen: true,
+          autoPauseOffscreen: false,
         ),
         returnsNormally,
       );
