@@ -471,9 +471,13 @@ void main() {
         final double expectedDisplacement =
             (baseShape * (1.0 + wave * 0.4 * blobiness)).clamp(0.1, 4.0);
 
-        expect(expectedDisplacement, inInclusiveRange(0.1, 4.0));
-        expect(expectedDisplacement.isNaN, isFalse);
-        expect(expectedDisplacement.isInfinite, isFalse);
+        final double actualDisplacement = BlobMath.evaluateNoiseForTesting(
+            BlobNoiseType.wave, px, py, pz, f, time, time15, blobiness);
+
+        expect(actualDisplacement, closeTo(expectedDisplacement, 1e-5));
+        expect(actualDisplacement, inInclusiveRange(0.1, 4.0));
+        expect(actualDisplacement.isNaN, isFalse);
+        expect(actualDisplacement.isInfinite, isFalse);
       }
 
       // 2. Validate wave grid projection execution and output bounds
@@ -804,6 +808,132 @@ void main() {
           expect(recordedDepths[i].isInfinite, false);
         }
       });
+
+      test(
+          'projectParticles records depths for BlobNoiseType.wave fast path (L603-L605)',
+          () {
+        const int count = 16;
+        final sphere = BlobMath.generateFibonacciSphere(count);
+        final projected = Float32List(count * 2);
+        final depths = Float32List(count);
+
+        BlobMath.projectParticles(
+          count: count,
+          radius: 100.0,
+          blobiness: 1.0,
+          dispersion: 0.0,
+          rotationX: 0.1,
+          rotationY: 0.2,
+          time: 1.0,
+          viewportWidth: 400.0,
+          viewportHeight: 400.0,
+          activeTouches: Float32List(0),
+          baseSphere: sphere,
+          projectedPoints: projected,
+          autoRotationSpeed: 0.0,
+          noiseFrequency: 1.0,
+          viewDistance: 2.0,
+          noiseType: BlobNoiseType.wave,
+          depths: depths,
+        );
+
+        for (int i = 0; i < count; i++) {
+          expect(depths[i].isNaN, isFalse);
+          expect(depths[i].isInfinite, isFalse);
+        }
+      });
+
+      test(
+          'projectParticles records depths for BlobNoiseType.wave interactive path (L650-L652)',
+          () {
+        const int count = 16;
+        final sphere = BlobMath.generateFibonacciSphere(count);
+        final projected = Float32List(count * 2);
+        final depths = Float32List(count);
+
+        BlobMath.projectParticles(
+          count: count,
+          radius: 100.0,
+          blobiness: 1.0,
+          dispersion: 0.5,
+          rotationX: 0.1,
+          rotationY: 0.2,
+          time: 1.0,
+          viewportWidth: 400.0,
+          viewportHeight: 400.0,
+          activeTouches: Float32List.fromList([200.0, 200.0]),
+          baseSphere: sphere,
+          projectedPoints: projected,
+          autoRotationSpeed: 0.0,
+          noiseFrequency: 1.0,
+          viewDistance: 2.0,
+          noiseType: BlobNoiseType.wave,
+          depths: depths,
+        );
+
+        for (int i = 0; i < count; i++) {
+          expect(depths[i].isNaN, isFalse);
+          expect(depths[i].isInfinite, isFalse);
+        }
+      });
+
+      test(
+          'sortParticlesByDepth handles count == 1 with distinct buffers (L824-L827)',
+          () {
+        const int count = 1;
+        final source = Float32List.fromList([15.0, 25.0]);
+        final sorted = Float32List(2);
+        final depths = Float32List.fromList([3.0]);
+
+        BlobMath.sortParticlesByDepth(
+          count: count,
+          sourcePoints: source,
+          depths: depths,
+          sortedPoints: sorted,
+        );
+
+        expect(sorted[0], 15.0);
+        expect(sorted[1], 25.0);
+      });
+
+      test('sortParticlesByDepth clamps bin when bin >= numBins (L863)', () {
+        final depths = _ExceedingDepthsList([10.0, 0.0]);
+        final source = Float32List.fromList([1.0, 2.0, 3.0, 4.0]);
+        final sorted = Float32List(4);
+
+        BlobMath.sortParticlesByDepth(
+          count: 2,
+          sourcePoints: source,
+          depths: depths,
+          sortedPoints: sorted,
+          numBins: 8,
+        );
+
+        expect(sorted.length, 4);
+        for (int i = 0; i < 4; i++) {
+          expect(sorted[i].isNaN, isFalse);
+        }
+      });
     });
   });
+}
+
+class _ExceedingDepthsList extends Fake implements Float32List {
+  final List<double> _values;
+  int _accessCount = 0;
+
+  _ExceedingDepthsList(this._values);
+
+  @override
+  int get length => _values.length;
+
+  @override
+  double operator [](int index) {
+    _accessCount++;
+    // In second pass (binning), return a depth far below minZ so (maxZ - z) * invRange >= numBins
+    if (_accessCount > _values.length && index == 0) {
+      return -500.0;
+    }
+    return _values[index];
+  }
 }
