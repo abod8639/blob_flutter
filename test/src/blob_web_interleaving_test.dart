@@ -162,6 +162,7 @@ void main() {
           encodedTouches: Float32List(0),
           webTemporalInterleaving: interleave,
           isComplex: interleave,
+          enableDepthSort: false,
         );
       }
 
