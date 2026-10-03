@@ -136,7 +136,7 @@ class BlobWorker {
     }
   }
 
-  final List<Object?> _paramsBuffer = List<Object?>.filled(20, null);
+  final List<Object?> _paramsBuffer = List<Object?>.filled(21, null);
 
   /// Submits [params] to the worker for parallel computation.
   ///
@@ -192,6 +192,11 @@ class BlobWorker {
     mainPort.send(rx.sendPort);
 
     int frameIndex = 0;
+    Float32List rawPoints = Float32List(count * 2);
+    Float32List depths = Float32List(count);
+    final Int32List binCounts = Int32List(64);
+    final Int32List binOffsets = Int32List(64);
+    Uint8List particleBins = Uint8List(count);
 
     await for (final msg in rx) {
       if (msg is! List) continue;
@@ -224,6 +229,12 @@ class BlobWorker {
         frameIndex = 0;
       }
 
+      if (rawPoints.length != count * 2) {
+        rawPoints = Float32List(count * 2);
+        depths = Float32List(count);
+        particleBins = Uint8List(count);
+      }
+
       final bool shouldInterleave = p.isComplex;
       int startIndex = 0;
       int stride = 1;
@@ -237,6 +248,9 @@ class BlobWorker {
       } else {
         frameIndex = 0;
       }
+
+      final bool enableDepthSort = p.enableDepthSort;
+      final Float32List targetBuffer = enableDepthSort ? rawPoints : output;
 
       BlobMath.projectParticles(
         count: p.count,
@@ -253,7 +267,7 @@ class BlobWorker {
         viewportHeight: p.viewportHeight,
         activeTouches: p.encodedTouches,
         baseSphere: sphere,
-        projectedPoints: output,
+        projectedPoints: targetBuffer,
         autoRotationSpeed: p.autoRotationSpeed,
         noiseFrequency: p.noiseFrequency,
         viewDistance: p.viewDistance,
@@ -261,7 +275,21 @@ class BlobWorker {
         touchRadiusFactor: p.touchRadiusFactor,
         startIndex: startIndex,
         stride: stride,
+        depths: enableDepthSort ? depths : null,
       );
+
+      if (enableDepthSort) {
+        BlobMath.sortParticlesByDepth(
+          count: p.count,
+          sourcePoints: rawPoints,
+          depths: depths,
+          sortedPoints: output,
+          scratchBinCounts: binCounts,
+          scratchBinOffsets: binOffsets,
+          scratchParticleBins: particleBins,
+          numBins: 64,
+        );
+      }
 
       // Transfer ownership back to main isolate — zero-copy on native.
       mainPort.send(TransferableTypedData.fromList([output]));
