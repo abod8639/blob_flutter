@@ -157,6 +157,31 @@ class BlobShaderCoordinator {
       // Index 2: uTime
       s.setFloat(2, time);
 
+      // Indices 51-52: uRotation (3D rotationX, rotationY angles)
+      s.setFloat(51, controller.rotationX);
+      s.setFloat(52, controller.rotationY);
+
+      // Indices 53-54: uBlobCenter (in canvas pixels)
+      final double alignOffsetX =
+          controller.alignment.x * (cachedSize.width / 2.0);
+      final double alignOffsetY =
+          controller.alignment.y * (cachedSize.height / 2.0);
+      final double centerX = cachedSize.width / 2.0 +
+          controller.centerOffset.dx +
+          alignOffsetX;
+      final double centerY = cachedSize.height / 2.0 +
+          controller.centerOffset.dy +
+          alignOffsetY;
+      s.setFloat(53, centerX);
+      s.setFloat(54, centerY);
+
+      // Index 55: uBlobRadius
+      final double effectiveRadius = controller.effectiveRadius;
+      s.setFloat(55, effectiveRadius > 0.0 ? effectiveRadius : 1.0);
+
+      // Index 56: uColor3D (1.0 = 3D object-space shading enabled)
+      s.setFloat(56, 1.0);
+
       if (controller.isRainbowMode) {
         BlobShaderHelper.pushColors(
           shader: s,
