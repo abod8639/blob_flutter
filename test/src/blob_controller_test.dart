@@ -665,5 +665,55 @@ void main() {
 
       controller.dispose();
     });
+
+    test(
+        'enableDepthSort, enableDepthCueing, and depthCueingFactor work as expected',
+        () {
+      final controller = BlobController(
+        enableDepthSort: false,
+        enableDepthCueing: false,
+        depthCueingFactor: 0.8,
+      );
+      expect(controller.enableDepthSort, isFalse);
+      expect(controller.enableDepthCueing, isFalse);
+      expect(controller.depthCueingFactor, 0.8);
+
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.setEnableDepthSort(true);
+      expect(controller.enableDepthSort, isTrue);
+      expect(notifyCount, 1);
+
+      controller.setEnableDepthCueing(true);
+      expect(controller.enableDepthCueing, isTrue);
+      expect(notifyCount, 2);
+
+      controller.setDepthCueingFactor(0.2);
+      expect(controller.depthCueingFactor, 0.2);
+      expect(notifyCount, 3);
+
+      // Clamping test
+      controller.setDepthCueingFactor(1.5);
+      expect(controller.depthCueingFactor, 1.0);
+      expect(notifyCount, 4);
+
+      controller.setDepthCueingFactor(-0.5);
+      expect(controller.depthCueingFactor, 0.0);
+      expect(notifyCount, 5);
+
+      controller.dispose();
+    });
+
+    test('asserts depthCueingFactor within [0.0, 1.0] in constructor', () {
+      expect(
+        () => BlobController(depthCueingFactor: -0.1),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => BlobController(depthCueingFactor: 1.1),
+        throwsA(isA<AssertionError>()),
+      );
+    });
   });
 }
