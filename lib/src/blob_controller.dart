@@ -36,6 +36,8 @@ class BlobController extends ChangeNotifier {
   double _maxScale = 10.0;
   Offset _centerOffset = Offset.zero;
   Alignment _alignment = Alignment.center;
+  bool _autoFit;
+  double _radiusFactor;
 
   // ── Dynamics & Noise ──────────────────────────────────────────────────────
   double _blobiness = 1.0;
@@ -104,6 +106,8 @@ class BlobController extends ChangeNotifier {
     BlobCustomNoiseFunction? customNoise,
     Gradient? gradient,
     bool isPaused = false,
+    bool autoFit = false,
+    double radiusFactor = 0.85,
   })  : _radius = radius,
         _pointSize = pointSize,
         _particleCount = particleCount,
@@ -113,6 +117,8 @@ class BlobController extends ChangeNotifier {
         _maxScale = maxScale,
         _centerOffset = centerOffset,
         _alignment = alignment,
+        _autoFit = autoFit,
+        _radiusFactor = radiusFactor,
         _dampingFactor = dampingFactor,
         _tapScaleFactor = tapScaleFactor,
         _touchRadiusFactor = touchRadiusFactor,
@@ -134,6 +140,11 @@ class BlobController extends ChangeNotifier {
         _customNoise = customNoise,
         _gradient = gradient,
         _isPaused = isPaused,
+        assert(
+          radiusFactor > 0.0 && radiusFactor <= 2.0,
+          "BlobController: 'radiusFactor' must be between 0.0 and 2.0 (received $radiusFactor). "
+          'Example fix: BlobController(radiusFactor: 0.85).',
+        ),
         assert(
           radius > 0.0,
           "BlobController: 'radius' must be greater than 0.0 (received $radius). "
@@ -238,6 +249,13 @@ class BlobController extends ChangeNotifier {
 
   /// Effective radius after scale factor is applied (`radius * scale`).
   double get effectiveRadius => _radius * _scale;
+
+  /// Whether the blob automatically resizes its radius to fit its container viewport.
+  bool get autoFit => _autoFit;
+
+  /// Multiplier applied to half the minimum container dimension when [autoFit] is enabled.
+  /// Default: 0.85 (leaves 15% breathing room for wave undulations and particle displacement).
+  double get radiusFactor => _radiusFactor;
 
   // ── Dynamics & Physics Getters ────────────────────────────────────────────
 
@@ -509,6 +527,23 @@ class BlobController extends ChangeNotifier {
   void setPinchToScale(bool value) {
     if (_pinchToScale != value) {
       _pinchToScale = value;
+      notifyListeners();
+    }
+  }
+
+  /// Enables or disables automatic responsive radius calculation based on container bounds.
+  void setAutoFit(bool value) {
+    if (_autoFit != value) {
+      _autoFit = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the responsive radius multiplier when [autoFit] is enabled. Clamped to `[0.05, 2.0]`.
+  void setRadiusFactor(double value) {
+    final clamped = value.clamp(0.05, 2.0);
+    if (_radiusFactor != clamped) {
+      _radiusFactor = clamped;
       notifyListeners();
     }
   }
