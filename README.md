@@ -47,7 +47,6 @@ _Powered by procedural noise algorithms, multi-threaded Isolate computation, and
 - **Zero-Jank Architecture**: Offloads heavy 3D math and vertex projections to a persistent background `Isolate`.
 - **True 3D Object-Space Shaders**: Hardware-accelerated per-pixel color gradients (Linear, Radial, Sweep) with dynamic surface normal reconstruction and inverse rotation matrices (`uColor3D`) so colors rotate synchronously with the 3D geometry.
 - **$O(N)$ Linear Depth Sorting & Depth-Cueing**: High-performance 64-bin Bucket Sort in the background isolate renders particles in Painter's Algorithm order, paired with 4-strata atmospheric depth-cueing for breathtaking 3D depth perception.
-- **Responsive Auto-Fitting**: Dynamically scales the blob radius to fit parent container bounds (`autoFit`, `radiusFactor`), seamlessly adapting to orientation changes and responsive screen layouts.
 - **9 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, cosmic vortex, wave carpets, and user-defined custom math models.
 - **Flutter Web Optimization & Temporal Interleaving**: Alternates frame calculations (`isComplex`, `webTemporalInterleaving`) and caps web particle counts (`maxWebParticles`) to lock 60 FPS on single-threaded JavaScript.
 - **Zero-Battery Multi-Tier Lifecycle**: Automatically halts tickers and isolate workers (0% CPU/GPU/battery) when scrolled offscreen, app is backgrounded, or when navigated away via Navigator routes (`autoPauseOnRouteChange`).
