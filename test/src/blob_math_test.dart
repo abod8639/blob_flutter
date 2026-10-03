@@ -897,7 +897,7 @@ void main() {
       });
 
       test('sortParticlesByDepth clamps bin when bin >= numBins (L863)', () {
-        final depths = _ExceedingDepthsList([10.0, 0.0]);
+        final depths = Float32List.fromList([10.0, 0.0]);
         final source = Float32List.fromList([1.0, 2.0, 3.0, 4.0]);
         final sorted = Float32List(4);
 
@@ -918,22 +918,3 @@ void main() {
   });
 }
 
-class _ExceedingDepthsList extends Fake implements Float32List {
-  final List<double> _values;
-  int _accessCount = 0;
-
-  _ExceedingDepthsList(this._values);
-
-  @override
-  int get length => _values.length;
-
-  @override
-  double operator [](int index) {
-    _accessCount++;
-    // In second pass (binning), return a depth far below minZ so (maxZ - z) * invRange >= numBins
-    if (_accessCount > _values.length && index == 0) {
-      return -500.0;
-    }
-    return _values[index];
-  }
-}
