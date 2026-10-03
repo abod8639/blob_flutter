@@ -1288,7 +1288,7 @@ void main() {
     });
 
     testWidgets(
-        'BlobFlutter throws BlobControllerConflictException when parameters passed alongside controller',
+        'BlobFlutter reports BlobControllerConflictException to onError and renders without crash when parameters passed alongside controller',
         (tester) async {
       final controller = BlobController();
       BlobFlutterException? capturedError;
@@ -1308,12 +1308,16 @@ void main() {
       );
 
       final dynamic exception = tester.takeException();
-      expect(exception, isA<BlobControllerConflictException>());
-      final conflictException = exception as BlobControllerConflictException;
+      expect(exception, isNull,
+          reason:
+              'BlobFlutter must not crash or throw unhandled exceptions in widget tree');
+      expect(capturedError, isA<BlobControllerConflictException>());
+      final conflictException =
+          capturedError as BlobControllerConflictException;
       expect(conflictException.conflictingParameters, contains('radius'));
       expect(conflictException.toString(), contains('IGNORED'));
       expect(conflictException.toString(), contains('radius: ...,'));
-      expect(capturedError, isA<BlobControllerConflictException>());
+      expect(find.byType(BlobFlutter), findsOneWidget);
 
       // Verifying static helper findConflictingParameters
       final conflicts = BlobFlutter.findConflictingParameters(
@@ -1476,10 +1480,7 @@ void main() {
         onError: (error, st) => capturedError = error,
       );
 
-      expect(
-        () => element.update(newWidget),
-        throwsA(isA<BlobControllerConflictException>()),
-      );
+      element.update(newWidget);
       expect(capturedError, isA<BlobControllerConflictException>());
       controller.dispose();
     });
