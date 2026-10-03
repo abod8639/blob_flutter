@@ -43,6 +43,9 @@ class BlobController extends ChangeNotifier {
   bool _webTemporalInterleaving;
   int? _maxWebParticles;
   bool _isComplex;
+  bool _enableDepthSort;
+  bool _enableDepthCueing;
+  double _depthCueingFactor;
 
   /// Test hook to simulate Flutter Web environment in unit tests.
   @visibleForTesting
@@ -120,6 +123,9 @@ class BlobController extends ChangeNotifier {
     bool webTemporalInterleaving = true,
     int? maxWebParticles = 3000,
     bool isComplex = false,
+    bool enableDepthSort = true,
+    bool enableDepthCueing = true,
+    double depthCueingFactor = 0.4,
   })  : _radius = radius,
         _pointSize = pointSize,
         _particleCount = particleCount,
@@ -134,6 +140,9 @@ class BlobController extends ChangeNotifier {
         _webTemporalInterleaving = webTemporalInterleaving,
         _maxWebParticles = maxWebParticles,
         _isComplex = isComplex,
+        _enableDepthSort = enableDepthSort,
+        _enableDepthCueing = enableDepthCueing,
+        _depthCueingFactor = depthCueingFactor,
         _dampingFactor = dampingFactor,
         _tapScaleFactor = tapScaleFactor,
         _touchRadiusFactor = touchRadiusFactor,
@@ -164,6 +173,11 @@ class BlobController extends ChangeNotifier {
           radiusFactor > 0.0 && radiusFactor <= 2.0,
           "BlobController: 'radiusFactor' must be between 0.0 and 2.0 (received $radiusFactor). "
           'Example fix: BlobController(radiusFactor: 0.85).',
+        ),
+        assert(
+          depthCueingFactor >= 0.0 && depthCueingFactor <= 1.0,
+          "BlobController: 'depthCueingFactor' must be between 0.0 and 1.0 (received $depthCueingFactor). "
+          'Example fix: BlobController(depthCueingFactor: 0.4).',
         ),
         assert(
           radius > 0.0,
@@ -281,6 +295,18 @@ class BlobController extends ChangeNotifier {
   /// (even and odd strides) to cut CPU computation time in half.
   /// When `false` (default), all particles are computed fully on every frame.
   bool get isComplex => _isComplex;
+
+  /// Whether depth sorting (Painter's algorithm: back-to-front rendering) is enabled.
+  /// When `true` (default), particles are sorted by their 3D depth (Z) so that
+  /// foreground particles properly occlude background particles.
+  bool get enableDepthSort => _enableDepthSort;
+
+  /// Whether depth-cueing (size attenuation across depth slices) is enabled.
+  /// When `true` (default), distant particles appear smaller and nearer particles appear larger.
+  bool get enableDepthCueing => _enableDepthCueing;
+
+  /// Intensity of depth-cueing perspective scaling. Range: `[0.0, 1.0]`. Default: 0.4.
+  double get depthCueingFactor => _depthCueingFactor;
 
   /// Current zoom/scale multiplier applied to the blob radius. Default: 1.0.
   double get scale => _scale;
@@ -502,6 +528,31 @@ class BlobController extends ChangeNotifier {
   void setIsComplex(bool value) {
     if (_isComplex != value) {
       _isComplex = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets whether depth sorting is enabled.
+  void setEnableDepthSort(bool value) {
+    if (_enableDepthSort != value) {
+      _enableDepthSort = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets whether depth-cueing size attenuation is enabled.
+  void setEnableDepthCueing(bool value) {
+    if (_enableDepthCueing != value) {
+      _enableDepthCueing = value;
+      notifyListeners();
+    }
+  }
+
+  /// Sets the intensity of depth-cueing perspective scaling. Clamped to `[0.0, 1.0]`.
+  void setDepthCueingFactor(double value) {
+    final clamped = value.clamp(0.0, 1.0);
+    if (_depthCueingFactor != clamped) {
+      _depthCueingFactor = clamped;
       notifyListeners();
     }
   }
