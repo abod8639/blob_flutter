@@ -132,6 +132,7 @@ BlobFlutter(
 
 // 2. Fully Responsive Blob with 3D Depth Sorting & Depth-Cueing
 BlobFlutter(
+  particleCount: 5000,
   autoFit: true, // Automatically resizes radius to fit parent bounds
   radiusFactor: 0.85,
   enableDepthSort: true, // Linear O(N) back-to-front depth sorting
