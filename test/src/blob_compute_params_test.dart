@@ -68,10 +68,13 @@ void main() {
         viewDistance: 2.5,
         noiseTypeIndex: BlobNoiseType.vortex.index,
         touchRadiusFactor: 1.25,
+        webTemporalInterleaving: true,
+        isComplex: true,
+        enableDepthSort: true,
       );
 
       final message = params.toMessage();
-      expect(message.length, 18);
+      expect(message.length, 21);
       expect(message[0], 500);
       expect(message[1], 180.0);
       expect(message[2], 1.5);
@@ -90,6 +93,9 @@ void main() {
       expect(message[15], BlobNoiseType.vortex.index);
       expect(message[16], 1.25);
       expect(message[17], touches);
+      expect(message[18], true);
+      expect(message[19], true);
+      expect(message[20], true);
 
       final restored = ProjectParamsFlat.fromMessage(message);
 
@@ -111,6 +117,9 @@ void main() {
       expect(restored.noiseTypeIndex, BlobNoiseType.vortex.index);
       expect(restored.touchRadiusFactor, 1.25);
       expect(restored.encodedTouches, touches);
+      expect(restored.webTemporalInterleaving, true);
+      expect(restored.isComplex, true);
+      expect(restored.enableDepthSort, true);
     });
 
     test('handles empty touches Float32List during serialization', () {
