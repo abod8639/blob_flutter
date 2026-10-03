@@ -23,7 +23,7 @@ _Powered by procedural noise algorithms, multi-threaded Isolate computation, and
 [![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Try%20Online-purple?style=&logo=googlechrome&logoColor=white)](https://blob-flutter-3d.web.app/)
 
-[Live Demo](https://blob-flutter-3d.web.app/) • [Features](#features) • [What's New](#-major-updates--whats-new) • [Quick Start](#quick-start) • [Algorithms](#procedural-noise-algorithms) • [Controller](#controller-usage) • [Error Handling](#error-handling) • [Architecture](#architecture--performance)
+[Live Demo](https://blob-flutter-3d.web.app/) • [Features](#features) • [What's New](#whats-new) • [Quick Start](#quick-start) • [Algorithms](#procedural-noise-algorithms) • [Controller](#controller-usage) • [Error Handling](#error-handling) • [Architecture](#architecture--performance)
 
 </div>
 
@@ -44,49 +44,23 @@ _Powered by procedural noise algorithms, multi-threaded Isolate computation, and
 
 ## Features
 
-- **Zero-Jank Architecture**: Offloads heavy 3D math and vertex projections to a persistent background `Isolate`.
-- **True 3D Object-Space Shaders**: Hardware-accelerated per-pixel color gradients (Linear, Radial, Sweep) with dynamic surface normal reconstruction and inverse rotation matrices (`uColor3D`) so colors rotate synchronously with the 3D geometry.
-- **$O(N)$ Linear Depth Sorting & Depth-Cueing**: High-performance 64-bin Bucket Sort in the background isolate renders particles in Painter's Algorithm order, paired with 4-strata atmospheric depth-cueing for breathtaking 3D depth perception.
-- **9 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, cosmic vortex, wave carpets, and user-defined custom math models.
-- **Flutter Web Optimization & Temporal Interleaving**: Alternates frame calculations (`isComplex`, `webTemporalInterleaving`) and caps web particle counts (`maxWebParticles`) to lock 60 FPS on single-threaded JavaScript.
-- **Zero-Battery Multi-Tier Lifecycle**: Automatically halts tickers and isolate workers (0% CPU/GPU/battery) when scrolled offscreen, app is backgrounded, or when navigated away via Navigator routes (`autoPauseOnRouteChange`).
-- **Fluid Touch Interaction**: Natural multi-touch drag rotation, hover tracking, and tap dispersion with configurable hit-test behaviors.
-- **Zero-Allocation Pipeline**: Pre-allocated buffers ensure zero heap object allocations during the render loop.
-- **Ultra-Fast Path Engine**: Automatically switches to an unbranched, zero-overhead projection pipeline during non-interactive frames, eliminating tens of thousands of redundant pointer and dispersion checks per frame.
-- **Resource-Conscious Engineering**: Crafted with rigorous mathematical precision to respect developers and end-user devices—maximizing performance while preventing battery drain and memory thrashing.
-- **Resilient Controller Architecture**: Single source of truth with graceful handling and developer hints when properties are supplied alongside an external controller.
+- **Zero-Jank Architecture**: Heavy 3D math and vertex projections run in a background `Isolate` for sustained 60/120 FPS.
+- **Hardware-Accelerated Shaders**: High-performance GPU fragment shaders for fluid color gradients and shimmer effects.
+- **9 Procedural Noise Models**: Smooth waves, spiky crystals, cosmic vortex, cellular bubbles, carpet nets, and custom math formulas.
+- **Fluid Touch Interaction**: Natural drag rotation, mouse hover tracking, and tap dispersion with customizable hit testing.
+- **Zero-Allocation Pipeline**: Pre-allocated typed buffers prevent Garbage Collection (GC) pauses during animation.
+- **Single GPU Draw Call**: Flattens and renders thousands of particles in a single call via `Canvas.drawRawPoints`.
 
 ---
 
-## Major Updates & What's New
+## What's New
 
-`blob_flutter` brings landmark architectural upgrades that significantly enhance 3D visual fidelity, responsive UI integration, multi-platform performance, and battery efficiency:
-
-### 1. True 3D Object-Space Shaders (`uColor3D`)
-
-- **The Problem Solved**: Conventional Flutter fragment shaders sample screen-space coordinates (`uv = FlutterFragCoord().xy / uResolution`), causing gradients to appear as a flat 2D wallpaper overlay that remains static when the 3D mesh spins or tilts.
-- **Surface Normal Reconstruction**: The shader now reconstructs the 3D surface normal $\vec{n} = (\hat{p}_x, \hat{p}_y, \hat{p}_z)$ for every point on the deformed geometry.
-- **Inverse Rotation Matrix ($R^T$) in GLSL**: Uses the pitch ($\theta_x$) and yaw ($\theta_y$) orientation angles to apply an inverse rotation transform directly in the GPU fragment shader (`blob.frag`). Color gradients now **rotate and track seamlessly with the 3D geometry in world space**, delivering authentic volumetric depth.
-
-### 2. $O(N)$ Linear Depth Sorting & Atmospheric Depth-Cueing
-
-- **Painter's Algorithm without Jitter**: Previous rendering drew particles in fixed Fibonacci index order, allowing background particles to incorrectly draw over foreground particles.
-- **Zero-Allocation 64-Bin Bucket Sort**: Instead of a costly $O(N \log N)$ quicksort that triggers GC pauses, depth sorting runs in the background isolate in linear $O(N)$ time using pre-allocated integer depth buckets. Particles are drawn strictly back-to-front.
-- **Atmospheric Depth-Cueing (`enableDepthCueing`, `depthCueingFactor`)**: Nearer particles dynamically scale up with enhanced luminance, while distant particles recede into the background through 4-strata perspective scaling and subtle opacity attenuation.
-
-### 3. Flutter Web Optimization & Temporal Interleaving (`isComplex`)
-
-- **Single-Threaded JS Engine Optimization**: Dart on Web runs on a single JavaScript event loop without native multi-threaded isolates. Heavy geometric math with high particle counts can drop frames on browsers.
-- **Temporal Frame Striding (`webTemporalInterleaving`, `isComplex`)**: Alternates particle calculation across successive frames (even and odd strides), slashing per-frame CPU math by **50%** while preserving smooth 60 FPS motion.
-- **Automatic Web Particle Cap (`maxWebParticles`)**: Automatically caps particle counts on Flutter Web (default: `3000`, configurable) to prevent thread starvation on lower-power devices.
-
-### 4. Zero-Battery Multi-Tier Lifecycle & Route Awareness
-
-`BlobFlutter` automatically pauses its animation ticker and isolate worker (dropping CPU and GPU usage to **0%**) across three critical lifecycle layers:
-
-1. **Offscreen Visibility (`autoPauseOffscreen`)**: Detects when the widget scrolls outside the viewport (with a 50px pre-wake margin).
-2. **App Lifecycle (`autoPauseOnAppBackground`)**: Hooks into `WidgetsBindingObserver` to pause when minimized, hidden, or in the background, and wakes up immediately on resume.
-3. **Route Navigation (`autoPauseOnRouteChange`, `routeObserver`)**: Automatically detects when another screen is pushed on top via `ModalRoute` / `Navigator.push`, eliminating invisible background drain until the user navigates back!
+- **Real 3D Colors (`uColor3D`)**: Shader gradients now rotate and turn with the 3D blob in real-time instead of staying fixed like a flat 2D wallpaper.
+- **Depth Sorting (`enableDepthSort`)**: Back-to-front $O(N)$ sorting ensures front particles properly cover rear ones, removing visual glitching.
+- **Atmospheric Depth-Cueing (`enableDepthCueing`)**: Distant particles scale down and softly fade, creating authentic depth and volume.
+- **Responsive Auto-Fit (`autoFit`)**: Automatically resizes the blob to fit any screen, container, or device orientation without manual pixel calculations.
+- **Fast Web Performance (`isComplex`)**: Alternates calculation frames on Flutter Web to keep single-threaded JavaScript smooth and responsive.
+- **Smart Battery Saver**: Automatically sleeps (0% CPU & GPU) when scrolled offscreen, when the app is minimized, or when navigating to another page.
 
 ---
 
