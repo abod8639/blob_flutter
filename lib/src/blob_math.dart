@@ -868,7 +868,7 @@ class BlobMath {
     final Uint8List particleBins = scratchParticleBins ?? Uint8List(count);
 
     binCounts.fillRange(0, numBins, 0);
-    final double invRange = (numBins - 1) / (maxZ - minZ);
+    final double invRange = numBins / (maxZ - minZ);
 
     for (int i = 0; i < count; i++) {
       final double z = depths[i];
