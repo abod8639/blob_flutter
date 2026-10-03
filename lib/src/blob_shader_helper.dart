@@ -124,6 +124,26 @@ class BlobShaderHelper {
 
     // 41: uWaveIntensity
     shader.setFloat(41, waveIntensity);
+
+    // 51-52: uRotation (default 0.0, 0.0)
+    shader.setFloat(51, 0.0);
+    shader.setFloat(52, 0.0);
+
+    // 53-54: uBlobCenter
+    final double cx = size.width / 2.0 +
+        (centerOffset?.dx ?? 0.0) +
+        (alignment != null ? alignment.x * (size.width / 2.0) : 0.0);
+    final double cy = size.height / 2.0 +
+        (centerOffset?.dy ?? 0.0) +
+        (alignment != null ? alignment.y * (size.height / 2.0) : 0.0);
+    shader.setFloat(53, cx);
+    shader.setFloat(54, cy);
+
+    // 55: uBlobRadius
+    shader.setFloat(55, radius != null && radius > 0.0 ? radius : 1.0);
+
+    // 56: uColor3D (1.0 = 3D object-space shading enabled)
+    shader.setFloat(56, 1.0);
   }
 
   /// Pushes uColor1-8, uColorCount, and uStops1-2 (indices 3-34, 42, 43-50).
