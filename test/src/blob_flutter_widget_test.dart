@@ -1806,30 +1806,28 @@ void main() {
     });
 
     testWidgets(
-        'BlobFlutter throws BlobControllerConflictException when depth properties passed with controller',
+        'BlobFlutter reports BlobControllerConflictException when depth properties passed with controller',
         (tester) async {
       final controller = BlobController();
-      expect(
-        () => BlobFlutter(
-          controller: controller,
-          enableDepthSort: false,
+      BlobFlutterException? capturedError;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              enableDepthSort: false,
+              enableDepthCueing: false,
+              depthCueingFactor: 0.5,
+              onError: (err, st) => capturedError = err,
+            ),
+          ),
         ),
-        throwsA(isA<BlobControllerConflictException>()),
       );
-      expect(
-        () => BlobFlutter(
-          controller: controller,
-          enableDepthCueing: false,
-        ),
-        throwsA(isA<BlobControllerConflictException>()),
-      );
-      expect(
-        () => BlobFlutter(
-          controller: controller,
-          depthCueingFactor: 0.5,
-        ),
-        throwsA(isA<BlobControllerConflictException>()),
-      );
+      expect(capturedError, isA<BlobControllerConflictException>());
+      final conflict = capturedError as BlobControllerConflictException;
+      expect(conflict.conflictingParameters.contains('enableDepthSort'), true);
+      expect(conflict.conflictingParameters.contains('enableDepthCueing'), true);
+      expect(conflict.conflictingParameters.contains('depthCueingFactor'), true);
       controller.dispose();
     });
 
