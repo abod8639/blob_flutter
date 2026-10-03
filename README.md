@@ -74,19 +74,13 @@ _Powered by procedural noise algorithms, multi-threaded Isolate computation, and
 - **Zero-Allocation 64-Bin Bucket Sort**: Instead of a costly $O(N \log N)$ quicksort that triggers GC pauses, depth sorting runs in the background isolate in linear $O(N)$ time using pre-allocated integer depth buckets. Particles are drawn strictly back-to-front.
 - **Atmospheric Depth-Cueing (`enableDepthCueing`, `depthCueingFactor`)**: Nearer particles dynamically scale up with enhanced luminance, while distant particles recede into the background through 4-strata perspective scaling and subtle opacity attenuation.
 
-### 3. Responsive Auto-Fitting (`autoFit` & `radiusFactor`)
-
-- **Dynamic Viewport Fit**: Say goodbye to manually calculating logical pixel radii or dealing with clipping on small screens.
-- With `autoFit: true`, the radius dynamically computes as `(min(viewportWidth, viewportHeight) / 2.0) * radiusFactor` (default factor: `0.85`, preserving 15% breathing room for wave crests).
-- Automatically adapts during device orientation changes (portrait $\leftrightarrow$ landscape), split-screen multitasking, and browser window resizing.
-
-### 4. Flutter Web Optimization & Temporal Interleaving (`isComplex`)
+### 3. Flutter Web Optimization & Temporal Interleaving (`isComplex`)
 
 - **Single-Threaded JS Engine Optimization**: Dart on Web runs on a single JavaScript event loop without native multi-threaded isolates. Heavy geometric math with high particle counts can drop frames on browsers.
 - **Temporal Frame Striding (`webTemporalInterleaving`, `isComplex`)**: Alternates particle calculation across successive frames (even and odd strides), slashing per-frame CPU math by **50%** while preserving smooth 60 FPS motion.
 - **Automatic Web Particle Cap (`maxWebParticles`)**: Automatically caps particle counts on Flutter Web (default: `3000`, configurable) to prevent thread starvation on lower-power devices.
 
-### 5. Zero-Battery Multi-Tier Lifecycle & Route Awareness
+### 4. Zero-Battery Multi-Tier Lifecycle & Route Awareness
 
 `BlobFlutter` automatically pauses its animation ticker and isolate worker (dropping CPU and GPU usage to **0%**) across three critical lifecycle layers:
 
