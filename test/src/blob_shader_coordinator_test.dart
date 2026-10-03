@@ -114,5 +114,39 @@ void main() {
         controller.dispose();
       }
     });
+
+    test(
+        'updateDynamicUniforms returns early when shader is null after debug callback (L133)',
+        () {
+      final coordinator = BlobShaderCoordinator();
+      final controller = BlobController();
+      bool callbackInvoked = false;
+      BlobRenderException? capturedError;
+
+      BlobShaderCoordinator.debugOnUpdateDynamicUniforms = () {
+        callbackInvoked = true;
+      };
+
+      try {
+        coordinator.updateDynamicUniforms(
+          controller: controller,
+          widgetGradient:
+              const LinearGradient(colors: [Colors.red, Colors.blue]),
+          cachedSize: const Size(200, 200),
+          time: 1.0,
+          onError: (err) {
+            capturedError = err;
+          },
+        );
+
+        expect(callbackInvoked, isTrue);
+        expect(capturedError, isNull);
+        expect(coordinator.shader, isNull);
+      } finally {
+        BlobShaderCoordinator.debugOnUpdateDynamicUniforms = null;
+        coordinator.dispose();
+        controller.dispose();
+      }
+    });
   });
 }
