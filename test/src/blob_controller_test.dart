@@ -540,5 +540,32 @@ void main() {
 
       controller.dispose();
     });
+
+    test('autoFit and radiusFactor getters and setters work as expected', () {
+      final controller = BlobController(autoFit: true, radiusFactor: 0.9);
+      expect(controller.autoFit, isTrue);
+      expect(controller.radiusFactor, 0.9);
+
+      int notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      controller.setAutoFit(false);
+      expect(controller.autoFit, isFalse);
+      expect(notifyCount, 1);
+
+      // Same value should not notify
+      controller.setAutoFit(false);
+      expect(notifyCount, 1);
+
+      controller.setRadiusFactor(0.75);
+      expect(controller.radiusFactor, 0.75);
+      expect(notifyCount, 2);
+
+      // Clamp test
+      controller.setRadiusFactor(3.0);
+      expect(controller.radiusFactor, 2.0);
+
+      controller.dispose();
+    });
   });
 }
