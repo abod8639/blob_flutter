@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 
-/// Manages viewport visibility and application lifecycle tracking for [BlobFlutter].
+/// Manages viewport visibility, navigation route awareness, and application lifecycle tracking for [BlobFlutter].
 ///
 /// Automatically pauses tickers and computation when:
 /// - The widget scrolls offscreen outside the visible viewport (with a 50px buffer).
 /// - The application transitions to the background ([AppLifecycleState.paused],
 ///   [AppLifecycleState.inactive], or [AppLifecycleState.hidden]).
-class BlobVisibilityManager {
+/// - The navigation route hosting the widget is covered, pushed over, or inactive.
+class BlobVisibilityManager implements RouteAware {
   /// Callback triggered whenever visibility or background state changes.
   final VoidCallback onStateChanged;
 
   bool _isAppInBackground = false;
   bool _isOffscreen = false;
+  bool _isRouteHidden = false;
   ScrollPosition? _scrollPosition;
   int _visibilityTickCounter = 0;
   VoidCallback? _scrollListener;
+
+  ModalRoute<dynamic>? _modalRoute;
+  Animation<double>? _secondaryAnimation;
+  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
 
   /// Whether the widget has detected that the application is in background/inactive state.
   bool get isAppInBackground => _isAppInBackground;
@@ -22,19 +28,120 @@ class BlobVisibilityManager {
   /// Whether the widget has detected that it is currently outside the screen viewport.
   bool get isOffscreen => _isOffscreen;
 
+  /// Whether the widget's hosting route is currently hidden or covered by another route.
+  bool get isRouteHidden => _isRouteHidden;
+
   BlobVisibilityManager({required this.onStateChanged});
 
-  /// Updates scroll listener and performs initial visibility check after frame layout.
+  /// Updates scroll and route listeners, performing initial visibility checks after layout.
   void updateDependencies({
     required BuildContext context,
     required bool autoPauseOffscreen,
+    bool autoPauseOnRouteChange = true,
+    RouteObserver<ModalRoute<dynamic>>? routeObserver,
   }) {
     _updateScrollListener(context, autoPauseOffscreen);
+    _updateRouteDependencies(
+      context: context,
+      autoPauseOnRouteChange: autoPauseOnRouteChange,
+      routeObserver: routeObserver,
+    );
     if (autoPauseOffscreen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         checkVisibility(
             context: context, autoPauseOffscreen: autoPauseOffscreen);
       });
+    }
+  }
+
+  void _updateRouteDependencies({
+    required BuildContext context,
+    required bool autoPauseOnRouteChange,
+    required RouteObserver<ModalRoute<dynamic>>? routeObserver,
+  }) {
+    if (!autoPauseOnRouteChange) {
+      _routeObserver?.unsubscribe(this);
+      _routeObserver = null;
+      _secondaryAnimation?.removeStatusListener(_onSecondaryAnimationStatus);
+      _secondaryAnimation = null;
+      _modalRoute = null;
+      if (_isRouteHidden) {
+        _isRouteHidden = false;
+        onStateChanged();
+      }
+      return;
+    }
+
+    final newRoute = ModalRoute.of(context);
+    if (newRoute != _modalRoute) {
+      _secondaryAnimation?.removeStatusListener(_onSecondaryAnimationStatus);
+      _modalRoute = newRoute;
+      _secondaryAnimation = newRoute?.secondaryAnimation;
+      _secondaryAnimation?.addStatusListener(_onSecondaryAnimationStatus);
+
+      if (_routeObserver != null && _modalRoute != null) {
+        _routeObserver!.subscribe(this, _modalRoute!);
+      }
+    }
+
+    if (routeObserver != _routeObserver) {
+      _routeObserver?.unsubscribe(this);
+      _routeObserver = routeObserver;
+      if (_routeObserver != null && _modalRoute != null) {
+        _routeObserver!.subscribe(this, _modalRoute!);
+      }
+    }
+
+    _evaluateRouteVisibility(autoPauseOnRouteChange: autoPauseOnRouteChange);
+  }
+
+  void _onSecondaryAnimationStatus(AnimationStatus status) {
+    _evaluateRouteVisibility(autoPauseOnRouteChange: true);
+  }
+
+  void _evaluateRouteVisibility({required bool autoPauseOnRouteChange}) {
+    if (!autoPauseOnRouteChange || _modalRoute == null) {
+      if (_isRouteHidden) {
+        _isRouteHidden = false;
+        onStateChanged();
+      }
+      return;
+    }
+
+    // A route is covered if it is not current and secondaryAnimation is completed or not in forward transition
+    final isCovered = !_modalRoute!.isCurrent &&
+        (_secondaryAnimation == null ||
+            _secondaryAnimation!.status != AnimationStatus.forward);
+
+    if (isCovered != _isRouteHidden) {
+      _isRouteHidden = isCovered;
+      onStateChanged();
+    }
+  }
+
+  // ── RouteAware Callbacks ───────────────────────────────────────────────────
+
+  @override
+  void didPush() {
+    _evaluateRouteVisibility(autoPauseOnRouteChange: true);
+  }
+
+  @override
+  void didPop() {}
+
+  @override
+  void didPushNext() {
+    if (!_isRouteHidden) {
+      _isRouteHidden = true;
+      onStateChanged();
+    }
+  }
+
+  @override
+  void didPopNext() {
+    if (_isRouteHidden) {
+      _isRouteHidden = false;
+      onStateChanged();
     }
   }
 
@@ -73,8 +180,19 @@ class BlobVisibilityManager {
     }
   }
 
-  /// Evaluates whether the widget's render object is inside or overlapping the screen bounds.
+  /// Evaluates whether the widget's render object is inside or overlapping the screen bounds,
+  /// and not concealed beneath an opaque route on the navigation stack.
   bool isRenderObjectVisible(BuildContext context) {
+    if (_isRouteHidden) return false;
+
+    final route = _modalRoute ?? ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      final secAnim = _secondaryAnimation ?? route.secondaryAnimation;
+      if (secAnim == null || secAnim.status != AnimationStatus.forward) {
+        return false;
+      }
+    }
+
     final renderObject = context.findRenderObject();
     if (renderObject == null || !renderObject.attached) return true;
     if (renderObject is! RenderBox) return true;
@@ -153,6 +271,10 @@ class BlobVisibilityManager {
     required bool newAutoPauseOffscreen,
     required bool oldAutoPauseOnAppBackground,
     required bool newAutoPauseOnAppBackground,
+    bool oldAutoPauseOnRouteChange = true,
+    bool newAutoPauseOnRouteChange = true,
+    RouteObserver<ModalRoute<dynamic>>? oldRouteObserver,
+    RouteObserver<ModalRoute<dynamic>>? newRouteObserver,
   }) {
     if (oldAutoPauseOffscreen != newAutoPauseOffscreen) {
       if (!newAutoPauseOffscreen) {
@@ -170,6 +292,15 @@ class BlobVisibilityManager {
       }
       onStateChanged();
     }
+
+    if (oldAutoPauseOnRouteChange != newAutoPauseOnRouteChange ||
+        oldRouteObserver != newRouteObserver) {
+      _updateRouteDependencies(
+        context: context,
+        autoPauseOnRouteChange: newAutoPauseOnRouteChange,
+        routeObserver: newRouteObserver,
+      );
+    }
   }
 
   /// Disposes scroll listeners and references.
@@ -181,5 +312,11 @@ class BlobVisibilityManager {
     }
     _scrollPosition = null;
     _scrollListener = null;
+
+    _routeObserver?.unsubscribe(this);
+    _routeObserver = null;
+    _secondaryAnimation?.removeStatusListener(_onSecondaryAnimationStatus);
+    _secondaryAnimation = null;
+    _modalRoute = null;
   }
 }
