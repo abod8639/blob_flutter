@@ -280,9 +280,20 @@ void main() {
 
       // Spawn worker isolate using the captured worker entry
       final rx = ReceivePort();
+      final handshakeCompleter = Completer<SendPort>();
+      final resultCompleter = Completer<TransferableTypedData>();
+
+      rx.listen((msg) {
+        if (!handshakeCompleter.isCompleted) {
+          handshakeCompleter.complete(msg as SendPort);
+        } else if (!resultCompleter.isCompleted) {
+          resultCompleter.complete(msg as TransferableTypedData);
+        }
+      });
+
       final isolate =
           await Isolate.spawn(capturedEntry, [rx.sendPort, sphere, count]);
-      final workerPort = await rx.first as SendPort;
+      final workerPort = await handshakeCompleter.future;
 
       final params = ProjectParamsFlat(
         count: count,
@@ -309,10 +320,8 @@ void main() {
       final flatMessage = params.toMessage();
       workerPort.send(flatMessage);
 
-      final response = await rx.first;
-      expect(response, isA<TransferableTypedData>());
-      final points =
-          (response as TransferableTypedData).materialize().asFloat32List();
+      final response = await resultCompleter.future;
+      final points = response.materialize().asFloat32List();
       expect(points.length, count * 2);
 
       isolate.kill();
