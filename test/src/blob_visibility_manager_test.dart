@@ -460,5 +460,217 @@ void main() {
       controller.throwingPosition?.shouldThrow = false;
       controller.dispose();
     });
+
+    testWidgets(
+        'RouteAware callbacks didPushNext and didPopNext update isRouteHidden and fire onStateChanged',
+        (tester) async {
+      int stateChangedCount = 0;
+      final manager = BlobVisibilityManager(
+        onStateChanged: () => stateChangedCount++,
+      );
+
+      expect(manager.isRouteHidden, isFalse);
+
+      manager.didPushNext();
+      expect(manager.isRouteHidden, isTrue);
+      expect(stateChangedCount, 1);
+
+      // Duplicate didPushNext does not fire redundant callback
+      manager.didPushNext();
+      expect(stateChangedCount, 1);
+
+      manager.didPopNext();
+      expect(manager.isRouteHidden, isFalse);
+      expect(stateChangedCount, 2);
+
+      // Duplicate didPopNext does not fire redundant callback
+      manager.didPopNext();
+      expect(stateChangedCount, 2);
+
+      manager.didPush();
+      manager.didPop();
+      manager.dispose();
+    });
+
+    testWidgets(
+        'automatically detects route covered on Navigator.push and restored on pop via ModalRoute',
+        (tester) async {
+      bool stateChanged = false;
+      final manager = BlobVisibilityManager(
+        onStateChanged: () => stateChanged = true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                manager.updateDependencies(
+                  context: context,
+                  autoPauseOffscreen: true,
+                  autoPauseOnRouteChange: true,
+                );
+                return const SizedBox(width: 100, height: 100);
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(manager.isRouteHidden, isFalse);
+
+      // Push a new page
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Page 2')),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(manager.isRouteHidden, isTrue);
+      expect(stateChanged, isTrue);
+
+      // Pop back
+      stateChanged = false;
+      navigator.pop();
+      await tester.pump();
+      expect(manager.isRouteHidden, isFalse);
+      expect(stateChanged, isTrue);
+
+      await tester.pumpAndSettle();
+      manager.dispose();
+    });
+
+    testWidgets(
+        'does not hide route when autoPauseOnRouteChange is false',
+        (tester) async {
+      bool stateChanged = false;
+      final manager = BlobVisibilityManager(
+        onStateChanged: () => stateChanged = true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                manager.updateDependencies(
+                  context: context,
+                  autoPauseOffscreen: true,
+                  autoPauseOnRouteChange: false,
+                );
+                return const SizedBox(width: 100, height: 100);
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Page 2')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(manager.isRouteHidden, isFalse);
+
+      manager.dispose();
+    });
+
+    testWidgets(
+        'integrates with RouteObserver and updates via handleWidgetUpdated',
+        (tester) async {
+      final routeObserver = RouteObserver<ModalRoute<dynamic>>();
+      final manager = BlobVisibilityManager(onStateChanged: () {});
+
+      BuildContext? testContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorObservers: [routeObserver],
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                testContext = context;
+                manager.updateDependencies(
+                  context: context,
+                  autoPauseOffscreen: true,
+                  autoPauseOnRouteChange: true,
+                  routeObserver: routeObserver,
+                );
+                return const SizedBox(width: 100, height: 100);
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Update widget with new routeObserver or toggling autoPauseOnRouteChange
+      manager.handleWidgetUpdated(
+        context: testContext!,
+        oldAutoPauseOffscreen: true,
+        newAutoPauseOffscreen: true,
+        oldAutoPauseOnAppBackground: true,
+        newAutoPauseOnAppBackground: true,
+        oldAutoPauseOnRouteChange: true,
+        newAutoPauseOnRouteChange: false,
+        oldRouteObserver: routeObserver,
+        newRouteObserver: null,
+      );
+      expect(manager.isRouteHidden, isFalse);
+
+      manager.dispose();
+    });
+
+    testWidgets(
+        'isRenderObjectVisible returns false when route is hidden or not current',
+        (tester) async {
+      final manager = BlobVisibilityManager(onStateChanged: () {});
+      BuildContext? testContext;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                testContext = context;
+                manager.updateDependencies(
+                  context: context,
+                  autoPauseOffscreen: true,
+                  autoPauseOnRouteChange: true,
+                );
+                return const SizedBox(width: 100, height: 100);
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(manager.isRenderObjectVisible(testContext!), isTrue);
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Page 2')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(manager.isRenderObjectVisible(testContext!), isFalse);
+
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(manager.isRenderObjectVisible(testContext!), isTrue);
+
+      manager.dispose();
+    });
   });
 }
