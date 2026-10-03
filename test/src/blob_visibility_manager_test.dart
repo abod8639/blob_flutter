@@ -548,10 +548,7 @@ void main() {
     testWidgets(
         'does not hide route when autoPauseOnRouteChange is false',
         (tester) async {
-      bool stateChanged = false;
-      final manager = BlobVisibilityManager(
-        onStateChanged: () => stateChanged = true,
-      );
+      final manager = BlobVisibilityManager(onStateChanged: () {});
 
       await tester.pumpWidget(
         MaterialApp(
