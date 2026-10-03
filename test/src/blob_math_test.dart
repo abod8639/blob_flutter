@@ -719,5 +719,91 @@ void main() {
                 'Mismatch at index $i between fallback branch and base screen coordinates');
       }
     });
+
+    group('Depth Sorting (Bucket Sort O(N))', () {
+      test(
+          'correctly orders particles from farthest (max rz) to nearest (min rz)',
+          () {
+        const int count = 5;
+        // Particle 0: rz = 2.0 (farthest, back)
+        // Particle 1: rz = -2.0 (nearest, front)
+        // Particle 2: rz = 0.5 (mid-back)
+        // Particle 3: rz = -0.5 (mid-front)
+        // Particle 4: rz = 1.0 (far)
+        final depths = Float32List.fromList([2.0, -2.0, 0.5, -0.5, 1.0]);
+        final sourcePoints = Float32List.fromList([
+          10.0, 10.0, // particle 0
+          20.0, 20.0, // particle 1
+          30.0, 30.0, // particle 2
+          40.0, 40.0, // particle 3
+          50.0, 50.0, // particle 4
+        ]);
+        final sortedPoints = Float32List(count * 2);
+
+        BlobMath.sortParticlesByDepth(
+          count: count,
+          sourcePoints: sourcePoints,
+          depths: depths,
+          sortedPoints: sortedPoints,
+          numBins: 8,
+        );
+
+        // First point must be the farthest (particle 0: x=10.0, y=10.0)
+        expect(sortedPoints[0], 10.0);
+        expect(sortedPoints[1], 10.0);
+
+        // Last point must be the nearest (particle 1: x=20.0, y=20.0)
+        expect(sortedPoints[(count - 1) * 2], 20.0);
+        expect(sortedPoints[(count - 1) * 2 + 1], 20.0);
+      });
+
+      test('handles identical depths and edge cases gracefully', () {
+        const int count = 3;
+        final depths = Float32List.fromList([1.0, 1.0, 1.0]);
+        final sourcePoints =
+            Float32List.fromList([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        final sortedPoints = Float32List(count * 2);
+
+        BlobMath.sortParticlesByDepth(
+          count: count,
+          sourcePoints: sourcePoints,
+          depths: depths,
+          sortedPoints: sortedPoints,
+        );
+
+        expect(sortedPoints, sourcePoints);
+      });
+
+      test('records depths accurately during projectParticles', () {
+        const int count = 10;
+        final baseSphere = BlobMath.generateFibonacciSphere(count);
+        final projected = Float32List(count * 2);
+        final recordedDepths = Float32List(count);
+
+        BlobMath.projectParticles(
+          count: count,
+          radius: 100.0,
+          blobiness: 1.0,
+          dispersion: 0.0,
+          rotationX: 0.2,
+          rotationY: 0.3,
+          time: 1.0,
+          viewportWidth: 400.0,
+          viewportHeight: 400.0,
+          activeTouches: Float32List(0),
+          baseSphere: baseSphere,
+          projectedPoints: projected,
+          autoRotationSpeed: 0.5,
+          noiseFrequency: 1.0,
+          viewDistance: 2.0,
+          depths: recordedDepths,
+        );
+
+        for (int i = 0; i < count; i++) {
+          expect(recordedDepths[i].isNaN, false);
+          expect(recordedDepths[i].isInfinite, false);
+        }
+      });
+    });
   });
 }
