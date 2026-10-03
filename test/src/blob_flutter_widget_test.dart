@@ -1685,6 +1685,34 @@ void main() {
       expect(capturedError!.message, 'Unexpected error during animation tick.');
       controller.dispose();
     });
+
+    testWidgets('autoFit: true dynamically fits radius to container bounds',
+        (tester) async {
+      final controller = BlobController(radius: 150.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 100,
+              height: 100,
+              child: BlobFlutter(
+                controller: controller,
+                autoFit: true,
+                radiusFactor: 0.8,
+                autoPlay: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(); // allow post-frame callback
+
+      // min(100, 100) / 2 * 0.8 = 40.0
+      expect(controller.radius, closeTo(40.0, 0.5));
+      controller.dispose();
+    });
   });
 }
 
