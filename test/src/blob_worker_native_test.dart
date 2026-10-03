@@ -250,5 +250,172 @@ void main() {
         BlobWorker.isolateSpawner = Isolate.spawn;
       }
     });
+
+    test(
+        'worker isolate handles raw flat parameters message without transferable wrapper (L212)',
+        () async {
+      late void Function(List<Object?>) capturedEntry;
+      final originalSpawner = BlobWorker.isolateSpawner;
+      BlobWorker.isolateSpawner = (
+        entry,
+        message, {
+        bool errorsAreFatal = false,
+        SendPort? onError,
+        String? debugName,
+      }) {
+        capturedEntry = entry;
+        return Isolate.spawn(entry, message,
+            errorsAreFatal: errorsAreFatal,
+            onError: onError,
+            debugName: debugName);
+      };
+
+      final worker = BlobWorker();
+      const count = 20;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      await worker.init(sphere, count);
+      worker.dispose();
+      BlobWorker.isolateSpawner = originalSpawner;
+
+      // Spawn worker isolate using the captured worker entry
+      final rx = ReceivePort();
+      final isolate =
+          await Isolate.spawn(capturedEntry, [rx.sendPort, sphere, count]);
+      final workerPort = await rx.first as SendPort;
+
+      final params = ProjectParamsFlat(
+        count: count,
+        radius: 100.0,
+        scale: 1.0,
+        centerOffsetX: 0.0,
+        centerOffsetY: 0.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        encodedTouches: Float32List(0),
+        autoRotationSpeed: 0.5,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseTypeIndex: BlobNoiseType.harmonic.index,
+        touchRadiusFactor: 1.0,
+      );
+
+      // Sending flat params message directly (first is int, not List) hits L212: else { paramsList = msg; }
+      final flatMessage = params.toMessage();
+      workerPort.send(flatMessage);
+
+      final response = await rx.first;
+      expect(response, isA<TransferableTypedData>());
+      final points =
+          (response as TransferableTypedData).materialize().asFloat32List();
+      expect(points.length, count * 2);
+
+      isolate.kill();
+      rx.close();
+    });
+
+    test(
+        'supports complex temporal interleaving across consecutive frames (L242-L245, L247)',
+        () async {
+      final worker = BlobWorker();
+      const count = 30;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      await worker.init(sphere, count);
+
+      ProjectParamsFlat createParams(bool isComplex, double time) =>
+          ProjectParamsFlat(
+            count: count,
+            radius: 100.0,
+            scale: 1.0,
+            centerOffsetX: 0.0,
+            centerOffsetY: 0.0,
+            blobiness: 1.0,
+            dispersion: 0.0,
+            rotationX: 0.0,
+            rotationY: 0.0,
+            time: time,
+            viewportWidth: 400.0,
+            viewportHeight: 400.0,
+            encodedTouches: Float32List(0),
+            autoRotationSpeed: 0.5,
+            noiseFrequency: 1.0,
+            viewDistance: 2.0,
+            noiseTypeIndex: BlobNoiseType.simplex.index,
+            touchRadiusFactor: 1.0,
+            isComplex: isComplex,
+          );
+
+      // Frame 0: isComplex: true, frameIndex == 0 -> frameIndex becomes 1
+      final frame0 = await worker.compute(createParams(true, 0.0));
+      expect(frame0, isNotNull);
+      expect(frame0!.length, count * 2);
+
+      // Frame 1: isComplex: true, frameIndex == 1 -> startIndex = 1, stride = 2, frameIndex becomes 2
+      final frame1 = await worker.compute(createParams(true, 1.0));
+      expect(frame1, isNotNull);
+      expect(frame1!.length, count * 2);
+
+      // Frame 2: isComplex: true, frameIndex == 2 -> startIndex = 0, stride = 2, frameIndex becomes 3
+      final frame2 = await worker.compute(createParams(true, 2.0));
+      expect(frame2, isNotNull);
+      expect(frame2!.length, count * 2);
+
+      // Frame 3: isComplex: false -> else { frameIndex = 0; }
+      final frame3 = await worker.compute(createParams(false, 3.0));
+      expect(frame3, isNotNull);
+      expect(frame3!.length, count * 2);
+
+      worker.dispose();
+    });
+
+    test(
+        'worker isolate allocates scratch depth-sort buffers on first frame (L233-L235)',
+        () async {
+      final worker = BlobWorker();
+      const count = 30;
+      final sphere = BlobMath.generateFibonacciSphere(count);
+
+      await worker.init(sphere, count);
+
+      final params = ProjectParamsFlat(
+        count: count,
+        radius: 100.0,
+        scale: 1.0,
+        centerOffsetX: 0.0,
+        centerOffsetY: 0.0,
+        blobiness: 1.0,
+        dispersion: 0.0,
+        rotationX: 0.0,
+        rotationY: 0.0,
+        time: 1.0,
+        viewportWidth: 400.0,
+        viewportHeight: 400.0,
+        encodedTouches: Float32List(0),
+        autoRotationSpeed: 0.5,
+        noiseFrequency: 1.0,
+        viewDistance: 2.0,
+        noiseTypeIndex: BlobNoiseType.harmonic.index,
+        touchRadiusFactor: 1.0,
+        enableDepthSort: true,
+      );
+
+      // Frame 1: allocates rawPoints, depths, particleBins (L233-L235)
+      final result1 = await worker.compute(params);
+      expect(result1, isNotNull);
+      expect(result1!.length, count * 2);
+
+      // Frame 2: scratch buffers already match dimensions, reuses them cleanly
+      final result2 = await worker.compute(params);
+      expect(result2, isNotNull);
+      expect(result2!.length, count * 2);
+
+      worker.dispose();
+    });
   });
 }
