@@ -1288,6 +1288,159 @@ void main() {
     });
 
     testWidgets(
+        'pauses ticker when navigating to a new route via Navigator.push and resumes on Navigator.pop',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: true,
+                autoPauseOnRouteChange: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+      expect(state.isRouteHidden, isFalse);
+
+      // Push a new route
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Page 2')),
+        ),
+      );
+
+      // During transition animation
+      await tester.pump();
+      // Wait for transition to complete
+      await tester.pumpAndSettle();
+
+      expect(state.isRouteHidden, isTrue);
+      expect(state.isTickerActive, isFalse);
+
+      // Pop Page 2
+      navigator.pop();
+      await tester.pump();
+      expect(state.isRouteHidden, isFalse);
+      expect(state.isTickerActive, isTrue);
+
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(state.isTickerActive, isTrue);
+    });
+
+    testWidgets(
+        'does not pause ticker when navigating to a new route if autoPauseOnRouteChange is false',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: true,
+                autoPauseOnRouteChange: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+      expect(state.isRouteHidden, isFalse);
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Page 2')),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(state.isRouteHidden, isFalse);
+      expect(state.isTickerActive, isTrue);
+
+      navigator.pop();
+      await tester.pump(const Duration(milliseconds: 350));
+    });
+
+    testWidgets(
+        'integrates with RouteObserver and dynamically updates autoPauseOnRouteChange via didUpdateWidget',
+        (tester) async {
+      final routeObserver = RouteObserver<ModalRoute<dynamic>>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorObservers: [routeObserver],
+          home: const Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: true,
+                autoPauseOnRouteChange: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state(find.byType(BlobFlutter)) as dynamic;
+      expect(state.isTickerActive, isTrue);
+      expect(state.isRouteHidden, isFalse);
+
+      // Push new route
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Page 2')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(state.isRouteHidden, isTrue);
+      expect(state.isTickerActive, isFalse);
+
+      // Dynamically update to autoPauseOnRouteChange: false while covered
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorObservers: [routeObserver],
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoPlay: true,
+                autoPauseOnRouteChange: false,
+                routeObserver: routeObserver,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(state.isRouteHidden, isFalse);
+      expect(state.isTickerActive, isTrue);
+
+      navigator.pop();
+      await tester.pump(const Duration(milliseconds: 350));
+    });
+
+    testWidgets(
         'BlobFlutter reports BlobControllerConflictException to onError and renders without crash when parameters passed alongside controller',
         (tester) async {
       final controller = BlobController();
