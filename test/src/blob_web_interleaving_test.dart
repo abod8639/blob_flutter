@@ -175,9 +175,9 @@ void main() {
       final f1 = await worker.compute(createParams(1.0, true));
       expect(f1, isNotNull);
 
-      // Even particle 0 should NOT have changed between Frame 0 and Frame 1
-      expect(f1![0], equals(f0Copy[0]));
-      expect(f1[1], equals(f0Copy[1]));
+      // Even particle 2 should NOT have changed between Frame 0 and Frame 1
+      expect(f1![4], equals(f0Copy[4]));
+      expect(f1[5], equals(f0Copy[5]));
 
       // Odd particle 1 SHOULD have changed due to time progression
       expect(f1[2], isNot(equals(f0Copy[2])));
@@ -189,9 +189,9 @@ void main() {
       final f2 = await worker.compute(createParams(2.0, true));
       expect(f2, isNotNull);
 
-      // Even particle 0 SHOULD have changed
-      expect(f2![0], isNot(equals(f1Copy[0])));
-      expect(f2[1], isNot(equals(f1Copy[1])));
+      // Even particle 2 SHOULD have changed
+      expect(f2![4], isNot(equals(f1Copy[4])));
+      expect(f2[5], isNot(equals(f1Copy[5])));
 
       // Odd particle 1 should NOT have changed between Frame 1 and Frame 2
       expect(f2[2], equals(f1Copy[2]));
@@ -229,6 +229,7 @@ void main() {
           touchRadiusFactor: 1.0,
           encodedTouches: Float32List(0),
           isComplex: false,
+          enableDepthSort: false,
         );
       }
 
@@ -239,11 +240,11 @@ void main() {
       final f1 = await worker.compute(createParams(1.0));
       expect(f1, isNotNull);
 
-      // When isComplex is false, both even (index 0) and odd (index 1) particles are updated
-      expect(f1![0], isNot(equals(f0Copy[0])));
-      expect(f1[1], isNot(equals(f0Copy[1])));
-      expect(f1[2], isNot(equals(f0Copy[2])));
+      // When isComplex is false, both even (particle 2) and odd (particle 1) particles are updated
+      expect(f1![2], isNot(equals(f0Copy[2])));
       expect(f1[3], isNot(equals(f0Copy[3])));
+      expect(f1[4], isNot(equals(f0Copy[4])));
+      expect(f1[5], isNot(equals(f0Copy[5])));
 
       worker.dispose();
     });
