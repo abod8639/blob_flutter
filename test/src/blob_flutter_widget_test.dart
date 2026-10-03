@@ -1772,6 +1772,75 @@ void main() {
 
       controller.dispose();
     });
+
+    testWidgets(
+        'BlobFlutter passes depth properties to controller and BlobPainter',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 100,
+              height: 100,
+              child: BlobFlutter(
+                autoPlay: false,
+                enableDepthSort: false,
+                enableDepthCueing: false,
+                depthCueingFactor: 0.7,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final customPaintWidget = tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .firstWhere((cp) => cp.painter is BlobPainter);
+      final painter = customPaintWidget.painter as BlobPainter;
+
+      expect(painter.enableDepthCueing, isFalse);
+      expect(painter.depthCueingFactor, 0.7);
+    });
+
+    testWidgets(
+        'BlobFlutter throws BlobControllerConflictException when depth properties passed with controller',
+        (tester) async {
+      final controller = BlobController();
+      expect(
+        () => BlobFlutter(
+          controller: controller,
+          enableDepthSort: false,
+        ),
+        throwsA(isA<BlobControllerConflictException>()),
+      );
+      expect(
+        () => BlobFlutter(
+          controller: controller,
+          enableDepthCueing: false,
+        ),
+        throwsA(isA<BlobControllerConflictException>()),
+      );
+      expect(
+        () => BlobFlutter(
+          controller: controller,
+          depthCueingFactor: 0.5,
+        ),
+        throwsA(isA<BlobControllerConflictException>()),
+      );
+      controller.dispose();
+    });
+
+    test('BlobFlutter asserts invalid depthCueingFactor', () {
+      expect(
+        () => BlobFlutter(depthCueingFactor: -0.1),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => BlobFlutter(depthCueingFactor: 1.5),
+        throwsA(isA<AssertionError>()),
+      );
+    });
   });
 }
 
