@@ -18,6 +18,11 @@ import 'blob_compute_params.dart';
 class BlobWorker {
   late Float32List _sphere;
   late Float32List _output;
+  late Float32List _rawPoints;
+  late Float32List _depths;
+  final Int32List _binCounts = Int32List(64);
+  final Int32List _binOffsets = Int32List(64);
+  late Uint8List _particleBins;
   bool _disposed = false;
   int _frameIndex = 0;
 
@@ -29,6 +34,9 @@ class BlobWorker {
   }) async {
     _sphere = baseSphere;
     _output = Float32List(count * 2);
+    _rawPoints = Float32List(count * 2);
+    _depths = Float32List(count);
+    _particleBins = Uint8List(count);
     _disposed = false;
     _frameIndex = 0;
   }
@@ -36,15 +44,12 @@ class BlobWorker {
   /// Runs [BlobMath.projectParticles] synchronously and returns a completed
   /// [Future] wrapping the result buffer.
   ///
-  /// When [p.webTemporalInterleaving] is `true` and particle count is large
-  /// (>= 1,000 particles), the computation is interleaved across two frames:
+  /// When [p.isComplex] is `true`, the computation is interleaved across alternating frames:
   /// - Even frames update even indices.
   /// - Odd frames update odd indices.
   ///
-  /// This cuts the CPU execution time on the JavaScript main event loop by ~50%
-  /// while preserving a smooth 60 FPS visual experience. On the initial frame
-  /// or when buffer size changes, all particles are calculated to prevent
-  /// uninitialized coordinates.
+  /// When [p.enableDepthSort] is `true`, sorts particles from back to front using
+  /// [BlobMath.sortParticlesByDepth] with zero per-frame heap allocations.
   Future<Float32List?> compute(ProjectParamsFlat p,
       [Float32List? recycleBuffer]) {
     if (_disposed) return Future.value(null);
@@ -52,6 +57,9 @@ class BlobWorker {
     final int requiredLength = p.count * 2;
     if (_output.length != requiredLength) {
       _output = Float32List(requiredLength);
+      _rawPoints = Float32List(requiredLength);
+      _depths = Float32List(p.count);
+      _particleBins = Uint8List(p.count);
       _frameIndex = 0;
     }
 
@@ -69,6 +77,9 @@ class BlobWorker {
       _frameIndex = 0;
     }
 
+    final bool enableDepthSort = p.enableDepthSort;
+    final Float32List targetBuffer = enableDepthSort ? _rawPoints : _output;
+
     BlobMath.projectParticles(
       count: p.count,
       radius: p.radius,
@@ -84,7 +95,7 @@ class BlobWorker {
       viewportHeight: p.viewportHeight,
       activeTouches: p.encodedTouches,
       baseSphere: _sphere,
-      projectedPoints: _output,
+      projectedPoints: targetBuffer,
       autoRotationSpeed: p.autoRotationSpeed,
       noiseFrequency: p.noiseFrequency,
       viewDistance: p.viewDistance,
@@ -92,7 +103,21 @@ class BlobWorker {
       touchRadiusFactor: p.touchRadiusFactor,
       startIndex: startIndex,
       stride: stride,
+      depths: enableDepthSort ? _depths : null,
     );
+
+    if (enableDepthSort) {
+      BlobMath.sortParticlesByDepth(
+        count: p.count,
+        sourcePoints: _rawPoints,
+        depths: _depths,
+        sortedPoints: _output,
+        scratchBinCounts: _binCounts,
+        scratchBinOffsets: _binOffsets,
+        scratchParticleBins: _particleBins,
+        numBins: 64,
+      );
+    }
 
     // Return the pre-allocated buffer directly (no copy on Web).
     return Future.value(_output);
