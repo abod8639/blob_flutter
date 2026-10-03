@@ -46,7 +46,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
     [Color(0xFF00F5D4), Color(0xFF7B2CBF)], // Cyberpunk Cyan & Purple
     [Color(0xFFFF007F), Color(0xFFFFBE0B)], // Sunset Pink & Gold
     [Color(0xFF00B4D8), Color(0xFF06D6A0)], // Ocean Blue & Mint
-    [Color(0xFFFF5400), Color(0xFFFF0054)], // Fire Orange & Red
+    [Color(0xFFFF69B4), Color(0xFFFF0054)], // Fire Orange & Red
     [Color(0xFFFFD700), Color(0xFF8B00FF)], // Gold & Purple
     [Color(0xFF4ECDC4), Color(0xFF1A535C)], // Mint & Dark Teal
     [Color(0xFF8B00FF), Color(0xFF4ECDC4)], // Purple & Mint
@@ -121,6 +121,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // ── 3D Particle Blob Canvas ─────────────────────────────────────────
