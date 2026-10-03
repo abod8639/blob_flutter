@@ -1873,7 +1873,7 @@ void main() {
         expect(capturedDetails!.library, 'blob_flutter');
         expect(
           capturedDetails!.context.toString(),
-          contains('during BlobFlutter initialization (initState)'),
+          contains('while initializing BlobFlutter with conflicting parameters'),
         );
 
         final collector = capturedDetails!.informationCollector;
