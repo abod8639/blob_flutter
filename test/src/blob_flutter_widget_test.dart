@@ -1841,6 +1841,141 @@ void main() {
         throwsA(isA<AssertionError>()),
       );
     });
+
+    testWidgets(
+        '_reportControllerConflicts reports to FlutterError with ErrorSummary, ErrorDescription, and ErrorHint when silentErrorLogging is false (L512-L526)',
+        (tester) async {
+      final controller = BlobController();
+      final oldOnError = FlutterError.onError;
+      FlutterErrorDetails? capturedDetails;
+      FlutterError.onError = (details) {
+        capturedDetails = details;
+      };
+
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: BlobFlutter(
+                controller: controller,
+                radius: 120.0,
+                silentErrorLogging: false,
+              ),
+            ),
+          ),
+        );
+
+        expect(capturedDetails, isNotNull);
+        expect(
+          capturedDetails!.exception,
+          isA<BlobControllerConflictException>(),
+        );
+        expect(capturedDetails!.library, 'blob_flutter');
+        expect(
+          capturedDetails!.context.toString(),
+          contains('during BlobFlutter initialization (initState)'),
+        );
+
+        final collector = capturedDetails!.informationCollector;
+        expect(collector, isNotNull);
+        final nodes = collector!().toList();
+        expect(nodes.length, 3);
+        expect(nodes[0], isA<ErrorSummary>());
+        expect(nodes[1], isA<ErrorDescription>());
+        expect(nodes[2], isA<ErrorHint>());
+        expect(nodes[0].toString(), contains('radius'));
+        expect(nodes[1].toString(), contains('single source of truth'));
+        expect(
+          nodes[2].toString(),
+          contains('Configure these properties directly'),
+        );
+      } finally {
+        FlutterError.onError = oldOnError;
+        controller.dispose();
+      }
+    });
+
+    testWidgets(
+        'didUpdateWidget updates autoFit, radiusFactor, webTemporalInterleaving, maxWebParticles, isComplex, depth properties, and customNoise (L780-L801, L816)',
+        (tester) async {
+      double customNoiseA(double px, double py, double pz, double f, double t,
+              double b) =>
+          1.1;
+      double customNoiseB(double px, double py, double pz, double f, double t,
+              double b) =>
+          2.2;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoFit: false,
+                radiusFactor: 0.5,
+                webTemporalInterleaving: false,
+                maxWebParticles: 1500,
+                isComplex: false,
+                enableDepthSort: true,
+                enableDepthCueing: true,
+                depthCueingFactor: 0.3,
+                customNoise: customNoiseA,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      var inputListener =
+          tester.widget<BlobInputListener>(find.byType(BlobInputListener));
+      final controller = inputListener.controller;
+
+      expect(controller.autoFit, isFalse);
+      expect(controller.radiusFactor, 0.5);
+      expect(controller.webTemporalInterleaving, isFalse);
+      expect(controller.maxWebParticles, 1500);
+      expect(controller.isComplex, isFalse);
+      expect(controller.enableDepthSort, isTrue);
+      expect(controller.enableDepthCueing, isTrue);
+      expect(controller.depthCueingFactor, 0.3);
+      expect(controller.customNoise, equals(customNoiseA));
+
+      // Trigger didUpdateWidget by updating with different values
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: BlobFlutter(
+                autoFit: true,
+                radiusFactor: 0.9,
+                webTemporalInterleaving: true,
+                maxWebParticles: 2500,
+                isComplex: true,
+                enableDepthSort: false,
+                enableDepthCueing: false,
+                depthCueingFactor: 0.8,
+                customNoise: customNoiseB,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(controller.autoFit, isTrue);
+      expect(controller.radiusFactor, 0.9);
+      expect(controller.webTemporalInterleaving, isTrue);
+      expect(controller.maxWebParticles, 2500);
+      expect(controller.isComplex, isTrue);
+      expect(controller.enableDepthSort, isFalse);
+      expect(controller.enableDepthCueing, isFalse);
+      expect(controller.depthCueingFactor, 0.8);
+      expect(controller.customNoise, equals(customNoiseB));
+    });
   });
 }
 
