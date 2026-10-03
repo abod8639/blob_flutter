@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:blob_flutter/src/blob_visibility_manager.dart';
 
 class _ThrowingScrollPosition extends ScrollPositionWithSingleContext {
+  bool shouldThrow = false;
+
   _ThrowingScrollPosition({
     required super.physics,
     required super.context,
@@ -12,22 +14,29 @@ class _ThrowingScrollPosition extends ScrollPositionWithSingleContext {
 
   @override
   void removeListener(VoidCallback listener) {
-    throw Exception('Simulated removeListener failure');
+    if (shouldThrow) {
+      throw Exception('Simulated removeListener failure');
+    }
+    super.removeListener(listener);
   }
 }
 
 class _ThrowingScrollController extends ScrollController {
+  _ThrowingScrollPosition? throwingPosition;
+
   @override
   ScrollPosition createScrollPosition(
     ScrollPhysics physics,
     ScrollContext context,
     ScrollPosition? oldPosition,
   ) {
-    return _ThrowingScrollPosition(
+    final pos = _ThrowingScrollPosition(
       physics: physics,
       context: context,
       oldPosition: oldPosition,
     );
+    throwingPosition = pos;
+    return pos;
   }
 }
 
@@ -35,6 +44,11 @@ class _DummyRenderBox extends RenderBox {
   _DummyRenderBox() {
     attach(PipelineOwner());
     layout(const BoxConstraints.tightFor(width: 50, height: 50));
+  }
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
   }
 }
 
@@ -55,8 +69,16 @@ class _ViewlessBuildContext extends Fake implements BuildContext {
       null;
 }
 
-class _ThrowingRenderBox extends RenderProxyBox {
-  _ThrowingRenderBox([super.child]);
+class _ThrowingRenderBox extends RenderBox {
+  _ThrowingRenderBox() {
+    attach(PipelineOwner());
+    layout(const BoxConstraints.tightFor(width: 50, height: 50));
+  }
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
+  }
 
   @override
   Matrix4 getTransformTo(RenderObject? ancestor) {
@@ -64,13 +86,23 @@ class _ThrowingRenderBox extends RenderProxyBox {
   }
 }
 
-class _ThrowingTransformWidget extends SingleChildRenderObjectWidget {
-  const _ThrowingTransformWidget({super.key, super.child});
+class _CustomRenderObjectContext extends Fake implements BuildContext {
+  final BuildContext _inner;
+  final RenderObject _customRenderObject;
+  _CustomRenderObjectContext(this._inner, this._customRenderObject);
 
   @override
-  RenderProxyBox createRenderObject(BuildContext context) {
-    return _ThrowingRenderBox();
-  }
+  RenderObject? findRenderObject() => _customRenderObject;
+
+  @override
+  T? dependOnInheritedWidgetOfExactType<T extends InheritedWidget>(
+          {Object? aspect}) =>
+      _inner.dependOnInheritedWidgetOfExactType<T>(aspect: aspect);
+
+  @override
+  InheritedElement? getElementForInheritedWidgetOfExactType<
+          T extends InheritedWidget>() =>
+      _inner.getElementForInheritedWidgetOfExactType<T>();
 }
 
 void main() {
@@ -291,44 +323,54 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SingleChildScrollView(
-              controller: controller1,
-              child: Builder(
-                builder: (context) {
-                  manager.updateDependencies(
-                    context: context,
-                    autoPauseOffscreen: true,
-                  );
-                  return const SizedBox(width: 100, height: 100);
-                },
-              ),
+            body: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: controller1,
+                    child: Builder(
+                      builder: (c1) =>
+                          const SizedBox(key: ValueKey('scroll1'), height: 100),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: controller2,
+                    child: Builder(
+                      builder: (c2) =>
+                          const SizedBox(key: ValueKey('scroll2'), height: 100),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
       await tester.pump();
 
-      // Rebuild with controller2: oldPosition is throwing, removeListener throws, caught by line 47
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              controller: controller2,
-              child: Builder(
-                builder: (context) {
-                  manager.updateDependencies(
-                    context: context,
-                    autoPauseOffscreen: true,
-                  );
-                  return const SizedBox(width: 100, height: 100);
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
+      final context1 = tester.element(find.byKey(const ValueKey('scroll1')));
+      final context2 = tester.element(find.byKey(const ValueKey('scroll2')));
 
+      manager.updateDependencies(
+        context: context1,
+        autoPauseOffscreen: true,
+      );
+
+      // Enable throwing specifically when removing the listener on oldPosition
+      controller1.throwingPosition?.shouldThrow = true;
+
+      // Updating dependencies with context2 triggers _updateScrollListener -> removeListener on oldPosition
+      expect(
+        () => manager.updateDependencies(
+          context: context2,
+          autoPauseOffscreen: true,
+        ),
+        returnsNormally,
+      );
+
+      controller1.throwingPosition?.shouldThrow = false;
       manager.dispose();
       controller1.dispose();
       controller2.dispose();
@@ -354,21 +396,27 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: _ThrowingTransformWidget(
-              child: const SizedBox(
-                key: ValueKey('throwing_box'),
-                width: 100,
-                height: 100,
-              ),
+            body: Builder(
+              builder: (context) {
+                return const SizedBox(
+                  key: ValueKey('test_box'),
+                  width: 100,
+                  height: 100,
+                );
+              },
             ),
           ),
         ),
       );
       await tester.pump();
 
-      final context =
-          tester.element(find.byKey(const ValueKey('throwing_box')));
-      final isVisible = manager.isRenderObjectVisible(context);
+      final innerContext =
+          tester.element(find.byKey(const ValueKey('test_box')));
+      final throwingBox = _ThrowingRenderBox();
+      final customContext =
+          _CustomRenderObjectContext(innerContext, throwingBox);
+
+      final isVisible = manager.isRenderObjectVisible(customContext);
       expect(isVisible, isTrue);
 
       manager.dispose();
@@ -400,8 +448,11 @@ void main() {
       );
       await tester.pump();
 
+      controller.throwingPosition?.shouldThrow = true;
       // Calling dispose while _scrollPosition is attached to ThrowingScrollPosition hits line 180
       expect(() => manager.dispose(), returnsNormally);
+
+      controller.throwingPosition?.shouldThrow = false;
       controller.dispose();
     });
   });
