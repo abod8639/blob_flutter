@@ -301,12 +301,12 @@ class BlobParameterException extends BlobFlutterException {
 
 // ── Controller Conflict Exception ─────────────────────────────────────────────
 
-/// Thrown or asserted when conflicting parameters are passed to [BlobFlutter]
+/// Reported when conflicting parameters are passed to [BlobFlutter]
 /// alongside an external [BlobController].
 ///
-/// When a [BlobController] is attached, all geometric, physics, and visual
-/// parameters must be configured directly on the controller, because widget-level
-/// parameters are ignored.
+/// When a [BlobController] is attached, it serves as the single source of truth;
+/// all geometric, physics, and visual parameters must be configured directly on
+/// the controller. Widget-level parameters are safely ignored with a debug-mode warning.
 class BlobControllerConflictException extends BlobFlutterException {
   @override
   BlobErrorCode get code => BlobErrorCode.controllerConflict;
