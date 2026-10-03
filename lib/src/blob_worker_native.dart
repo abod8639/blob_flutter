@@ -192,11 +192,11 @@ class BlobWorker {
     mainPort.send(rx.sendPort);
 
     int frameIndex = 0;
-    Float32List rawPoints = Float32List(count * 2);
-    Float32List depths = Float32List(count);
+    Float32List rawPoints = Float32List(0);
+    Float32List depths = Float32List(0);
     final Int32List binCounts = Int32List(64);
     final Int32List binOffsets = Int32List(64);
-    Uint8List particleBins = Uint8List(count);
+    Uint8List particleBins = Uint8List(0);
 
     await for (final msg in rx) {
       if (msg is! List) continue;
