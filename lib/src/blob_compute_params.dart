@@ -39,6 +39,9 @@ class ProjectParamsFlat {
   /// Whether the computation is considered complex, enabling temporal interleaving / striding across frames.
   final bool isComplex;
 
+  /// Whether depth sorting is enabled (Painter's algorithm: farthest particles first).
+  final bool enableDepthSort;
+
   const ProjectParamsFlat({
     required this.count,
     required this.radius,
@@ -60,15 +63,16 @@ class ProjectParamsFlat {
     this.touchRadiusFactor = 1.0,
     this.webTemporalInterleaving = true,
     this.isComplex = false,
+    this.enableDepthSort = true,
   });
 
   /// Packs all fields into a [List] that satisfies Dart's isolate message
   /// protocol (primitives + [Float32List]).
   ///
-  /// Optionally populates and returns [buffer] if provided (must have length >= 20)
+  /// Optionally populates and returns [buffer] if provided (must have length >= 21)
   /// to eliminate per-frame list allocations.
   List<Object?> toMessage([List<Object?>? buffer]) {
-    if (buffer != null && buffer.length >= 20) {
+    if (buffer != null && buffer.length >= 21) {
       buffer[0] = count;
       buffer[1] = radius;
       buffer[2] = scale;
@@ -89,6 +93,7 @@ class ProjectParamsFlat {
       buffer[17] = encodedTouches;
       buffer[18] = webTemporalInterleaving;
       buffer[19] = isComplex;
+      buffer[20] = enableDepthSort;
       return buffer;
     }
     return [
@@ -112,6 +117,7 @@ class ProjectParamsFlat {
       encodedTouches,
       webTemporalInterleaving,
       isComplex,
+      enableDepthSort,
     ];
   }
 
@@ -139,5 +145,6 @@ class ProjectParamsFlat {
         webTemporalInterleaving:
             m.length > 18 ? (m[18] as bool? ?? true) : true,
         isComplex: m.length > 19 ? (m[19] as bool? ?? false) : false,
+        enableDepthSort: m.length > 20 ? (m[20] as bool? ?? true) : true,
       );
 }
