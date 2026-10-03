@@ -241,6 +241,21 @@ class BlobFlutter extends StatefulWidget {
   /// and automatically resumes when the app returns to [AppLifecycleState.resumed].
   final bool autoPauseOnAppBackground;
 
+  /// Whether to automatically pause the animation ticker and computation
+  /// when the current navigation route is covered, navigated away from, or inactive.
+  ///
+  /// When `true` (default), automatically listens to [ModalRoute] and halts the
+  /// ticker and isolate computations when another page is pushed via [Navigator.push].
+  /// Resumes seamlessly when the route becomes top/current again upon [Navigator.pop].
+  final bool autoPauseOnRouteChange;
+
+  /// Optional [RouteObserver] to subscribe to for navigation events.
+  ///
+  /// While [autoPauseOnRouteChange] automatically detects route transitions via
+  /// [ModalRoute], providing a [RouteObserver] provides secondary confirmation via
+  /// standard [RouteAware] lifecycle events.
+  final RouteObserver<ModalRoute<dynamic>>? routeObserver;
+
   /// Whether the blob responds to touch, drag, and mouse interactions.
   ///
   /// When `false`, touch gestures and mouse hover events are completely ignored
@@ -291,6 +306,8 @@ class BlobFlutter extends StatefulWidget {
     this.autoPlay,
     this.autoPauseOffscreen = true,
     this.autoPauseOnAppBackground = true,
+    this.autoPauseOnRouteChange = true,
+    this.routeObserver,
     bool? autoFit,
     double? radiusFactor,
     bool? webTemporalInterleaving,
@@ -472,6 +489,10 @@ class _ParticleBlobState extends State<BlobFlutter>
   @visibleForTesting
   bool get isAppInBackground => _visibilityManager.isAppInBackground;
 
+  /// Whether the widget has detected that its hosting route is currently hidden or inactive.
+  @visibleForTesting
+  bool get isRouteHidden => _visibilityManager.isRouteHidden;
+
   /// Executes a single animation tick for testing deterministic tick handling.
   @visibleForTesting
   void onTickForTesting(Duration elapsed) => _onTick(elapsed);
@@ -489,7 +510,8 @@ class _ParticleBlobState extends State<BlobFlutter>
       !_controller.isPaused &&
       !(widget.autoPauseOnAppBackground &&
           _visibilityManager.isAppInBackground) &&
-      !(widget.autoPauseOffscreen && _visibilityManager.isOffscreen);
+      !(widget.autoPauseOffscreen && _visibilityManager.isOffscreen) &&
+      !(widget.autoPauseOnRouteChange && _visibilityManager.isRouteHidden);
 
   void _updateCombinedOffset() {
     _cachedCombinedOffset = Offset(
@@ -606,6 +628,8 @@ class _ParticleBlobState extends State<BlobFlutter>
     _visibilityManager.updateDependencies(
       context: context,
       autoPauseOffscreen: widget.autoPauseOffscreen,
+      autoPauseOnRouteChange: widget.autoPauseOnRouteChange,
+      routeObserver: widget.routeObserver,
     );
   }
 
@@ -829,6 +853,10 @@ class _ParticleBlobState extends State<BlobFlutter>
       newAutoPauseOffscreen: widget.autoPauseOffscreen,
       oldAutoPauseOnAppBackground: oldWidget.autoPauseOnAppBackground,
       newAutoPauseOnAppBackground: widget.autoPauseOnAppBackground,
+      oldAutoPauseOnRouteChange: oldWidget.autoPauseOnRouteChange,
+      newAutoPauseOnRouteChange: widget.autoPauseOnRouteChange,
+      oldRouteObserver: oldWidget.routeObserver,
+      newRouteObserver: widget.routeObserver,
     );
   }
 
