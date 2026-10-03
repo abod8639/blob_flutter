@@ -73,6 +73,9 @@ class BlobFlutter extends StatefulWidget {
   final bool? _webTemporalInterleaving;
   final int? _maxWebParticles;
   final bool? _isComplex;
+  final bool? _enableDepthSort;
+  final bool? _enableDepthCueing;
+  final double? _depthCueingFactor;
 
   /// Whether the blob automatically resizes its radius to fit the parent container bounds.
   ///
@@ -106,6 +109,20 @@ class BlobFlutter extends StatefulWidget {
   /// (even and odd strides) to cut CPU computation time in half.
   /// When `false` (default), all particles are computed fully on every frame.
   bool get isComplex => _isComplex ?? false;
+
+  /// Whether depth sorting (Painter's algorithm: back-to-front rendering) is enabled.
+  ///
+  /// When `true` (default), particles are sorted by their 3D depth (Z) so that
+  /// foreground particles properly occlude background particles.
+  bool get enableDepthSort => _enableDepthSort ?? true;
+
+  /// Whether depth-cueing (size attenuation across depth slices) is enabled.
+  ///
+  /// When `true` (default), distant particles appear smaller and nearer particles appear larger.
+  bool get enableDepthCueing => _enableDepthCueing ?? true;
+
+  /// Intensity of depth-cueing perspective scaling. Range: `[0.0, 1.0]`. Default: 0.4.
+  double get depthCueingFactor => _depthCueingFactor ?? 0.4;
 
   /// Total number of particles. Default: 5000.
   int get particleCount => _particleCount ?? 5000;
@@ -279,6 +296,9 @@ class BlobFlutter extends StatefulWidget {
     bool? webTemporalInterleaving,
     int? maxWebParticles,
     bool? isComplex,
+    bool? enableDepthSort,
+    bool? enableDepthCueing,
+    double? depthCueingFactor,
   })  : _particleCount = particleCount,
         _radius = radius,
         _pointSize = pointSize,
@@ -302,6 +322,9 @@ class BlobFlutter extends StatefulWidget {
         _webTemporalInterleaving = webTemporalInterleaving,
         _maxWebParticles = maxWebParticles,
         _isComplex = isComplex,
+        _enableDepthSort = enableDepthSort,
+        _enableDepthCueing = enableDepthCueing,
+        _depthCueingFactor = depthCueingFactor,
         assert(
           maxWebParticles == null || maxWebParticles > 0,
           "BlobFlutter: 'maxWebParticles' must be positive or null (received $maxWebParticles). "
@@ -311,6 +334,12 @@ class BlobFlutter extends StatefulWidget {
           radiusFactor == null || (radiusFactor > 0.0 && radiusFactor <= 2.0),
           "BlobFlutter: 'radiusFactor' must be between 0.0 and 2.0 (received $radiusFactor). "
           'Example fix: BlobFlutter(radiusFactor: 0.85).',
+        ),
+        assert(
+          depthCueingFactor == null ||
+              (depthCueingFactor >= 0.0 && depthCueingFactor <= 1.0),
+          "BlobFlutter: 'depthCueingFactor' must be between 0.0 and 1.0 (received $depthCueingFactor). "
+          'Example fix: BlobFlutter(depthCueingFactor: 0.4).',
         ),
         assert(
           particleCount == null || particleCount > 0,
@@ -381,6 +410,9 @@ class BlobFlutter extends StatefulWidget {
     if (w._webTemporalInterleaving != null) list.add('webTemporalInterleaving');
     if (w._maxWebParticles != null) list.add('maxWebParticles');
     if (w._isComplex != null) list.add('isComplex');
+    if (w._enableDepthSort != null) list.add('enableDepthSort');
+    if (w._enableDepthCueing != null) list.add('enableDepthCueing');
+    if (w._depthCueingFactor != null) list.add('depthCueingFactor');
     return list;
   }
 
@@ -550,6 +582,9 @@ class _ParticleBlobState extends State<BlobFlutter>
           webTemporalInterleaving: widget.webTemporalInterleaving,
           maxWebParticles: widget._maxWebParticles ?? 3000,
           isComplex: widget.isComplex,
+          enableDepthSort: widget.enableDepthSort,
+          enableDepthCueing: widget.enableDepthCueing,
+          depthCueingFactor: widget.depthCueingFactor,
         );
 
     _lastParticleCount = _controller.effectiveParticleCount;
@@ -690,6 +725,9 @@ class _ParticleBlobState extends State<BlobFlutter>
             webTemporalInterleaving: widget.webTemporalInterleaving,
             maxWebParticles: widget._maxWebParticles ?? 3000,
             isComplex: widget.isComplex,
+            enableDepthSort: widget.enableDepthSort,
+            enableDepthCueing: widget.enableDepthCueing,
+            depthCueingFactor: widget.depthCueingFactor,
           );
       _lastParticleCount = _controller.effectiveParticleCount;
       _controller.addListener(_onControllerChanged);
@@ -752,6 +790,15 @@ class _ParticleBlobState extends State<BlobFlutter>
       }
       if (oldWidget.isComplex != widget.isComplex) {
         _controller.setIsComplex(widget.isComplex);
+      }
+      if (oldWidget.enableDepthSort != widget.enableDepthSort) {
+        _controller.setEnableDepthSort(widget.enableDepthSort);
+      }
+      if (oldWidget.enableDepthCueing != widget.enableDepthCueing) {
+        _controller.setEnableDepthCueing(widget.enableDepthCueing);
+      }
+      if (oldWidget.depthCueingFactor != widget.depthCueingFactor) {
+        _controller.setDepthCueingFactor(widget.depthCueingFactor);
       }
       if (oldWidget.pinchToScale != widget.pinchToScale) {
         _controller.setPinchToScale(widget.pinchToScale);
@@ -1009,6 +1056,8 @@ class _ParticleBlobState extends State<BlobFlutter>
                         centerOffset: _cachedCombinedOffset,
                         radius: _controller.radius * _controller.scale,
                         paint: _paint,
+                        enableDepthCueing: _controller.enableDepthCueing,
+                        depthCueingFactor: _controller.depthCueingFactor,
                       ),
                       size: Size.infinite,
                       isComplex: _controller.isComplex,
