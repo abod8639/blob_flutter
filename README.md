@@ -3,16 +3,16 @@
 # Blob Flutter (3D Particle Blob)
 
 [![Cyberpunk Blob Banner](https://github.com/abod8639/media/blob/main/blob_flutter/Picsart_2.png?raw=true)](https://blob-flutter-3d.web.app/)
+
 <!-- ![Cyberpunk Blob Banner](assets/banner.jpg) -->
 
 **A high-performance, interactive 3D particle blob for Flutter.**<br>
-*Powered by procedural noise algorithms, multi-threaded Isolate computation, and GPU Fragment Shaders.*
+_Powered by procedural noise algorithms, multi-threaded Isolate computation, and GPU Fragment Shaders._
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=&logo=Flutter&logoColor=white)]()
 [![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=&logo=dart&logoColor=white)]()
 
 [![Platform](https://img.shields.io/badge/Platform-Flutter%20%7C%20Web%20--%20Linux%20--%20Windows%20--%20MacOS%20--%20Android%20--%20iOS-02569B?style=&logo=flutter)](https://pub.dev/packages/blob_flutter)
-
 
 [![Pub Points](https://img.shields.io/pub/points/blob_flutter?style=&logo=dart&color=2E8B57)](https://pub.dev/packages/blob_flutter/score)
 [![Pub Likes](https://img.shields.io/pub/likes/blob_flutter?style=&logo=flutter&color=blueviolet)](https://pub.dev/packages/blob_flutter)
@@ -23,7 +23,7 @@
 [![Pub Version](https://img.shields.io/pub/v/blob_flutter?style=&logo=dart&color=blue)](https://pub.dev/packages/blob_flutter)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Try%20Online-purple?style=&logo=googlechrome&logoColor=white)](https://blob-flutter-3d.web.app/)
 
-[Live Demo](https://blob-flutter-3d.web.app/) • [Features](#features) • [Quick Start](#quick-start) • [Algorithms](#procedural-noise-algorithms) • [Controller](#controller-usage) • [Error Handling](#error-handling) • [Architecture](#architecture--performance)
+[Live Demo](https://blob-flutter-3d.web.app/) • [Features](#features) • [What's New](#-major-updates--whats-new) • [Quick Start](#quick-start) • [Algorithms](#procedural-noise-algorithms) • [Controller](#controller-usage) • [Error Handling](#error-handling) • [Architecture](#architecture--performance)
 
 </div>
 
@@ -45,19 +45,62 @@
 ## Features
 
 - **Zero-Jank Architecture**: Offloads heavy 3D math and vertex projections to a persistent background `Isolate`.
-- **GPU Fragment Shaders**: Hardware-accelerated per-pixel color gradients (Linear, Radial, Sweep) via custom GLSL.
-- **8 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, and more.
-- **Fluid Touch Interaction**: Natural multi-touch drag rotation, hover tracking, and tap dispersion.
+- **True 3D Object-Space Shaders**: Hardware-accelerated per-pixel color gradients (Linear, Radial, Sweep) with dynamic surface normal reconstruction and inverse rotation matrices (`uColor3D`) so colors rotate synchronously with the 3D geometry.
+- **$O(N)$ Linear Depth Sorting & Depth-Cueing**: High-performance 64-bin Bucket Sort in the background isolate renders particles in Painter's Algorithm order, paired with 4-strata atmospheric depth-cueing for breathtaking 3D depth perception.
+- **Responsive Auto-Fitting**: Dynamically scales the blob radius to fit parent container bounds (`autoFit`, `radiusFactor`), seamlessly adapting to orientation changes and responsive screen layouts.
+- **9 Procedural Noise Models**: Smooth liquid waves, crystalline spikes, cellular bubbles, cosmic vortex, wave carpets, and user-defined custom math models.
+- **Flutter Web Optimization & Temporal Interleaving**: Alternates frame calculations (`isComplex`, `webTemporalInterleaving`) and caps web particle counts (`maxWebParticles`) to lock 60 FPS on single-threaded JavaScript.
+- **Zero-Battery Multi-Tier Lifecycle**: Automatically halts tickers and isolate workers (0% CPU/GPU/battery) when scrolled offscreen, app is backgrounded, or when navigated away via Navigator routes (`autoPauseOnRouteChange`).
+- **Fluid Touch Interaction**: Natural multi-touch drag rotation, hover tracking, and tap dispersion with configurable hit-test behaviors.
 - **Zero-Allocation Pipeline**: Pre-allocated buffers ensure zero heap object allocations during the render loop.
 - **Ultra-Fast Path Engine**: Automatically switches to an unbranched, zero-overhead projection pipeline during non-interactive frames, eliminating tens of thousands of redundant pointer and dispersion checks per frame.
 - **Resource-Conscious Engineering**: Crafted with rigorous mathematical precision to respect developers and end-user devices—maximizing performance while preventing battery drain and memory thrashing.
-- **Error Handling**: Robust error handling to prevent crashes and provide meaningful error messages.
+- **Resilient Controller Architecture**: Single source of truth with graceful handling and developer hints when properties are supplied alongside an external controller.
+
+---
+
+## Major Updates & What's New
+
+`blob_flutter` brings landmark architectural upgrades that significantly enhance 3D visual fidelity, responsive UI integration, multi-platform performance, and battery efficiency:
+
+### 1. True 3D Object-Space Shaders (`uColor3D`)
+
+- **The Problem Solved**: Conventional Flutter fragment shaders sample screen-space coordinates (`uv = FlutterFragCoord().xy / uResolution`), causing gradients to appear as a flat 2D wallpaper overlay that remains static when the 3D mesh spins or tilts.
+- **Surface Normal Reconstruction**: The shader now reconstructs the 3D surface normal $\vec{n} = (\hat{p}_x, \hat{p}_y, \hat{p}_z)$ for every point on the deformed geometry.
+- **Inverse Rotation Matrix ($R^T$) in GLSL**: Uses the pitch ($\theta_x$) and yaw ($\theta_y$) orientation angles to apply an inverse rotation transform directly in the GPU fragment shader (`blob.frag`). Color gradients now **rotate and track seamlessly with the 3D geometry in world space**, delivering authentic volumetric depth.
+
+### 2. $O(N)$ Linear Depth Sorting & Atmospheric Depth-Cueing
+
+- **Painter's Algorithm without Jitter**: Previous rendering drew particles in fixed Fibonacci index order, allowing background particles to incorrectly draw over foreground particles.
+- **Zero-Allocation 64-Bin Bucket Sort**: Instead of a costly $O(N \log N)$ quicksort that triggers GC pauses, depth sorting runs in the background isolate in linear $O(N)$ time using pre-allocated integer depth buckets. Particles are drawn strictly back-to-front.
+- **Atmospheric Depth-Cueing (`enableDepthCueing`, `depthCueingFactor`)**: Nearer particles dynamically scale up with enhanced luminance, while distant particles recede into the background through 4-strata perspective scaling and subtle opacity attenuation.
+
+### 3. Responsive Auto-Fitting (`autoFit` & `radiusFactor`)
+
+- **Dynamic Viewport Fit**: Say goodbye to manually calculating logical pixel radii or dealing with clipping on small screens.
+- With `autoFit: true`, the radius dynamically computes as `(min(viewportWidth, viewportHeight) / 2.0) * radiusFactor` (default factor: `0.85`, preserving 15% breathing room for wave crests).
+- Automatically adapts during device orientation changes (portrait $\leftrightarrow$ landscape), split-screen multitasking, and browser window resizing.
+
+### 4. Flutter Web Optimization & Temporal Interleaving (`isComplex`)
+
+- **Single-Threaded JS Engine Optimization**: Dart on Web runs on a single JavaScript event loop without native multi-threaded isolates. Heavy geometric math with high particle counts can drop frames on browsers.
+- **Temporal Frame Striding (`webTemporalInterleaving`, `isComplex`)**: Alternates particle calculation across successive frames (even and odd strides), slashing per-frame CPU math by **50%** while preserving smooth 60 FPS motion.
+- **Automatic Web Particle Cap (`maxWebParticles`)**: Automatically caps particle counts on Flutter Web (default: `3000`, configurable) to prevent thread starvation on lower-power devices.
+
+### 5. Zero-Battery Multi-Tier Lifecycle & Route Awareness
+
+`BlobFlutter` automatically pauses its animation ticker and isolate worker (dropping CPU and GPU usage to **0%**) across three critical lifecycle layers:
+
+1. **Offscreen Visibility (`autoPauseOffscreen`)**: Detects when the widget scrolls outside the viewport (with a 50px pre-wake margin).
+2. **App Lifecycle (`autoPauseOnAppBackground`)**: Hooks into `WidgetsBindingObserver` to pause when minimized, hidden, or in the background, and wakes up immediately on resume.
+3. **Route Navigation (`autoPauseOnRouteChange`, `routeObserver`)**: Automatically detects when another screen is pushed on top via `ModalRoute` / `Navigator.push`, eliminating invisible background drain until the user navigates back!
 
 ---
 
 ## Quick Start
 
 ### 1. Install
+
 Add `blob_flutter` to your `pubspec.yaml` dependencies:
 
 ```yaml
@@ -66,14 +109,17 @@ dependencies:
 ```
 
 ### 2. Import
+
 ```dart
 import 'package:blob_flutter/blob_flutter.dart';
 ```
 
 ### 3. Use
+
 The simplest way to render a basic Blob:
 
 ```dart
+// 1. Basic Blob with Fixed Radius
 BlobFlutter(
   particleCount: 5000,
   radius: 150.0,
@@ -81,8 +127,18 @@ BlobFlutter(
   noiseType: BlobNoiseType.harmonic,
   gradient: const LinearGradient(
     colors: [Colors.cyanAccent, Colors.purpleAccent],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+  ),
+)
+
+// 2. Fully Responsive Blob with 3D Depth Sorting & Depth-Cueing
+BlobFlutter(
+  autoFit: true, // Automatically resizes radius to fit parent bounds
+  radiusFactor: 0.85,
+  enableDepthSort: true, // Linear O(N) back-to-front depth sorting
+  enableDepthCueing: true, // Realistic atmospheric perspective attenuation
+  noiseType: BlobNoiseType.harmonic,
+  gradient: const LinearGradient(
+    colors: [Colors.cyanAccent, Colors.purpleAccent],
   ),
 )
 ```
@@ -142,17 +198,17 @@ class _MyBlobState extends State<MyBlob> {
 
 Choose from 9 distinct mathematical displacement models using the `BlobNoiseType` enum:
 
-| Algorithm | Visual Characteristics | Best For |
-| :--- | :--- | :--- |
-| `harmonic` | Smooth, organic, fluid liquid blob motion. | Liquid effects, calm assistants |
-| `spiky` | Sharp peaks, crystalline spikes, urchin geometry. | Audio visualizers, energetic UI |
-| `fractal` | Multi-octave turbulent cloud and terrain details. | Complex, textured surfaces |
-| `cellular` | Segmented clusters, biological cells, bubbles. | Organic, microscopic visuals |
-| `vortex` | Swirling cyclone, spiral galaxy, tornado. | Loading spinners, portals |
-| `sphericalHarmonics`| Acoustic cymatics, nodal patterns, quantum fields. | High-tech, futuristic UI |
-| `simplex` | Omni-directional, artifact-free smooth flow. | Clean, continuous deformation |
-| `wave` | Flat full square carpet/net with undulating wave ripples. | Floating wave nets, square carpets, audio grids |
-| `custom` | User-defined mathematical procedural noise algorithm. | Custom 3D shapes, stars, toruses, hearts, custom math |
+| Algorithm            | Visual Characteristics                                    | Best For                                              |
+| :------------------- | :-------------------------------------------------------- | :---------------------------------------------------- |
+| `harmonic`           | Smooth, organic, fluid liquid blob motion.                | Liquid effects, calm assistants                       |
+| `spiky`              | Sharp peaks, crystalline spikes, urchin geometry.         | Audio visualizers, energetic UI                       |
+| `fractal`            | Multi-octave turbulent cloud and terrain details.         | Complex, textured surfaces                            |
+| `cellular`           | Segmented clusters, biological cells, bubbles.            | Organic, microscopic visuals                          |
+| `vortex`             | Swirling cyclone, spiral galaxy, tornado.                 | Loading spinners, portals                             |
+| `sphericalHarmonics` | Acoustic cymatics, nodal patterns, quantum fields.        | High-tech, futuristic UI                              |
+| `simplex`            | Omni-directional, artifact-free smooth flow.              | Clean, continuous deformation                         |
+| `wave`               | Flat full square carpet/net with undulating wave ripples. | Floating wave nets, square carpets, audio grids       |
+| `custom`             | User-defined mathematical procedural noise algorithm.     | Custom 3D shapes, stars, toruses, hearts, custom math |
 
 ---
 
@@ -161,6 +217,7 @@ Choose from 9 distinct mathematical displacement models using the `BlobNoiseType
 With `BlobNoiseType.custom`, you have complete creative freedom to sculpt custom 3D geometries, pulsating crystals, hollow toruses, swirling spirals, or bespoke mathematical motions.
 
 ### 1. Custom Noise Function Signature
+
 A custom noise function evaluates per-particle displacement in 3D space:
 
 ```dart
@@ -175,18 +232,20 @@ typedef BlobCustomNoiseFunction = double Function(
 ```
 
 ### 2. Built-in Math Helpers in `BlobMath`
+
 `BlobMath` provides high-performance, allocation-free static utilities for sculpting 3D particles:
 
-* **`BlobMath.azimuth(px, pz)`**: Azimuthal angle $\phi = \text{atan2}(pz, px) \in [-\pi, \pi]$ (ideal for longitude/spiral twisting).
-* **`BlobMath.elevation(py)`**: Elevation angle $\theta = \text{asin}(py) \in [-\pi/2, \pi/2]$ with safe clamping against `NaN`.
-* **`BlobMath.distance2D(x, z)`**: Planar radial distance $\sqrt{x^2 + z^2}$ from the Y-axis.
-* **`BlobMath.fastSimplex3D(x, y, z)`**: High-speed Simplex 3D noise for organic, terrain-like surfaces.
-* **`BlobMath.smoothstep(edge0, edge1, x)`**: Hermite interpolation for smooth borders and transitions.
-* **`BlobMath.clampDisplacement(val)`**: Automatic safeguard against `NaN` or `Infinity`, clamping values safely to `[0.05, 5.0]`.
+- **`BlobMath.azimuth(px, pz)`**: Azimuthal angle $\phi = \text{atan2}(pz, px) \in [-\pi, \pi]$ (ideal for longitude/spiral twisting).
+- **`BlobMath.elevation(py)`**: Elevation angle $\theta = \text{asin}(py) \in [-\pi/2, \pi/2]$ with safe clamping against `NaN`.
+- **`BlobMath.distance2D(x, z)`**: Planar radial distance $\sqrt{x^2 + z^2}$ from the Y-axis.
+- **`BlobMath.fastSimplex3D(x, y, z)`**: High-speed Simplex 3D noise for organic, terrain-like surfaces.
+- **`BlobMath.smoothstep(edge0, edge1, x)`**: Hermite interpolation for smooth borders and transitions.
+- **`BlobMath.clampDisplacement(val)`**: Automatic safeguard against `NaN` or `Infinity`, clamping values safely to `[0.05, 5.0]`.
 
 ### 3. Usage Examples
 
 #### Via `BlobController`:
+
 ```dart
 final controller = BlobController(
   noiseType: BlobNoiseType.custom,
@@ -203,6 +262,7 @@ controller.setCustomNoise((px, py, pz, f, time, blobiness) {
 ```
 
 #### Via `BlobFlutter` Widget:
+
 ```dart
 BlobFlutter(
   noiseType: BlobNoiseType.custom,
@@ -214,6 +274,7 @@ BlobFlutter(
 ```
 
 ### 4. Golden Rules for Glitch-Free Shapes
+
 1. **The 1.0 Anchor:** Displacements scale the unit sphere. Always write equations relative to `1.0` (e.g. `1.0 + (wave * blobiness)`).
 2. **Safe from NaN & Isolate Closures:** Custom noise closures run synchronously on the main thread (<0.5ms for 3,000 particles), allowing you to write any lambda or closure without Isolate serialization errors. All returns are automatically protected from `NaN` and `Infinity`.
 3. **Zero Heap Allocations:** The function is invoked per-particle every frame. Keep all calculations on `double` primitives without instantiating objects or collections.
@@ -245,50 +306,75 @@ controller.setCustomNoise((px, py, pz, f, time, blobiness) {
 ## Customization Properties
 
 ### Widget Properties (`BlobFlutter`)
+
 Configure the initial state of your blob directly in the widget.
 
-| Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `particleCount` | `int` | `5000` | Total number of particles on the sphere (higher counts increase density but may affect performance). |
-| `radius` | `double` | `150.0` | Base radius in logical pixels. |
-| `pointSize` | `double` | `2.0` | Diameter of each rendered particle. |
-| `rotationX` / `rotationY` | `double` | `0.0` | Initial base 3D orientation angles (pitch & yaw) in radians. |
-| `noiseType` | `Enum` | `harmonic` | Procedural 3D noise algorithm used. |
-| `customNoise` | `BlobCustomNoiseFunction?` | `null` | Custom procedural displacement function used when `noiseType` is `BlobNoiseType.custom`. |
-| `controller` | `BlobController?` | `null` | External controller for runtime manipulation. |
-| `gradient` | `Gradient` | `Linear` | Color gradient (Linear, Radial, or Sweep). |
-| `autoPlay` | `bool` | `true` | Whether the animation loop starts automatically. Set to `false` for battery savings on static views or widget tests. |
+| Property                   | Type                       | Default       | Description                                                                                                             |
+| :------------------------- | :------------------------- | :------------ | :---------------------------------------------------------------------------------------------------------------------- |
+| `particleCount`            | `int`                      | `5000`        | Total number of particles on the sphere (higher counts increase density but may affect performance).                    |
+| `radius`                   | `double`                   | `150.0`       | Base radius in logical pixels.                                                                                          |
+| `autoFit`                  | `bool`                     | `false`       | Dynamically resizes the radius to fit parent container bounds `(min(w, h) / 2.0) * radiusFactor`.                       |
+| `radiusFactor`             | `double`                   | `0.85`        | Multiplier applied to half the minimum container dimension when `autoFit` is active (leaves room for wave crests).      |
+| `enableDepthSort`          | `bool`                     | `true`        | Linear $O(N)$ bucket sort in isolate; renders particles back-to-front (Painter's algorithm) to prevent depth artifacts. |
+| `enableDepthCueing`        | `bool`                     | `true`        | Dynamic perspective scaling and opacity attenuation across depth slices for authentic 3D realism.                       |
+| `depthCueingFactor`        | `double`                   | `0.4`         | Intensity of depth-cueing perspective scaling (`[0.0, 1.0]`).                                                           |
+| `pointSize`                | `double`                   | `2.0`         | Diameter of each rendered particle.                                                                                     |
+| `rotationX` / `rotationY`  | `double`                   | `0.0`         | Initial base 3D orientation angles (pitch & yaw) in radians.                                                            |
+| `noiseType`                | `Enum`                     | `harmonic`    | Procedural 3D noise algorithm used.                                                                                     |
+| `customNoise`              | `BlobCustomNoiseFunction?` | `null`        | Custom procedural displacement function used when `noiseType` is `BlobNoiseType.custom`.                                |
+| `controller`               | `BlobController?`          | `null`        | External controller for runtime manipulation.                                                                           |
+| `gradient`                 | `Gradient`                 | `Linear`      | Color gradient (Linear, Radial, or Sweep) mapped in 3D object space.                                                    |
+| `isComplex`                | `bool`                     | `false`       | Enables temporal frame interleaving (striding) across alternating frames to halve per-frame CPU calculations.           |
+| `webTemporalInterleaving`  | `bool`                     | `true`        | Automatically enables frame interleaving on Flutter Web to guarantee smooth 60 FPS.                                     |
+| `maxWebParticles`          | `int?`                     | `3000`        | Automatic particle cap on Flutter Web to safeguard single-threaded JS performance.                                      |
+| `autoPlay`                 | `bool`                     | `true`        | Whether the animation loop starts automatically. Set to `false` for battery savings on static views or widget tests.    |
+| `autoPauseOffscreen`       | `bool`                     | `true`        | Automatically halts ticker and isolate (0% CPU/GPU) when scrolled out of viewport.                                      |
+| `autoPauseOnAppBackground` | `bool`                     | `true`        | Automatically pauses when application is minimized, hidden, or in the background.                                       |
+| `autoPauseOnRouteChange`   | `bool`                     | `true`        | Automatically pauses when navigated away from via Navigator routes (`ModalRoute`).                                      |
+| `routeObserver`            | `RouteObserver?`           | `null`        | Optional observer for navigation route transitions.                                                                     |
+| `interactive`              | `bool`                     | `true`        | When `false`, touches pass through seamlessly to underlying widgets in a `Stack`.                                       |
+| `hitTestBehavior`          | `HitTestBehavior`          | `translucent` | Hit-test event dispatching behavior (`translucent`, `opaque`, `deferToChild`).                                          |
 
 > [!TIP]
 > **Performance & Particle Count (`particleCount`):**
 > Increasing the particle count enhances visual fullness and detail, but directly increases computation time in the isolate and vertex drawing load on the GPU:
+>
 > - **1,000 – 3,000:** Ideal for low-end devices, battery-sensitive apps, or subtle background elements.
 > - **3,000 – 6,000 (Default: `5000`):** Sweet spot for smooth 60/120 FPS on most modern mobile devices.
 > - **8,000 – 20,000+:** Recommended for modern flagship phones, desktop, or web applications with capable GPUs.
 >
-> *(Note: These figures are approximations and may vary depending on target device hardware and workload).*
+> _(Note: These figures are approximations and may vary depending on target device hardware and workload)._
 
 ### Controller Properties (`BlobController`)
+
 Manipulate the blob dynamically at runtime using the controller methods.
 
-| Setter Method | Valid Range | Description |
-| :--- | :--- | :--- |
-| `pause()` | - | Stops the animation ticker completely (0% CPU/battery usage). |
-| `resume()` | - | Resumes the animation loop if paused. |
-| `isPaused` | `true`/`false` | Getter checking whether the animation loop is currently paused. |
-| `setParticleCount(val)`| `10` - `100000`| Dynamically sets particle count (reallocates buffers). |
-| `setBlobiness(val)` | `0.0` - `5.0` | Amplitude of noise displacement. |
-| `setSpeed(val)` | `0.0` - `10.0` | Playback speed of the animation. |
-| `setRotationX(val)` / `setRotationY(val)` | `double` (radians) | Sets persistent 3D orientation pitch & yaw angles. |
-| `setRotation({x, y})` | `double?` (radians) | Sets both 3D orientation angles simultaneously. |
-| `setDispersion(val)` | `0.0` - `3.0` | Outward radial displacement. |
-| `setNoiseFrequency(val)`| `0.1` - `5.0` | Density of the noise ripples. |
-| `setNoiseType(type)` | `Enum` | Changes the deformation algorithm. |
-| `setCustomNoise(fn, {switchToCustom})` | `Function?` | Sets custom procedural noise callback and optionally sets noiseType to `custom`. |
-| `setIsRainbowMode(bool)`| `true`/`false` | Cycles colors through the HSV spectrum. |
-| `zoomIn(val)` / `zoomOut` | - | Scales the blob size dynamically. |
+| Setter Method                             | Valid Range / Type  | Description                                                                      |
+| :---------------------------------------- | :------------------ | :------------------------------------------------------------------------------- |
+| `pause()`                                 | -                   | Stops the animation ticker completely (0% CPU/battery usage).                    |
+| `resume()`                                | -                   | Resumes the animation loop if paused.                                            |
+| `isPaused`                                | `true`/`false`      | Getter checking whether the animation loop is currently paused.                  |
+| `setParticleCount(val)`                   | `10` - `100000`     | Dynamically sets particle count (reallocates buffers).                           |
+| `setAutoFit(val)`                         | `true`/`false`      | Toggles dynamic viewport-fitting radius.                                         |
+| `setRadiusFactor(val)`                    | `double`            | Changes container dimension multiplier in auto-fit mode.                         |
+| `setEnableDepthSort(val)`                 | `true`/`false`      | Toggles isolate $O(N)$ Z-depth sorting (Painter's algorithm).                    |
+| `setEnableDepthCueing(val)`               | `true`/`false`      | Toggles atmospheric perspective depth scaling.                                   |
+| `setDepthCueingFactor(val)`               | `0.0` - `1.0`       | Adjusts depth attenuation strength.                                              |
+| `setIsComplex(val)`                       | `true`/`false`      | Enables/disables temporal frame interleaving (striding).                         |
+| `setWebTemporalInterleaving(val)`         | `true`/`false`      | Toggles temporal frame interleaving on Web.                                      |
+| `setMaxWebParticles(val)`                 | `int?`              | Sets or clears web particle count limit.                                         |
+| `setBlobiness(val)`                       | `0.0` - `5.0`       | Amplitude of noise displacement.                                                 |
+| `setSpeed(val)`                           | `0.0` - `10.0`      | Playback speed of the animation.                                                 |
+| `setRotationX(val)` / `setRotationY(val)` | `double` (radians)  | Sets persistent 3D orientation pitch & yaw angles.                               |
+| `setRotation({x, y})`                     | `double?` (radians) | Sets both 3D orientation angles simultaneously.                                  |
+| `setDispersion(val)`                      | `0.0` - `3.0`       | Outward radial displacement.                                                     |
+| `setNoiseFrequency(val)`                  | `0.1` - `5.0`       | Density of the noise ripples.                                                    |
+| `setNoiseType(type)`                      | `Enum`              | Changes the deformation algorithm.                                               |
+| `setCustomNoise(fn, {switchToCustom})`    | `Function?`         | Sets custom procedural noise callback and optionally sets noiseType to `custom`. |
+| `setIsRainbowMode(bool)`                  | `true`/`false`      | Cycles colors through the HSV spectrum.                                          |
+| `zoomIn(val)` / `zoomOut`                 | -                   | Scales the blob size dynamically.                                                |
 
-*(Check the source code for a complete list of advanced physics and shader properties).*
+_(Check the source code for a complete list of advanced physics and shader properties)._
 
 ---
 
@@ -297,11 +383,13 @@ Manipulate the blob dynamically at runtime using the controller methods.
 `BlobFlutter` is built with deep respect for both developers and end-user hardware. Every mathematical model, buffer allocation, and render pass is calculated with exacting precision to deliver sustained **60 / 120 FPS** while safeguarding device resources, thermals, and battery life:
 
 1. **Persistent Worker Isolate**: 3D math, trigonometric deformations, and matrix rotations execute in a dedicated background worker (`BlobWorker`). The UI receives data via zero-copy `TransferableTypedData`.
-2. **Single GPU Draw Call**: Particle coordinates are flattened and drawn directly to graphics hardware using `Canvas.drawRawPoints`.
-3. **Zero Heap Allocation**: Coordinate caches and calculation buffers are pre-allocated during initialization, avoiding Garbage Collector (GC) stutters.
-4. **Hardware Shaders**: Complex color interpolation and organic shimmer waves run entirely on the GPU via custom GLSL shaders (`ui.FragmentProgram`).
-5. **Resource-Conscious Loop**: Calculations and render cycles are strictly optimized so device CPU/GPU cycles are never wasted on redundant processing.
-6. **Ultra-Fast Path for Automatic Frames**: During steady-state animations (when no pointers or radial dispersions are active), the math loop transitions into an unbranched, streamlined execution path. By bypassing over 18,000 conditional pointer and touch checks per frame, single-threaded environments like Flutter Web and mobile CPU architectures achieve peak JIT optimization, lower thermals, and a rock-solid, sustained 60/120 FPS.
+2. **True 3D Object-Space Fragment Shaders (`blob.frag`)**: Rather than projecting flat 2D color coordinates across screen pixels, the GLSL fragment program reconstructs the 3D surface normal $\vec{n} = (\hat{p}_x, \hat{p}_y, \hat{p}_z)$ for each point and multiplies by the inverse pitch/yaw rotation matrix ($R^T$). Colors rotate synchronously with the 3D object in space.
+3. **$O(N)$ Linear Depth Bucket Sorting**: To preserve 60/120 FPS without Garbage Collection pauses, the worker isolate sorts particles using a 64-bin linear bucket sort ($O(N)$ vs $O(N \log N)$ quicksort). Combined with 4-strata atmospheric depth-cueing in `BlobPainter`, particles render back-to-front with depth-dependent scale and opacity.
+4. **Single GPU Draw Call**: Particle coordinates are flattened and drawn directly to graphics hardware using `Canvas.drawRawPoints`.
+5. **Zero Heap Allocation**: Coordinate caches, depth sorting bins, and calculation buffers are pre-allocated during initialization, avoiding Garbage Collector (GC) stutters.
+6. **Web Temporal Striding (`isComplex`)**: On Flutter Web, where Dart executes on a single JavaScript event loop, temporal interleaving splits particle computations across alternating odd/even frames, reducing CPU execution time by 50% without visual stutter.
+7. **Ultra-Fast Path Engine**: During steady-state animations (when no pointers or radial dispersions are active), the math loop transitions into an unbranched, streamlined execution path, eliminating redundant pointer and touch checks per frame.
+8. **Multi-Tier Zero-Battery Lifecycle**: Tickers and isolate computations automatically shut down (0% CPU/GPU usage) when scrolled offscreen, when the app enters the background, or when navigating to another route via `ModalRoute` / `RouteObserver`.
 
 > [!NOTE]
 > **Performance Scaling:** Although computation is offloaded to a background `Isolate` to keep the UI thread jank-free, mathematical transformations and GPU vertex throughput scale linearly with `particleCount`. Very high counts on budget or older hardware may impact frame rates or cause battery drain.

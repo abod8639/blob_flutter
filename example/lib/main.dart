@@ -127,6 +127,7 @@ class _BlobShowcasePageState extends State<BlobShowcasePage> {
           // ── 3D Particle Blob Canvas ─────────────────────────────────────────
           Positioned.fill(
             child: BlobFlutter(
+              
               controller: _controller,
             ),
           ),
