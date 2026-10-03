@@ -1472,15 +1472,17 @@ void main() {
         ),
       );
 
-      final element =
-          tester.element(find.byType(BlobFlutter)) as StatefulElement;
-      final newWidget = BlobFlutter(
-        controller: controller,
-        particleCount: 500,
-        onError: (error, st) => capturedError = error,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlobFlutter(
+              controller: controller,
+              particleCount: 500,
+              onError: (error, st) => capturedError = error,
+            ),
+          ),
+        ),
       );
-
-      element.update(newWidget);
       expect(capturedError, isA<BlobControllerConflictException>());
       controller.dispose();
     });
