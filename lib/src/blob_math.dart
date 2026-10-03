@@ -417,6 +417,22 @@ class BlobMath {
     }
   }
 
+  /// Evaluates procedural noise displacement for [type]. Exposed for testing.
+  static double evaluateNoiseForTesting(
+    BlobNoiseType type,
+    double px,
+    double py,
+    double pz,
+    double f,
+    double time,
+    double time15,
+    double blobiness, [
+    BlobCustomNoiseFunction? customNoise,
+  ]) {
+    return _selectNoise(type, customNoise)(
+        px, py, pz, f, time, time15, blobiness);
+  }
+
   static final Map<int, Float32List> _sphereCache = {};
 
   /// Maximum distinct sphere sizes held in memory at once.
