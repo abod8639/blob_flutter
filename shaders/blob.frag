@@ -23,8 +23,12 @@
 ///   42   : uColorCount          (float) — number of active colors (1.0 to 8.0)
 ///   43-46: uStops1              (vec4)  — color stops 1 to 4 [0.0, 1.0]
 ///   47-50: uStops2              (vec4)  — color stops 5 to 8 [0.0, 1.0]
+///   51-52: uRotation            (vec2)  — rotation angles (pitch X, yaw Y) in radians
+///   53-54: uBlobCenter          (vec2)  — center coordinates in canvas pixels
+///   55   : uBlobRadius          (float) — effective sphere radius in canvas pixels
+///   56   : uColor3D             (float) — 1.0 = 3D object-space shading, 0.0 = 2D fallback
 ///
-/// Total: 51 floats.
+/// Total: 57 floats.
 
 #version 460 core
 
@@ -55,6 +59,10 @@ uniform float uWaveIntensity;
 uniform float uColorCount;
 uniform vec4  uStops1;
 uniform vec4  uStops2;
+uniform vec2  uRotation;
+uniform vec2  uBlobCenter;
+uniform float uBlobRadius;
+uniform float uColor3D;
 
 out vec4 fragColor;
 
@@ -120,38 +128,92 @@ vec4 evaluateColor(float t) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 void main() {
-    // Normalize fragment coordinate to [0.0, 1.0] UV space
-    vec2 uv = FlutterFragCoord().xy / uResolution;
+    vec2 fragCoord = FlutterFragCoord().xy;
+    vec2 uv = fragCoord / uResolution;
 
     float t = 0.0;
 
-    if (uGradientType < 0.5) {
-        // Linear gradient from uGradientStart to uGradientEnd
-        vec2  dir   = uGradientEnd - uGradientStart;
-        float lenSq = dot(dir, dir);
-        t = lenSq > 0.00001
-            ? dot(uv - uGradientStart, dir) / lenSq
-            : uv.y;
+    if (uColor3D > 0.5 && uBlobRadius > 0.001) {
+        // Normalized 2D offset from blob center in [-1.0, 1.0] range
+        vec2 offset = (fragCoord - uBlobCenter) / uBlobRadius;
+        float distSq = dot(offset, offset);
 
-    } else if (uGradientType < 1.5) {
-        // Radial gradient centred on uGradientStart, radius = uGradientEnd.x
-        float r = max(uGradientEnd.x, 0.001);
-        t = length(uv - uGradientStart) / r;
+        // Reconstruct front-hemisphere 3D sphere normal
+        float z = sqrt(max(0.0, 1.0 - min(distSq, 1.0)));
+        vec3 normal = vec3(offset.x, offset.y, z);
 
+        // Inverse 3D Rotation to transform from view-space back to object-space:
+        // 1. Rotate around Y (yaw) by -uRotation.y
+        float cosY = cos(-uRotation.y);
+        float sinY = sin(-uRotation.y);
+        vec3 rotY = vec3(
+            normal.x * cosY + normal.z * sinY,
+            normal.y,
+            -normal.x * sinY + normal.z * cosY
+        );
+
+        // 2. Rotate around X (pitch) by -uRotation.x
+        float cosX = cos(-uRotation.x);
+        float sinX = sin(-uRotation.x);
+        vec3 objSpace = vec3(
+            rotY.x,
+            rotY.y * cosX - rotY.z * sinX,
+            rotY.y * sinX + rotY.z * cosX
+        );
+
+        if (uGradientType < 0.5) {
+            // Linear gradient in 3D: projected along gradient direction
+            vec2 dir = uGradientEnd - uGradientStart;
+            float len = length(dir);
+            vec2 unitDir = len > 0.0001 ? (dir / len) : vec2(0.0, 1.0);
+            t = (dot(objSpace.xy, unitDir) + 1.0) * 0.5;
+        } else if (uGradientType < 1.5) {
+            // Radial gradient in 3D: distance from 3D object center
+            float r = max(uGradientEnd.x, 0.001);
+            t = length(objSpace.xy) / r;
+        } else {
+            // Sweep / Angular gradient in 3D: rotates 360° around object Y-axis
+            float angle = atan(objSpace.z, objSpace.x); // [-PI, PI]
+            t = (angle + PI) / TWO_PI;
+        }
+
+        // 3D Organic Wave Shimmer
+        if (uColorAnimationSpeed > 0.0 && uWaveIntensity > 0.0) {
+            float anim    = uTime * uColorAnimationSpeed;
+            float wave1   = sin(objSpace.x * PI * 2.0 + anim * 0.8) * 0.08;
+            float wave2   = cos(objSpace.y * PI * 2.0 - anim * 0.6) * 0.06;
+            float shimmer = sin((objSpace.x + objSpace.y + objSpace.z) * TWO_PI + anim * 1.5) * 0.03;
+            t += (wave1 + wave2 + shimmer) * min(uWaveIntensity, 2.0);
+        }
     } else {
-        // Sweep / Angular gradient around uGradientStart
-        vec2  dir   = uv - uGradientStart;
-        float angle = atan(dir.y, dir.x);          // [-PI, PI]
-        t = (angle + PI) / TWO_PI;
-    }
+        if (uGradientType < 0.5) {
+            // Linear gradient from uGradientStart to uGradientEnd
+            vec2  dir   = uGradientEnd - uGradientStart;
+            float lenSq = dot(dir, dir);
+            t = lenSq > 0.00001
+                ? dot(uv - uGradientStart, dir) / lenSq
+                : uv.y;
 
-    // Wave shimmer — smooth, organic chromatic liquid effect
-    if (uColorAnimationSpeed > 0.0 && uWaveIntensity > 0.0) {
-        float anim    = uTime * uColorAnimationSpeed;
-        float wave1   = sin(uv.x * PI * 2.0 + anim * 0.8) * 0.08;
-        float wave2   = cos(uv.y * PI * 2.0 - anim * 0.6) * 0.06;
-        float shimmer = sin((uv.x + uv.y) * TWO_PI + anim * 1.5) * 0.03;
-        t += (wave1 + wave2 + shimmer) * min(uWaveIntensity, 2.0);
+        } else if (uGradientType < 1.5) {
+            // Radial gradient centred on uGradientStart, radius = uGradientEnd.x
+            float r = max(uGradientEnd.x, 0.001);
+            t = length(uv - uGradientStart) / r;
+
+        } else {
+            // Sweep / Angular gradient around uGradientStart
+            vec2  dir   = uv - uGradientStart;
+            float angle = atan(dir.y, dir.x);          // [-PI, PI]
+            t = (angle + PI) / TWO_PI;
+        }
+
+        // Wave shimmer — smooth, organic chromatic liquid effect
+        if (uColorAnimationSpeed > 0.0 && uWaveIntensity > 0.0) {
+            float anim    = uTime * uColorAnimationSpeed;
+            float wave1   = sin(uv.x * PI * 2.0 + anim * 0.8) * 0.08;
+            float wave2   = cos(uv.y * PI * 2.0 - anim * 0.6) * 0.06;
+            float shimmer = sin((uv.x + uv.y) * TWO_PI + anim * 1.5) * 0.03;
+            t += (wave1 + wave2 + shimmer) * min(uWaveIntensity, 2.0);
+        }
     }
 
     fragColor = evaluateColor(clamp(t, 0.0, 1.0));
